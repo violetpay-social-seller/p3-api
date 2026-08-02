@@ -1,3 +1,16 @@
 spring:
   application:
     name: p3-api
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:p3}
+    username: ${POSTGRES_USER:p3}
+    password: ${POSTGRES_PASSWORD:p3}
+
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
+      credentials:
+        access-key: dummy
+        secret-key: dummy

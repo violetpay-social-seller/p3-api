@@ -1,0 +1,87 @@
+package io.point3.p3api.user.domain.entity;
+
+import io.point3.p3api.user.domain.type.UserStatus;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
+
+@Entity
+@Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(name = "cognito_sub", nullable = false, unique = true, updatable = false, length = 128)
+    private String cognitoSub;
+
+    @Column(name = "email", nullable = false, length = 320)
+    private String email;
+
+    @Column(name = "name",nullable = false, length = 100)
+    private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 30)
+    private UserStatus status;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    private User(String cognitoSub, String email, String name) {
+        this.cognitoSub = cognitoSub;
+        this.email = email;
+        this.name = name;
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public static User create(String cognitoSub, String email, String name) {
+        Objects.requireNonNull(cognitoSub, "cognitoSub");
+        Objects.requireNonNull(email, "email");
+        Objects.requireNonNull(name, "name");
+
+
+        return new User(cognitoSub, email, name);
+    }
+
+    public void updateProfile(String email, String name) {
+        this.email = email;
+        this.name = name;
+    }
+
+    public void withdraw() {
+        ensureActive("Only active users can withdraw");
+        this.status = UserStatus.WITHDRAWN;
+    }
+
+    public void ban() {
+        ensureActive("Only active users can be banned");
+        this.status = UserStatus.BANNED;
+    }
+
+    public boolean isActive() {
+        return this.status == UserStatus.ACTIVE;
+    }
+
+
+    private void ensureActive(String message) {
+        if (!isActive()) {
+            throw new IllegalArgumentException(); // TODO:User 도메인 예외로 변경 필요
+        }
+    }
+}

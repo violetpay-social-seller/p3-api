@@ -12,7 +12,15 @@ public enum CommonErrorCode implements ErrorCode {
             HttpStatus.BAD_REQUEST,
             "/errors/common/invalid-input"),
     INVALID_ID(
-            "COMMON_INVALID_ID_400", "Invalid id", HttpStatus.BAD_REQUEST, "/errors/common/invalid-id"),
+            "COMMON_INVALID_ID_400",
+            "Invalid id",
+            HttpStatus.BAD_REQUEST,
+            "/errors/common/invalid-id"),
+    UNAUTHORIZED(
+            "COMMON_UNAUTHORIZED_401",
+            "UNAUTHORIZED",
+            HttpStatus.UNAUTHORIZED,
+            "/errors/common/unauthorized"),
     DATA_ACCESS_ERROR(
             "COMMON_DATA_ACCESS_ERROR_500",
             "Data access error",
@@ -23,6 +31,7 @@ public enum CommonErrorCode implements ErrorCode {
             "Internal server error",
             HttpStatus.INTERNAL_SERVER_ERROR,
             "/errors/common/internal-server-error");
+
 
     private final String code;
     private final String title;

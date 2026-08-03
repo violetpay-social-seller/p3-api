@@ -1,4 +1,4 @@
-package io.point3.p3api.config;
+package io.point3.p3api.auth.infrastructure.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

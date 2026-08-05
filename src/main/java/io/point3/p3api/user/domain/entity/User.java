@@ -81,7 +81,7 @@ public class User {
 
     private void ensureActive(String message) {
         if (!isActive()) {
-            throw new IllegalArgumentException(); // TODO:User 도메인 예외로 변경 필요
+            throw new IllegalArgumentException(message); // TODO:User 도메인 예외로 변경 필요
         }
     }
 }

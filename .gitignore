@@ -62,3 +62,7 @@ replay_pid*
 
 # Generated
 HELP.md
+
+# ai agent
+.codex
+.codex/*

@@ -1,4 +1,4 @@
-package io.point3.p3api.user.application.port;
+package io.point3.p3api.user.application.render;
 
 import io.point3.p3api.user.domain.entity.User;
 

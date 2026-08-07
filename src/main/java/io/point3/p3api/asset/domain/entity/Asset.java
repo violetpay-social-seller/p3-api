@@ -5,8 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -25,11 +23,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Asset {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
-    @Column(name = "store_id")
-    private UUID storeId;
 
     @Column(name = "uploaded_by", nullable = false)
     private UUID uploadedBy;
@@ -59,13 +53,13 @@ public class Asset {
     private Instant updatedAt;
 
     private Asset(
-            UUID storeId,
+            UUID id,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
             long size,
             String objectKey) {
-        this.storeId = storeId;
+        this.id = id;
         this.uploadedBy = uploadedBy;
         this.originalFilename = originalFilename;
         this.contentType = contentType;
@@ -75,12 +69,13 @@ public class Asset {
     }
 
     public static Asset create(
-            UUID storeId,
+            UUID id,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
             long size,
             String objectKey) {
+        Objects.requireNonNull(id, "id");
         Objects.requireNonNull(uploadedBy, "uploadedBy");
         Objects.requireNonNull(originalFilename, "originalFilename");
         Objects.requireNonNull(contentType, "contentType");
@@ -90,7 +85,7 @@ public class Asset {
             throw new IllegalArgumentException("size must be greater than or equal to 0");
         }
 
-        return new Asset(storeId, uploadedBy, originalFilename, contentType, size, objectKey);
+        return new Asset(id, uploadedBy, originalFilename, contentType, size, objectKey);
     }
 
     public void markProcessing() {

@@ -1,6 +1,6 @@
 package io.point3.p3api.user.infrastructure;
 
-import io.point3.p3api.user.application.port.UserRender;
+import io.point3.p3api.user.application.render.UserRender;
 import io.point3.p3api.user.domain.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

@@ -14,3 +14,11 @@ spring:
       credentials:
         access-key: dummy
         secret-key: dummy
+
+p3:
+  asset:
+    storage:
+      original-asset-bucket: p3-s3-original-dev
+      processed-asset-bucket: p3-s3-processed-dev
+    delivery:
+      base-url: ${P3_DELIVERY_BASE_URL:}

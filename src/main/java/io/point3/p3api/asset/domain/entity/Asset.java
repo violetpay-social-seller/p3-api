@@ -25,7 +25,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Asset {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "store_id")

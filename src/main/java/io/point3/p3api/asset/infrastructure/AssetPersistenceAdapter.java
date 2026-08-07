@@ -2,6 +2,8 @@ package io.point3.p3api.asset.infrastructure;
 
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,4 +20,8 @@ public class AssetPersistenceAdapter implements AssetPersistencePort {
         return assetJpaRepository.save(asset);
     }
 
+    @Override
+    public Optional<Asset> findById(UUID assetId) {
+        return assetJpaRepository.findById(assetId);
+    }
 }

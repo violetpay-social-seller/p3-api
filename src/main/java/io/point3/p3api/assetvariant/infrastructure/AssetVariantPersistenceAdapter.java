@@ -1,0 +1,21 @@
+package io.point3.p3api.assetvariant.infrastructure;
+
+import io.point3.p3api.assetvariant.application.port.AssetVariantPersistencePort;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+@Transactional
+@RequiredArgsConstructor
+public class AssetVariantPersistenceAdapter implements AssetVariantPersistencePort {
+
+    private final AssetVariantJpaRepository assetVariantJpaRepository;
+
+    @Override
+    public List<AssetVariant> saveAll(List<AssetVariant> variants) {
+        return assetVariantJpaRepository.saveAll(variants);
+    }
+}

@@ -1,7 +1,6 @@
 package io.point3.p3api.store.domain.entity;
 
 import io.point3.p3api.store.domain.type.StoreStatus;
-import io.point3.p3api.user.domain.type.UserStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

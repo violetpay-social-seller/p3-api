@@ -25,9 +25,6 @@ public class Asset {
     @Id
     private UUID id;
 
-    @Column(name = "store_id")
-    private UUID storeId;
-
     @Column(name = "uploaded_by", nullable = false)
     private UUID uploadedBy;
 
@@ -57,14 +54,12 @@ public class Asset {
 
     private Asset(
             UUID id,
-            UUID storeId,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
             long size,
             String objectKey) {
         this.id = id;
-        this.storeId = storeId;
         this.uploadedBy = uploadedBy;
         this.originalFilename = originalFilename;
         this.contentType = contentType;
@@ -75,7 +70,6 @@ public class Asset {
 
     public static Asset create(
             UUID id,
-            UUID storeId,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
@@ -91,7 +85,7 @@ public class Asset {
             throw new IllegalArgumentException("size must be greater than or equal to 0");
         }
 
-        return new Asset(id, storeId, uploadedBy, originalFilename, contentType, size, objectKey);
+        return new Asset(id, uploadedBy, originalFilename, contentType, size, objectKey);
     }
 
     public void markProcessing() {

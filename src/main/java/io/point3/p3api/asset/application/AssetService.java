@@ -38,7 +38,6 @@ public class AssetService implements AssetRegisterUseCase {
 
         Asset asset = Asset.create(
                 assetId,
-                null,
                 command.uploadedBy(),
                 command.originalFilename(),
                 command.contentType(),

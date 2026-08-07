@@ -11,7 +11,7 @@ public class AssetStorageKeyGenerator {
 
     public static String original(UUID assetId, String originalFileName) {
         String safeFileName = sanitize(originalFileName);
-        return "assets/%s/original/%s".formatted(assetId, originalFileName);
+        return "assets/%s/original/%s".formatted(assetId, safeFileName);
     }
 
     private static String sanitize(String filename) {

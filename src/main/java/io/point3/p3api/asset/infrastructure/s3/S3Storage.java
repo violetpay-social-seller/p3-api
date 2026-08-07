@@ -20,6 +20,7 @@ public class S3Storage {
     public void store(AssetStoreRequest request) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(originalBucket)
+                .key(request.objectKey())
                 .contentType(request.contentType())
                 .contentLength(request.sizeBytes())
                 .build();

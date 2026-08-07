@@ -18,4 +18,3 @@ public class UserPersistenceAdapter implements UserRender {
         return userJpaRepository.findByCognitoSub(cognitoSub);
     }
 }
-c

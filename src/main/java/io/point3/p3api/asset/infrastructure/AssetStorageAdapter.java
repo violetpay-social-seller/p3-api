@@ -1,6 +1,9 @@
 package io.point3.p3api.asset.infrastructure;
 
-import io.point3.p3api.asset.application.register.AssetStoragePort;
+import io.point3.p3api.asset.application.port.AssetPersistencePort;
+import io.point3.p3api.asset.application.port.AssetStoragePort;
+import io.point3.p3api.asset.application.storage.StoreAssetCommand;
+import io.point3.p3api.asset.infrastructure.s3.AssetStoreRequest;
 import io.point3.p3api.asset.infrastructure.s3.S3Storage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

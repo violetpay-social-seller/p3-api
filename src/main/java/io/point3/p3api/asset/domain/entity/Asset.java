@@ -5,8 +5,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -58,12 +56,14 @@ public class Asset {
     private Instant updatedAt;
 
     private Asset(
+            UUID id,
             UUID storeId,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
             long size,
             String objectKey) {
+        this.id = id;
         this.storeId = storeId;
         this.uploadedBy = uploadedBy;
         this.originalFilename = originalFilename;
@@ -74,12 +74,14 @@ public class Asset {
     }
 
     public static Asset create(
+            UUID id,
             UUID storeId,
             UUID uploadedBy,
             String originalFilename,
             String contentType,
             long size,
             String objectKey) {
+        Objects.requireNonNull(id, "id");
         Objects.requireNonNull(uploadedBy, "uploadedBy");
         Objects.requireNonNull(originalFilename, "originalFilename");
         Objects.requireNonNull(contentType, "contentType");
@@ -89,7 +91,7 @@ public class Asset {
             throw new IllegalArgumentException("size must be greater than or equal to 0");
         }
 
-        return new Asset(storeId, uploadedBy, originalFilename, contentType, size, objectKey);
+        return new Asset(id, storeId, uploadedBy, originalFilename, contentType, size, objectKey);
     }
 
     public void markProcessing() {

@@ -21,7 +21,7 @@ public class SecurityConfig {
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
-                        .requestMatchers("/error", "/actuator/health")
+                        .requestMatchers("/error", "/actuator/health", "/ws")
                         .permitAll()
                         .anyRequest()
                         .authenticated())

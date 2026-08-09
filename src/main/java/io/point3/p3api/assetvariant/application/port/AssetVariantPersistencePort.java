@@ -5,5 +5,5 @@ import java.util.List;
 
 public interface AssetVariantPersistencePort {
 
-    List<AssetVariant> saveAll(List<AssetVariant> variants);
+  List<AssetVariant> saveAll(List<AssetVariant> variants);
 }

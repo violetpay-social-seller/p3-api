@@ -29,96 +29,96 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AssetVariant {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "asset_id", nullable = false)
-    private Asset asset;
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "asset_id", nullable = false)
+  private Asset asset;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 30)
-    private AssetVariantType type;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "type", nullable = false, length = 30)
+  private AssetVariantType type;
 
-    @Column(name = "object_key", nullable = false, unique = true, length = 1024)
-    private String objectKey;
+  @Column(name = "object_key", nullable = false, unique = true, length = 1024)
+  private String objectKey;
 
-    @Column(name = "content_type", nullable = false, length = 100)
-    private String contentType;
+  @Column(name = "content_type", nullable = false, length = 100)
+  private String contentType;
 
-    @Column(name = "width", nullable = false)
-    private int width;
+  @Column(name = "width", nullable = false)
+  private int width;
 
-    @Column(name = "height", nullable = false)
-    private int height;
+  @Column(name = "height", nullable = false)
+  private int height;
 
-    @Column(name = "size", nullable = false)
-    private long size;
+  @Column(name = "size", nullable = false)
+  private long size;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    private AssetVariantStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 30)
+  private AssetVariantStatus status;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
-    private AssetVariant(
-            Asset asset,
-            AssetVariantType type,
-            String objectKey,
-            String contentType,
-            int width,
-            int height,
-            long size) {
-        this.asset = asset;
-        this.type = type;
-        this.objectKey = objectKey;
-        this.contentType = contentType;
-        this.width = width;
-        this.height = height;
-        this.size = size;
-        this.status = AssetVariantStatus.READY;
+  private AssetVariant(
+      Asset asset,
+      AssetVariantType type,
+      String objectKey,
+      String contentType,
+      int width,
+      int height,
+      long size) {
+    this.asset = asset;
+    this.type = type;
+    this.objectKey = objectKey;
+    this.contentType = contentType;
+    this.width = width;
+    this.height = height;
+    this.size = size;
+    this.status = AssetVariantStatus.READY;
+  }
+
+  public static AssetVariant create(
+      Asset asset,
+      AssetVariantType type,
+      String objectKey,
+      String contentType,
+      int width,
+      int height,
+      long size) {
+    Objects.requireNonNull(asset, "asset");
+    Objects.requireNonNull(type, "type");
+    Objects.requireNonNull(objectKey, "objectKey");
+    Objects.requireNonNull(contentType, "contentType");
+
+    if (width <= 0) {
+      throw new IllegalArgumentException("width must be greater than 0");
     }
 
-    public static AssetVariant create(
-            Asset asset,
-            AssetVariantType type,
-            String objectKey,
-            String contentType,
-            int width,
-            int height,
-            long size) {
-        Objects.requireNonNull(asset, "asset");
-        Objects.requireNonNull(type, "type");
-        Objects.requireNonNull(objectKey, "objectKey");
-        Objects.requireNonNull(contentType, "contentType");
-
-        if (width <= 0) {
-            throw new IllegalArgumentException("width must be greater than 0");
-        }
-
-        if (height <= 0) {
-            throw new IllegalArgumentException("height must be greater than 0");
-        }
-
-        if (size < 0) {
-            throw new IllegalArgumentException("size must be greater than or equal to 0");
-        }
-
-        return new AssetVariant(asset, type, objectKey, contentType, width, height, size);
+    if (height <= 0) {
+      throw new IllegalArgumentException("height must be greater than 0");
     }
 
-    public void markFailed() {
-        this.status = AssetVariantStatus.FAILED;
+    if (size < 0) {
+      throw new IllegalArgumentException("size must be greater than or equal to 0");
     }
 
-    public void delete() {
-        this.status = AssetVariantStatus.DELETED;
-    }
+    return new AssetVariant(asset, type, objectKey, contentType, width, height, size);
+  }
+
+  public void markFailed() {
+    this.status = AssetVariantStatus.FAILED;
+  }
+
+  public void delete() {
+    this.status = AssetVariantStatus.DELETED;
+  }
 }

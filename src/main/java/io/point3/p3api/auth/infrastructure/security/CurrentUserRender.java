@@ -13,17 +13,18 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CurrentUserRender {
 
-    private final UserRender userRender;
+  private final UserRender userRender;
 
-    public CurrentUser read(Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
-            throw new BaseException(CommonErrorCode.UNAUTHORIZED);
-        }
-
-        String cognitoSub = jwt.getSubject();
-
-        return userRender.findByCognitoSub(cognitoSub)
-                .map(CurrentUser::from)
-                .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
+  public CurrentUser read(Authentication authentication) {
+    if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
+
+    String cognitoSub = jwt.getSubject();
+
+    return userRender
+        .findByCognitoSub(cognitoSub)
+        .map(CurrentUser::from)
+        .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
+  }
 }

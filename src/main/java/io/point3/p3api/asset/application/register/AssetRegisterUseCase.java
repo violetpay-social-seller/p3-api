@@ -4,5 +4,5 @@ import io.point3.p3api.asset.application.result.RegistryAsset;
 
 public interface AssetRegisterUseCase {
 
-    RegistryAsset register(RegisterAssetCommand command);
+  RegistryAsset register(RegisterAssetCommand command);
 }

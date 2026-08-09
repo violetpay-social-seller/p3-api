@@ -16,21 +16,22 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 @RequiredArgsConstructor
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
-    private final CurrentUserRender currentUserRender;
+  private final CurrentUserRender currentUserRender;
 
-    @Override
-    public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(Authenticated.class)
-                && parameter.getParameterType().equals(CurrentUser.class);
-    }
+  @Override
+  public boolean supportsParameter(MethodParameter parameter) {
+    return parameter.hasParameterAnnotation(Authenticated.class)
+        && parameter.getParameterType().equals(CurrentUser.class);
+  }
 
-    @Override
-    public @Nullable Object resolveArgument(
-            MethodParameter parameter,
-            @Nullable ModelAndViewContainer mavContainer,
-            NativeWebRequest webRequest,
-            @Nullable WebDataBinderFactory binderFactory) throws Exception {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return currentUserRender.read(authentication);
-    }
+  @Override
+  public @Nullable Object resolveArgument(
+      MethodParameter parameter,
+      @Nullable ModelAndViewContainer mavContainer,
+      NativeWebRequest webRequest,
+      @Nullable WebDataBinderFactory binderFactory)
+      throws Exception {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return currentUserRender.read(authentication);
+  }
 }

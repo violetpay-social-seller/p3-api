@@ -1,4 +1,4 @@
-package io.point3.p3api.auth;
+package io.point3.p3api.auth.controller;
 
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.user.application.sync.SyncCommand;
@@ -16,16 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserSyncUseCase userSyncUseCase;
-    private final JwtSyncCommandExtractor jwtSyncCommandExtractor;
+  private final UserSyncUseCase userSyncUseCase;
+  private final JwtSyncCommandExtractor jwtSyncCommandExtractor;
 
-    @PostMapping("/me/sync")
-    public ApiResponse<UserSyncResponse> sync(
-            @AuthenticationPrincipal Jwt jwt
-    ) {
-        SyncCommand command = jwtSyncCommandExtractor.extract(jwt);
-        User user = userSyncUseCase.findOrCreate(command);
-        return ApiResponse.ok(UserSyncResponse.from(user));
-    }
-
+  @PostMapping("/me/sync")
+  public ApiResponse<UserSyncResponse> sync(@AuthenticationPrincipal Jwt jwt) {
+    SyncCommand command = jwtSyncCommandExtractor.extract(jwt);
+    User user = userSyncUseCase.findOrCreate(command);
+    return ApiResponse.ok(UserSyncResponse.from(user));
+  }
 }

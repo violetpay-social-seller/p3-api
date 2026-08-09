@@ -82,10 +82,9 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-
 spotless {
     java {
-        palantirJavaFormat().style("GOOGLE")
+        palantirJavaFormat("2.80.0").style("GOOGLE")
 
         target("src/**/*.java")
 

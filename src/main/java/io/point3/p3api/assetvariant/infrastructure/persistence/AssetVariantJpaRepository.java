@@ -1,4 +1,4 @@
-package io.point3.p3api.assetvariant.infrastructure;
+package io.point3.p3api.assetvariant.infrastructure.persistence;
 
 import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
 import java.util.UUID;

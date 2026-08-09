@@ -5,5 +5,5 @@ import java.util.Optional;
 @FunctionalInterface
 public interface TenantResolver<T> {
 
-    Optional<String> resolveTenantIdentifier(T source);
+  Optional<String> resolveTenantIdentifier(T source);
 }

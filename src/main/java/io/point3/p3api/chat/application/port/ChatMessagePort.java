@@ -4,5 +4,5 @@ import io.point3.p3api.chat.domain.entity.ChatMessage;
 
 public interface ChatMessagePort {
 
-    ChatMessage save(ChatMessage chatMessage);
+  ChatMessage save(ChatMessage chatMessage);
 }

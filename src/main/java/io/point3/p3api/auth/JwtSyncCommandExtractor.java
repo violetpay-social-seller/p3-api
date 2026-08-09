@@ -1,4 +1,4 @@
-package io.point3.p3api.auth;
+package io.point3.p3api.auth.controller;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
@@ -9,30 +9,29 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtSyncCommandExtractor {
 
-    public SyncCommand extract(Jwt jwt) {
-        if (jwt == null) {
-            throw new BaseException(CommonErrorCode.UNAUTHORIZED);
-        }
-
-        String cognitoSub = jwt.getSubject();
-        String email = jwt.getClaimAsString("email");
-        String name = jwt.getClaimAsString("name");
-
-        validateNotBlank(cognitoSub,"cognitoSub");
-        validateNotBlank(email,"email");
-        validateNotBlank(name,"name");
-
-        return SyncCommand.of(cognitoSub,email,name);
+  public SyncCommand extract(Jwt jwt) {
+    if (jwt == null) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
 
-    private void validateNotBlank(String value, String paramName) {
-        if (isBlank(value)) {
-            throw new BaseException(CommonErrorCode.UNAUTHORIZED, paramName + " must not be blank");
-        }
-    }
+    String cognitoSub = jwt.getSubject();
+    String email = jwt.getClaimAsString("email");
+    String name = jwt.getClaimAsString("name");
 
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
-    }
+    validateNotBlank(cognitoSub, "cognitoSub");
+    validateNotBlank(email, "email");
+    validateNotBlank(name, "name");
 
+    return SyncCommand.of(cognitoSub, email, name);
+  }
+
+  private void validateNotBlank(String value, String paramName) {
+    if (isBlank(value)) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED, paramName + " must not be blank");
+    }
+  }
+
+  private boolean isBlank(String value) {
+    return value == null || value.isBlank();
+  }
 }

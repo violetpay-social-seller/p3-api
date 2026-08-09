@@ -12,16 +12,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService implements UserSyncUseCase {
 
-    private final UserPersistencePort userPersistencePort;
-    private final UserRender userRender;
+  private final UserPersistencePort userPersistencePort;
+  private final UserRender userRender;
 
-    @Override
-    public User findOrCreate(SyncCommand command) {
-        return userRender.findByCognitoSub(command.cognitoSub())
-                .orElseGet(() -> userPersistencePort.save(User.create(
-                        command.cognitoSub(),
-                        command.email(),
-                        command.name()
-                )));
-    }
+  @Override
+  public User findOrCreate(SyncCommand command) {
+    return userRender
+        .findByCognitoSub(command.cognitoSub())
+        .orElseGet(() -> userPersistencePort.save(
+            User.create(command.cognitoSub(), command.email(), command.name())));
+  }
 }

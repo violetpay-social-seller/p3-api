@@ -7,9 +7,9 @@ import java.util.function.Function;
 
 public record RegisteredAssetVariant(UUID variantId, AssetVariantType type, String deliveryUrl) {
 
-    public static RegisteredAssetVariant from(
-            AssetVariant variant, Function<String, String> deliveryUrlResolver) {
-        return new RegisteredAssetVariant(
-                variant.getId(), variant.getType(), deliveryUrlResolver.apply(variant.getObjectKey()));
-    }
+  public static RegisteredAssetVariant from(
+      AssetVariant variant, Function<String, String> deliveryUrlResolver) {
+    return new RegisteredAssetVariant(
+        variant.getId(), variant.getType(), deliveryUrlResolver.apply(variant.getObjectKey()));
+  }
 }

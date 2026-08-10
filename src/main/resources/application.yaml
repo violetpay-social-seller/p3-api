@@ -20,6 +20,9 @@ spring:
         jwt:
           issuer-uri: ${COGNITO_ISSUER_URI}
 p3:
+  websocket:
+    allowed-origins: ${P3_WEBSOCKET_ALLOWED_ORIGINS}
+
   asset:
     storage:
       original-asset-bucket: p3-s3-original-dev

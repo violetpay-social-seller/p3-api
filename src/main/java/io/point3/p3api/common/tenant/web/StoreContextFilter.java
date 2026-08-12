@@ -1,7 +1,9 @@
-package io.point3.p3api.common.tenant;
+package io.point3.p3api.common.tenant.web;
 
 import io.point3.p3api.auth.infrastructure.security.CurrentUserRender;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
+import io.point3.p3api.common.tenant.provider.SellerStoreProvider;
+import io.point3.p3api.common.tenant.context.StoreContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

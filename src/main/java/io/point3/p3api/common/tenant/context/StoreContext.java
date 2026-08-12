@@ -1,4 +1,4 @@
-package io.point3.p3api.common.tenant;
+package io.point3.p3api.common.tenant.context;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;

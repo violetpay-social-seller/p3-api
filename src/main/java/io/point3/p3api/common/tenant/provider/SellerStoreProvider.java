@@ -1,4 +1,4 @@
-package io.point3.p3api.common.tenant;
+package io.point3.p3api.common.tenant.provider;
 
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.store.application.port.StorePersistencePort;

@@ -3,6 +3,7 @@ package io.point3.p3api.store.domain.entity;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -20,8 +21,38 @@ public class Store {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
+  @Column(name = "owner_user_id", nullable = false, unique = true)
+  private UUID ownerUserId;
+
+  @Column(name = "profile_asset_id")
+  private UUID profileAssetId;
+
+  @Column(name = "banner_asset_id")
+  private UUID bannerAssetId;
+
   @Column(name = "name", nullable = false, length = 100)
   private String name;
+
+  @Column(name = "slug", nullable = false, unique = true, length = 120)
+  private String slug;
+
+  @Column(name = "description", columnDefinition = "text")
+  private String description;
+
+  @Column(name = "contact", length = 100)
+  private String contact;
+
+  @Column(name = "contact_visible", nullable = false)
+  private boolean contactVisible;
+
+  @Column(name = "sns_links", columnDefinition = "jsonb")
+  private String snsLinks;
+
+  @Column(name = "business_hours", columnDefinition = "jsonb")
+  private String businessHours;
+
+  @Column(name = "address", length = 255)
+  private String address;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
@@ -35,13 +66,28 @@ public class Store {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private Store(String name) {
+  private Store(UUID ownerUserId, String name, String slug) {
+    this.ownerUserId = ownerUserId;
     this.name = name;
+    this.slug = slug;
+    this.contactVisible = false;
     this.status = StoreStatus.ACTIVE;
   }
 
-  public static Store create(String name) {
-    return new Store(name);
+  public static Store create(UUID ownerUserId, String name, String slug) {
+    Objects.requireNonNull(ownerUserId, "ownerUserId");
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(slug, "slug");
+
+    return new Store(ownerUserId, name, slug);
+  }
+
+  public void updateProfileAsset(UUID profileAssetId) {
+    this.profileAssetId = profileAssetId;
+  }
+
+  public void updateBannerAsset(UUID bannerAssetId) {
+    this.bannerAssetId = bannerAssetId;
   }
 
   public boolean isActive() {

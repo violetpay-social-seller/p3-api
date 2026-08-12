@@ -1,0 +1,103 @@
+package io.point3.p3api.payment.domain.entity;
+
+import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+@Entity
+@Table(name = "payment_attempts")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class PaymentAttempt {
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
+
+  @Column(name = "payment_request_id", nullable = false)
+  private UUID paymentRequestId;
+
+  @Column(name = "payer_user_id", nullable = false)
+  private UUID payerUserId;
+
+  @Column(name = "point3_session_id", nullable = false, unique = true, length = 128)
+  private String point3SessionId;
+
+  @Column(name = "payer_id", length = 128)
+  private String payerId;
+
+  @Column(name = "amount", nullable = false)
+  private long amount;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 30)
+  private PaymentAttemptStatus status;
+
+  @Column(name = "failure_code", length = 100)
+  private String failureCode;
+
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
+
+  @Column(name = "completed_at")
+  private Instant completedAt;
+
+  private PaymentAttempt(
+      UUID paymentRequestId,
+      UUID payerUserId,
+      String point3SessionId,
+      String payerId,
+      long amount) {
+    this.paymentRequestId = paymentRequestId;
+    this.payerUserId = payerUserId;
+    this.point3SessionId = point3SessionId;
+    this.payerId = payerId;
+    this.amount = amount;
+    this.status = PaymentAttemptStatus.READY;
+  }
+
+  public static PaymentAttempt create(
+      UUID paymentRequestId,
+      UUID payerUserId,
+      String point3SessionId,
+      String payerId,
+      long amount) {
+    Objects.requireNonNull(paymentRequestId, "paymentRequestId");
+    Objects.requireNonNull(payerUserId, "payerUserId");
+    Objects.requireNonNull(point3SessionId, "point3SessionId");
+
+    if (amount < 0) {
+      throw new IllegalArgumentException("amount must be greater than or equal to 0");
+    }
+
+    return new PaymentAttempt(paymentRequestId, payerUserId, point3SessionId, payerId, amount);
+  }
+
+  public void succeed(String payerId, Instant completedAt) {
+    Objects.requireNonNull(completedAt, "completedAt");
+    this.payerId = payerId;
+    this.status = PaymentAttemptStatus.SUCCEEDED;
+    this.completedAt = completedAt;
+  }
+
+  public void fail(String failureCode, Instant completedAt) {
+    Objects.requireNonNull(completedAt, "completedAt");
+    this.failureCode = failureCode;
+    this.status = PaymentAttemptStatus.FAILED;
+    this.completedAt = completedAt;
+  }
+}

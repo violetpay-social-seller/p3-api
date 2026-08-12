@@ -8,9 +8,18 @@ import java.util.UUID;
 
 public record AssetVariantResponse(UUID assetId, List<Variant> variants) {
 
+  public AssetVariantResponse {
+    variants = List.copyOf(variants);
+  }
+
   public static AssetVariantResponse from(RegisteredAssetVariants result) {
     return new AssetVariantResponse(
         result.assetId(), result.variants().stream().map(Variant::from).toList());
+  }
+
+  @Override
+  public List<Variant> variants() {
+    return List.copyOf(variants);
   }
 
   public record Variant(UUID variantId, AssetVariantType type, String deliveryUrl) {

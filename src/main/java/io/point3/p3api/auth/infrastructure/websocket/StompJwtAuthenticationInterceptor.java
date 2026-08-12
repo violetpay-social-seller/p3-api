@@ -22,46 +22,47 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StompJwtAuthenticationInterceptor implements ChannelInterceptor {
 
-    private static final String BEARER_PREFIX = "Bearer ";
+  private static final String BEARER_PREFIX = "Bearer ";
 
-    private final JwtDecoder jwtDecoder;
-    private final CurrentUserRender currentUserRender;
+  private final JwtDecoder jwtDecoder;
+  private final CurrentUserRender currentUserRender;
 
-    @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor =
-                MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+  @Override
+  public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    StompHeaderAccessor accessor =
+        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            accessor.setUser(authenticate(message, accessor));
-        }
-
-        return message;
+    if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
+      accessor.setUser(authenticate(message, accessor));
     }
 
-    private Authentication authenticate(Message<?> message, StompHeaderAccessor accessor) {
-        String authorization = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
+    return message;
+  }
 
-        if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
-            throw unauthorized(message, null);
-        }
+  private Authentication authenticate(Message<?> message, StompHeaderAccessor accessor) {
+    String authorization = accessor.getFirstNativeHeader(HttpHeaders.AUTHORIZATION);
 
-        String accessToken = authorization.substring(BEARER_PREFIX.length());
-        if (accessToken.isBlank()) {
-            throw unauthorized(message, null);
-        }
-
-        try {
-            Jwt jwt = jwtDecoder.decode(accessToken);
-            Authentication authentication = new JwtAuthenticationToken(jwt);
-            currentUserRender.read(authentication);
-            return authentication;
-        } catch (JwtException | BaseException e) {
-            throw unauthorized(message, e);
-        }
+    if (authorization == null || !authorization.startsWith(BEARER_PREFIX)) {
+      throw unauthorized(message, null);
     }
 
-    private MessageDeliveryException unauthorized(Message<?> message, Throwable cause) {
-        return new MessageDeliveryException(message, "STOMP CONNECT requires a valid Bearer token", cause);
+    String accessToken = authorization.substring(BEARER_PREFIX.length());
+    if (accessToken.isBlank()) {
+      throw unauthorized(message, null);
     }
+
+    try {
+      Jwt jwt = jwtDecoder.decode(accessToken);
+      Authentication authentication = new JwtAuthenticationToken(jwt);
+      currentUserRender.read(authentication);
+      return authentication;
+    } catch (JwtException | BaseException e) {
+      throw unauthorized(message, e);
+    }
+  }
+
+  private MessageDeliveryException unauthorized(Message<?> message, Throwable cause) {
+    return new MessageDeliveryException(
+        message, "STOMP CONNECT requires a valid Bearer token", cause);
+  }
 }

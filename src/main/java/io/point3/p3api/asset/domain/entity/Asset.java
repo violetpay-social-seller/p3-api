@@ -22,85 +22,85 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Asset {
 
-    @Id
-    private UUID id;
+  @Id
+  private UUID id;
 
-    @Column(name = "uploaded_by", nullable = false)
-    private UUID uploadedBy;
+  @Column(name = "uploaded_by", nullable = false)
+  private UUID uploadedBy;
 
-    @Column(name = "original_filename", nullable = false, length = 255)
-    private String originalFilename;
+  @Column(name = "original_filename", nullable = false, length = 255)
+  private String originalFilename;
 
-    @Column(name = "content_type", nullable = false, length = 100)
-    private String contentType;
+  @Column(name = "content_type", nullable = false, length = 100)
+  private String contentType;
 
-    @Column(name = "size", nullable = false)
-    private long size;
+  @Column(name = "size", nullable = false)
+  private long size;
 
-    @Column(name = "object_key", nullable = false, unique = true, length = 1024)
-    private String objectKey;
+  @Column(name = "object_key", nullable = false, unique = true, length = 1024)
+  private String objectKey;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
-    private AssetStatus status;
+  @Enumerated(EnumType.STRING)
+  @Column(name = "status", nullable = false, length = 30)
+  private AssetStatus status;
 
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private Instant createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+  @UpdateTimestamp
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
 
-    private Asset(
-            UUID id,
-            UUID uploadedBy,
-            String originalFilename,
-            String contentType,
-            long size,
-            String objectKey) {
-        this.id = id;
-        this.uploadedBy = uploadedBy;
-        this.originalFilename = originalFilename;
-        this.contentType = contentType;
-        this.size = size;
-        this.objectKey = objectKey;
-        this.status = AssetStatus.UPLOADED;
+  private Asset(
+      UUID id,
+      UUID uploadedBy,
+      String originalFilename,
+      String contentType,
+      long size,
+      String objectKey) {
+    this.id = id;
+    this.uploadedBy = uploadedBy;
+    this.originalFilename = originalFilename;
+    this.contentType = contentType;
+    this.size = size;
+    this.objectKey = objectKey;
+    this.status = AssetStatus.UPLOADED;
+  }
+
+  public static Asset create(
+      UUID id,
+      UUID uploadedBy,
+      String originalFilename,
+      String contentType,
+      long size,
+      String objectKey) {
+    Objects.requireNonNull(id, "id");
+    Objects.requireNonNull(uploadedBy, "uploadedBy");
+    Objects.requireNonNull(originalFilename, "originalFilename");
+    Objects.requireNonNull(contentType, "contentType");
+    Objects.requireNonNull(objectKey, "objectKey");
+
+    if (size < 0) {
+      throw new IllegalArgumentException("size must be greater than or equal to 0");
     }
 
-    public static Asset create(
-            UUID id,
-            UUID uploadedBy,
-            String originalFilename,
-            String contentType,
-            long size,
-            String objectKey) {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(uploadedBy, "uploadedBy");
-        Objects.requireNonNull(originalFilename, "originalFilename");
-        Objects.requireNonNull(contentType, "contentType");
-        Objects.requireNonNull(objectKey, "objectKey");
+    return new Asset(id, uploadedBy, originalFilename, contentType, size, objectKey);
+  }
 
-        if (size < 0) {
-            throw new IllegalArgumentException("size must be greater than or equal to 0");
-        }
+  public void markProcessing() {
+    this.status = AssetStatus.PROCESSING;
+  }
 
-        return new Asset(id, uploadedBy, originalFilename, contentType, size, objectKey);
-    }
+  public void markReady() {
+    this.status = AssetStatus.READY;
+  }
 
-    public void markProcessing() {
-        this.status = AssetStatus.PROCESSING;
-    }
+  public void markFailed() {
+    this.status = AssetStatus.FAILED;
+  }
 
-    public void markReady() {
-        this.status = AssetStatus.READY;
-    }
-
-    public void markFailed() {
-        this.status = AssetStatus.FAILED;
-    }
-
-    public void delete() {
-        this.status = AssetStatus.DELETED;
-    }
+  public void delete() {
+    this.status = AssetStatus.DELETED;
+  }
 }

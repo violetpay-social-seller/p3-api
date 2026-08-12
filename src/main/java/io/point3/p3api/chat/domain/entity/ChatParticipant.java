@@ -17,38 +17,38 @@ import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Table(
-        name = "chat_participants",
-        uniqueConstraints =
-                @UniqueConstraint(
-                        name = "uk_chat_participants_room_user",
-                        columnNames = {"chat_room_id", "user_id"}))
+    name = "chat_participants",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_chat_participants_room_user",
+            columnNames = {"chat_room_id", "user_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChatParticipant {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    @Column(name = "chat_room_id", nullable = false)
-    private UUID chatRoomId;
+  @Column(name = "chat_room_id", nullable = false)
+  private UUID chatRoomId;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+  @Column(name = "user_id", nullable = false)
+  private UUID userId;
 
-    @CreationTimestamp
-    @Column(name = "joined_at", nullable = false, updatable = false)
-    private Instant joinedAt;
+  @CreationTimestamp
+  @Column(name = "joined_at", nullable = false, updatable = false)
+  private Instant joinedAt;
 
-    private ChatParticipant(UUID chatRoomId, UUID userId) {
-        this.chatRoomId = chatRoomId;
-        this.userId = userId;
-    }
+  private ChatParticipant(UUID chatRoomId, UUID userId) {
+    this.chatRoomId = chatRoomId;
+    this.userId = userId;
+  }
 
-    public static ChatParticipant create(UUID chatRoomId, UUID userId) {
-        Objects.requireNonNull(chatRoomId, "chatRoomId");
-        Objects.requireNonNull(userId, "userId");
+  public static ChatParticipant create(UUID chatRoomId, UUID userId) {
+    Objects.requireNonNull(chatRoomId, "chatRoomId");
+    Objects.requireNonNull(userId, "userId");
 
-        return new ChatParticipant(chatRoomId, userId);
-    }
+    return new ChatParticipant(chatRoomId, userId);
+  }
 }

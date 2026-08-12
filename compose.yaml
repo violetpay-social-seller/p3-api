@@ -34,6 +34,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       AWS_PROFILE: p3-dev
       AWS_REGION: ap-northeast-2
+      COGNITO_ISSUER_URI: ${COGNITO_ISSUER_URI}
+
 
 
 volumes:

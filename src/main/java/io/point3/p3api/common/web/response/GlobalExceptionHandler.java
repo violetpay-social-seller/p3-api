@@ -15,73 +15,73 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler (BaseException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAllExceptions(
-            BaseException e, HttpServletRequest request) {
-        ErrorCode errorCode = e.getErrorCode();
+  @ExceptionHandler(BaseException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAllExceptions(
+      BaseException e, HttpServletRequest request) {
+    ErrorCode errorCode = e.getErrorCode();
 
-        String instance = request.getRequestURI();
+    String instance = request.getRequestURI();
 
-        log.warn(
-                "Business exception. code={} ,title={} ,status={} ,type={}",
-                errorCode.getCode(),
-                errorCode.getTitle(),
-                errorCode.getStatus(),
-                errorCode.getType());
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
-    }
+    log.warn(
+        "Business exception. code={} ,title={} ,status={} ,type={}",
+        errorCode.getCode(),
+        errorCode.getTitle(),
+        errorCode.getStatus(),
+        errorCode.getType());
+    return ResponseEntity.status(errorCode.getStatus())
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Void>> handleValidationException(
-            MethodArgumentNotValidException e, HttpServletRequest request) {
-        ErrorCode errorCode = CommonErrorCode.INVALID_INPUT;
-        String instance = request.getRequestURI();
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiResponse<Void>> handleValidationException(
+      MethodArgumentNotValidException e, HttpServletRequest request) {
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT;
+    String instance = request.getRequestURI();
 
-        log.warn(
-                "Validation exception. code={} ,title={} ,status={} ,type={}",
-                errorCode.getCode(),
-                errorCode.getTitle(),
-                errorCode.getStatus(),
-                errorCode.getType());
+    log.warn(
+        "Validation exception. code={} ,title={} ,status={} ,type={}",
+        errorCode.getCode(),
+        errorCode.getTitle(),
+        errorCode.getStatus(),
+        errorCode.getType());
 
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
-    }
+    return ResponseEntity.status(errorCode.getStatus())
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
 
-    @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDataAccessException(
-            DataAccessException e, HttpServletRequest request) {
-        ErrorCode errorCode = CommonErrorCode.DATA_ACCESS_ERROR;
-        String instance = request.getRequestURI();
+  @ExceptionHandler(DataAccessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataAccessException(
+      DataAccessException e, HttpServletRequest request) {
+    ErrorCode errorCode = CommonErrorCode.DATA_ACCESS_ERROR;
+    String instance = request.getRequestURI();
 
-        log.error(
-                "Data access exception. code={} ,title={} ,status={} ,type={}",
-                errorCode.getCode(),
-                errorCode.getTitle(),
-                errorCode.getStatus(),
-                errorCode.getType(),
-                e);
+    log.error(
+        "Data access exception. code={} ,title={} ,status={} ,type={}",
+        errorCode.getCode(),
+        errorCode.getTitle(),
+        errorCode.getStatus(),
+        errorCode.getType(),
+        e);
 
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
-    }
+    return ResponseEntity.status(errorCode.getStatus())
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
-            Exception e, HttpServletRequest request) {
-        ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
-        String instance = request.getRequestURI();
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Void>> handleUnexpectedException(
+      Exception e, HttpServletRequest request) {
+    ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
+    String instance = request.getRequestURI();
 
-        log.error(
-                "Unexpected exception. code={} ,title={} ,status={} ,type={}",
-                errorCode.getCode(),
-                errorCode.getTitle(),
-                errorCode.getStatus(),
-                errorCode.getType(),
-                e);
+    log.error(
+        "Unexpected exception. code={} ,title={} ,status={} ,type={}",
+        errorCode.getCode(),
+        errorCode.getTitle(),
+        errorCode.getStatus(),
+        errorCode.getType(),
+        e);
 
-        return ResponseEntity.status(errorCode.getStatus())
-                .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
-    }
+    return ResponseEntity.status(errorCode.getStatus())
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
 }

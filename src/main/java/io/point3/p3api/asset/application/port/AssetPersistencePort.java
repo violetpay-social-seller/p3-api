@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public interface AssetPersistencePort {
 
-    Asset save(Asset asset);
+  Asset save(Asset asset);
 
-    Optional<Asset> findById(UUID assetId);
+  Optional<Asset> findById(UUID assetId);
 }

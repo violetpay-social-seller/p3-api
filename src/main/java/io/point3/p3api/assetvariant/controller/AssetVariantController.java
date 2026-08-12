@@ -1,4 +1,4 @@
-package io.point3.p3api.assetvariant;
+package io.point3.p3api.assetvariant.controller;
 
 import io.point3.p3api.assetvariant.application.register.AssetVariantRegisterUseCase;
 import io.point3.p3api.assetvariant.application.register.RegisterAssetVariantsCommand;
@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AssetVariantController {
 
-    private final AssetVariantRegisterUseCase assetVariantRegisterUseCase;
+  private final AssetVariantRegisterUseCase assetVariantRegisterUseCase;
 
-    @PostMapping
-    public ApiResponse<AssetVariantResponse> registerVariants(
-            @PathVariable UUID assetId, @RequestBody AssetVariantRequest request) {
-        RegisteredAssetVariants result =
-                assetVariantRegisterUseCase.register(RegisterAssetVariantsCommand.from(assetId, request));
-        return ApiResponse.ok(AssetVariantResponse.from(result));
-    }
+  @PostMapping
+  public ApiResponse<AssetVariantResponse> registerVariants(
+      @PathVariable UUID assetId, @RequestBody AssetVariantRequest request) {
+    RegisteredAssetVariants result =
+        assetVariantRegisterUseCase.register(RegisterAssetVariantsCommand.from(assetId, request));
+    return ApiResponse.ok(AssetVariantResponse.from(result));
+  }
 }

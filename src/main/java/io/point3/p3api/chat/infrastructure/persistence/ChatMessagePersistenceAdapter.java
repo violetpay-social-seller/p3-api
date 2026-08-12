@@ -1,4 +1,4 @@
-package io.point3.p3api.chat.infrastructure;
+package io.point3.p3api.chat.infrastructure.persistence;
 
 import io.point3.p3api.chat.application.port.ChatMessagePort;
 import io.point3.p3api.chat.domain.entity.ChatMessage;
@@ -9,10 +9,10 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ChatMessagePersistenceAdapter implements ChatMessagePort {
 
-    private final ChatMessageJpaRepository chatMessageJpaRepository;
+  private final ChatMessageJpaRepository chatMessageJpaRepository;
 
-    @Override
-    public ChatMessage save(ChatMessage chatMessage) {
-        return chatMessageJpaRepository.save(chatMessage);
-    }
+  @Override
+  public ChatMessage save(ChatMessage chatMessage) {
+    return chatMessageJpaRepository.save(chatMessage);
+  }
 }

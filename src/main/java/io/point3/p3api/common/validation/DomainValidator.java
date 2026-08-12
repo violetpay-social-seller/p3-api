@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DomainValidator {
 
-    public static String requireText(String value, String fileName) {
-        if (value == null || value.isBlank()) {
-            throw new BaseException(CommonErrorCode.INVALID_INPUT, fileName + " must not be null");
-        }
-        return value;
+  public static String requireText(String value, String fileName) {
+    if (value == null || value.isBlank()) {
+      throw new BaseException(CommonErrorCode.INVALID_INPUT, fileName + " must not be null");
     }
+    return value;
+  }
 }

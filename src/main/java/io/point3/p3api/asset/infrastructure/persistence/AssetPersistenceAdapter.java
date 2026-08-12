@@ -1,4 +1,4 @@
-package io.point3.p3api.asset.infrastructure;
+package io.point3.p3api.asset.infrastructure.persistence;
 
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
@@ -13,15 +13,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AssetPersistenceAdapter implements AssetPersistencePort {
 
-    private final AssetJpaRepository assetJpaRepository;
+  private final AssetJpaRepository assetJpaRepository;
 
-    @Override
-    public Asset save(Asset asset) {
-        return assetJpaRepository.save(asset);
-    }
+  @Override
+  public Asset save(Asset asset) {
+    return assetJpaRepository.save(asset);
+  }
 
-    @Override
-    public Optional<Asset> findById(UUID assetId) {
-        return assetJpaRepository.findById(assetId);
-    }
+  @Override
+  public Optional<Asset> findById(UUID assetId) {
+    return assetJpaRepository.findById(assetId);
+  }
 }

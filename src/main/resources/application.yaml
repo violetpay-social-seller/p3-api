@@ -14,7 +14,11 @@ spring:
       credentials:
         access-key: dummy
         secret-key: dummy
-
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${COGNITO_ISSUER_URI}
 p3:
   websocket:
     allowed-origins: ${P3_WEBSOCKET_ALLOWED_ORIGINS}

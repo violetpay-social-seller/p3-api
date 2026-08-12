@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public interface ChatRoomPort {
 
-    ChatRoom save(ChatRoom chatRoom);
+  ChatRoom save(ChatRoom chatRoom);
 
-    Optional<ChatRoom> findById(UUID id);
+  Optional<ChatRoom> findById(UUID id);
 }

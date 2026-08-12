@@ -1,4 +1,4 @@
-package io.point3.p3api.chat.infrastructure;
+package io.point3.p3api.chat.infrastructure.persistence;
 
 import io.point3.p3api.chat.domain.entity.ChatRoom;
 import java.util.UUID;

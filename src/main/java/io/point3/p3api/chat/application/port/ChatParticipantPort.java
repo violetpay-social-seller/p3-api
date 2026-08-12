@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public interface ChatParticipantPort {
 
-    ChatParticipant save(ChatParticipant chatParticipant);
+  ChatParticipant save(ChatParticipant chatParticipant);
 
-    boolean existsByChatRoomIdAndUserId(UUID chatRoomId, UUID userId);
+  boolean existsByChatRoomIdAndUserId(UUID chatRoomId, UUID userId);
 }

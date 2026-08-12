@@ -7,9 +7,18 @@ import java.util.UUID;
 
 public record RegisterAssetVariantsCommand(UUID assetId, List<Variant> variants) {
 
+  public RegisterAssetVariantsCommand {
+    variants = List.copyOf(variants);
+  }
+
   public static RegisterAssetVariantsCommand from(UUID assetId, AssetVariantRequest request) {
     return new RegisterAssetVariantsCommand(
         assetId, request.variants().stream().map(Variant::from).toList());
+  }
+
+  @Override
+  public List<Variant> variants() {
+    return List.copyOf(variants);
   }
 
   public record Variant(

@@ -1,5 +1,6 @@
 package io.point3.p3api.user.domain.entity;
 
+import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.domain.type.UserStatus;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -27,8 +28,15 @@ public class User {
   @Column(name = "email", nullable = false, length = 320)
   private String email;
 
+  @Column(name = "payer_id", length = 128)
+  private String payerId;
+
   @Column(name = "name", nullable = false, length = 100)
   private String name;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "role", nullable = false, length = 30)
+  private UserRole role;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
@@ -42,24 +50,35 @@ public class User {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private User(String cognitoSub, String email, String name) {
+  private User(String cognitoSub, String email, String name, UserRole role) {
     this.cognitoSub = cognitoSub;
     this.email = email;
     this.name = name;
+    this.role = role;
     this.status = UserStatus.ACTIVE;
   }
 
   public static User create(String cognitoSub, String email, String name) {
+    return create(cognitoSub, email, name, UserRole.BUYER);
+  }
+
+  public static User create(String cognitoSub, String email, String name, UserRole role) {
     Objects.requireNonNull(cognitoSub, "cognitoSub");
     Objects.requireNonNull(email, "email");
     Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(role, "role");
 
-    return new User(cognitoSub, email, name);
+    return new User(cognitoSub, email, name, role);
   }
 
   public void updateProfile(String email, String name) {
     this.email = email;
     this.name = name;
+  }
+
+  public void connectPayer(String payerId) {
+    Objects.requireNonNull(payerId, "payerId");
+    this.payerId = payerId;
   }
 
   public void withdraw() {

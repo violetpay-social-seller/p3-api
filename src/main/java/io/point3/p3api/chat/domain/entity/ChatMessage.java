@@ -24,35 +24,34 @@ public class ChatMessage {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "chat_room_id", nullable = false)
-  private UUID chatRoomId;
+  @Column(name = "inquiry_id", nullable = false)
+  private UUID inquiryId;
 
-  @Column(name = "sender_id", nullable = false)
-  private UUID senderId;
+  @Column(name = "sender_user_id", nullable = false)
+  private UUID senderUserId;
 
-  @Column(name = "content", nullable = false, columnDefinition = "text")
+  @Column(name = "content", columnDefinition = "text")
   private String content;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
-  private ChatMessage(UUID chatRoomId, UUID senderId, String content) {
-    this.chatRoomId = chatRoomId;
-    this.senderId = senderId;
+  private ChatMessage(UUID inquiryId, UUID senderUserId, String content) {
+    this.inquiryId = inquiryId;
+    this.senderUserId = senderUserId;
     this.content = content;
   }
 
-  public static ChatMessage create(UUID chatRoomId, UUID senderId, String content) {
-    Objects.requireNonNull(chatRoomId, "chatRoomId");
-    Objects.requireNonNull(senderId, "senderId");
-    Objects.requireNonNull(content, "content");
+  public static ChatMessage create(UUID inquiryId, UUID senderUserId, String content) {
+    Objects.requireNonNull(inquiryId, "inquiryId");
+    Objects.requireNonNull(senderUserId, "senderUserId");
 
-    if (content.isBlank()) {
+    if (content != null && content.isBlank()) {
       // TODO: Chat 도메인 예외로 변경 필요
       throw new IllegalArgumentException("content must not be blank");
     }
 
-    return new ChatMessage(chatRoomId, senderId, content);
+    return new ChatMessage(inquiryId, senderUserId, content);
   }
 }

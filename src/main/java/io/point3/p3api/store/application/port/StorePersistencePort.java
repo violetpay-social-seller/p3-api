@@ -10,6 +10,8 @@ public interface StorePersistencePort {
 
   Optional<Store> findById(UUID storeId);
 
+  Optional<Store> findBySlug(String slug);
+
   Optional<Store> findByOwnerUserId(UUID ownerUserId);
 
   boolean existsByOwnerUserId(UUID ownerUserId);

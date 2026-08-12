@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface StoreDeleteUseCase {
 
-  void deleteMyStore(UUID ownerUserId);
+  void delete(UUID storeId);
 }

@@ -9,6 +9,8 @@ public interface StoreJpaRepository extends JpaRepository<Store, UUID> {
 
   Optional<Store> findByOwnerUserId(UUID ownerUserId);
 
+  Optional<Store> findBySlug(String slug);
+
   boolean existsByOwnerUserId(UUID ownerUserId);
 
   boolean existsBySlug(String slug);

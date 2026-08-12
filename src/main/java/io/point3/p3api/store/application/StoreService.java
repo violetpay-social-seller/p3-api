@@ -52,13 +52,13 @@ public class StoreService
 
   @Override
   @Transactional(readOnly = true)
-  public StoreResult getMyStore(UUID ownerUserId) {
-    return StoreResult.from(getStoreByOwner(ownerUserId));
+  public StoreResult getStore(UUID storeId) {
+    return StoreResult.from(findStore(storeId));
   }
 
   @Override
   public StoreResult update(UpdateStoreCommand command) {
-    Store store = getStoreByOwner(command.ownerUserId());
+    Store store = findStore(command.storeId());
 
     store.updateProfileAsset(command.profileAssetId());
     store.updateBannerAsset(command.bannerAssetId());
@@ -76,7 +76,7 @@ public class StoreService
 
   @Override
   public StoreResult changeStatus(ChangeStoreStatusCommand command) {
-    Store store = getStoreByOwner(command.ownerUserId());
+    Store store = findStore(command.storeId());
 
     if (command.status() == StoreStatus.ACTIVE) {
       store.active();
@@ -92,9 +92,15 @@ public class StoreService
   }
 
   @Override
-  public void deleteMyStore(UUID ownerUserId) {
-    Store store = getStoreByOwner(ownerUserId);
+  public void delete(UUID storeId) {
+    Store store = findStore(storeId);
     store.delete();
+  }
+
+  private Store findStore(UUID storeId) {
+    return storePersistencePort
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
   }
 
   private Store getStoreByOwner(UUID ownerUserId) {

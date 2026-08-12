@@ -1,4 +1,4 @@
-package io.point3.p3api.store.controller;
+package io.point3.p3api.store.controller.request;
 
 import io.point3.p3api.store.domain.type.StoreStatus;
 import jakarta.validation.constraints.NotNull;

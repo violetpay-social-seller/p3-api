@@ -1,8 +1,7 @@
 package io.point3.p3api.auth.infrastructure.web;
 
-import java.util.List;
-
 import io.point3.p3api.common.tenant.web.CurrentStoreIdArgumentResolver;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;

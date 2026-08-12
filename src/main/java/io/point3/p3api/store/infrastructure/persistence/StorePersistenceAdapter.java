@@ -26,6 +26,11 @@ public class StorePersistenceAdapter implements StorePersistencePort {
   }
 
   @Override
+  public Optional<Store> findBySlug(String slug) {
+    return storeJpaRepository.findBySlug(slug);
+  }
+
+  @Override
   public Optional<Store> findByOwnerUserId(UUID ownerUserId) {
     return storeJpaRepository.findByOwnerUserId(ownerUserId);
   }

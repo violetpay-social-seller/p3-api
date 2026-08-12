@@ -5,5 +5,5 @@ import java.util.UUID;
 
 public interface StoreQueryUseCase {
 
-  StoreResult getMyStore(UUID ownerUserId);
+  StoreResult getStore(UUID storeId);
 }

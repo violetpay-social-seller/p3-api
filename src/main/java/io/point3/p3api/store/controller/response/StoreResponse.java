@@ -1,4 +1,4 @@
-package io.point3.p3api.store.controller;
+package io.point3.p3api.store.controller.response;
 
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.domain.type.StoreStatus;

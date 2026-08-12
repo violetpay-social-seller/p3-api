@@ -2,14 +2,11 @@ package io.point3.p3api.common.tenant.context;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
-/**
- *  결정된 storeId를 요청 스코프내에서 꺼내쓰는 역할
- */
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StoreContext {
 
   private static final ScopedValue<UUID> STORE_ID = ScopedValue.newInstance();

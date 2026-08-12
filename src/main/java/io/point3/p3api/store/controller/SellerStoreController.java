@@ -2,6 +2,7 @@ package io.point3.p3api.store.controller;
 
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
+import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
@@ -11,7 +12,12 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
+import io.point3.p3api.store.controller.request.StoreCreateRequest;
+import io.point3.p3api.store.controller.request.StoreStatusRequest;
+import io.point3.p3api.store.controller.request.StoreUpdateRequest;
+import io.point3.p3api.store.controller.response.StoreResponse;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,9 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/stores")
+@RequestMapping("/seller/store")
 @RequiredArgsConstructor
-public class StoreController {
+public class SellerStoreController {
 
   private final StoreCreateUseCase storeCreateUseCase;
   private final StoreQueryUseCase storeQueryUseCase;
@@ -38,30 +44,30 @@ public class StoreController {
     return ApiResponse.ok(StoreResponse.from(result));
   }
 
-  @GetMapping("/me")
-  public ApiResponse<StoreResponse> getMyStore(@Authenticated CurrentUser currentUser) {
-    StoreResult result = storeQueryUseCase.getMyStore(currentUser.userId());
+  @GetMapping
+  public ApiResponse<StoreResponse> getMyStore(@CurrentStoreId UUID storeId) {
+    StoreResult result = storeQueryUseCase.getStore(storeId);
     return ApiResponse.ok(StoreResponse.from(result));
   }
 
-  @PatchMapping("/me")
+  @PatchMapping
   public ApiResponse<StoreResponse> update(
-      @Authenticated CurrentUser currentUser, @Valid @RequestBody StoreUpdateRequest request) {
-    StoreResult result = storeUpdateUseCase.update(toCommand(currentUser, request));
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreUpdateRequest request) {
+    StoreResult result = storeUpdateUseCase.update(toCommand(storeId, request));
     return ApiResponse.ok(StoreResponse.from(result));
   }
 
-  @PatchMapping("/me/status")
+  @PatchMapping("/status")
   public ApiResponse<StoreResponse> changeStatus(
-      @Authenticated CurrentUser currentUser, @Valid @RequestBody StoreStatusRequest request) {
-    StoreResult result = storeUpdateUseCase.changeStatus(
-        new ChangeStoreStatusCommand(currentUser.userId(), request.status()));
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreStatusRequest request) {
+    StoreResult result =
+        storeUpdateUseCase.changeStatus(new ChangeStoreStatusCommand(storeId, request.status()));
     return ApiResponse.ok(StoreResponse.from(result));
   }
 
-  @DeleteMapping("/me")
-  public ApiResponse<Void> deleteMyStore(@Authenticated CurrentUser currentUser) {
-    storeDeleteUseCase.deleteMyStore(currentUser.userId());
+  @DeleteMapping
+  public ApiResponse<Void> deleteMyStore(@CurrentStoreId UUID storeId) {
+    storeDeleteUseCase.delete(storeId);
     return ApiResponse.ok();
   }
 
@@ -79,9 +85,9 @@ public class StoreController {
         request.address());
   }
 
-  private UpdateStoreCommand toCommand(CurrentUser currentUser, StoreUpdateRequest request) {
+  private UpdateStoreCommand toCommand(UUID storeId, StoreUpdateRequest request) {
     return new UpdateStoreCommand(
-        currentUser.userId(),
+        storeId,
         request.name(),
         request.profileAssetId(),
         request.bannerAssetId(),

@@ -1,10 +1,10 @@
-package io.point3.p3api.store.controller;
+package io.point3.p3api.store.controller.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
-public record StoreCreateRequest(
+public record StoreUpdateRequest(
     @NotBlank @Size(max = 100) String name,
     UUID profileAssetId,
     UUID bannerAssetId,

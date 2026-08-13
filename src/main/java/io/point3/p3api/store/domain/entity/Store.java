@@ -90,12 +90,40 @@ public class Store {
     this.bannerAssetId = bannerAssetId;
   }
 
+  public void updateBasicInfo(
+      String name,
+      String description,
+      String contact,
+      boolean contactVisible,
+      String snsLinks,
+      String businessHours,
+      String address) {
+    Objects.requireNonNull(name, "name");
+
+    this.name = name;
+    this.description = description;
+    this.contact = contact;
+    this.contactVisible = contactVisible;
+    this.snsLinks = snsLinks;
+    this.businessHours = businessHours;
+    this.address = address;
+  }
+
   public boolean isActive() {
     return this.status == StoreStatus.ACTIVE;
   }
 
+  public void active() {
+    if (this.status == StoreStatus.DELETED) {
+      throw new IllegalArgumentException("Deleted store can not active");
+    }
+    this.status = StoreStatus.ACTIVE;
+  }
+
   public void inactive() {
-    ensureActive("Only active store can inactive");
+    if (this.status == StoreStatus.DELETED) {
+      throw new IllegalArgumentException("Deleted store can not inactive");
+    }
     this.status = StoreStatus.INACTIVE;
   }
 

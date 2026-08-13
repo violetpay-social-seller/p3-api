@@ -1,45 +1,49 @@
-package io.point3.p3api.common.tenant.web;
+package io.point3.p3api.common.tenant.seller.filter;
 
 import io.point3.p3api.auth.infrastructure.security.CurrentUserRender;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
-import io.point3.p3api.common.tenant.access.TenantAccessChecker;
-import io.point3.p3api.common.tenant.context.TenantContext;
-import io.point3.p3api.common.tenant.resolvers.TenantResolver;
-import io.point3.p3api.exception.BaseException;
-import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.common.tenant.context.StoreContext;
+import io.point3.p3api.common.tenant.seller.provider.SellerStoreProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-@RequiredArgsConstructor
-public class TenantContextFilter extends OncePerRequestFilter {
+public class StoreContextFilter extends OncePerRequestFilter {
+
+  private static final String SELLER_PREFIX = "/seller/";
+  private static final String SELLER_STORE_PATH = "/seller/store";
 
   private final CurrentUserRender currentUserRender;
-  private final TenantResolver<HttpServletRequest> tenantResolver;
-  private final TenantAccessChecker tenantAccessChecker;
+  private final SellerStoreProvider sellerStoreProvider;
+
+  public StoreContextFilter(
+      CurrentUserRender currentUserRender, SellerStoreProvider sellerStoreProvider) {
+    this.currentUserRender = currentUserRender;
+    this.sellerStoreProvider = sellerStoreProvider;
+  }
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    return !path.startsWith(SELLER_PREFIX)
+        || ("POST".equals(request.getMethod()) && SELLER_STORE_PATH.equals(path));
+  }
 
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
-    String tenantId = tenantResolver
-        .resolveTenantIdentifier(request)
-        .orElseThrow(() -> new BaseException(CommonErrorCode.INVALID_INPUT));
-
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     CurrentUser currentUser = currentUserRender.read(authentication);
 
-    tenantAccessChecker.check(currentUser, tenantId);
-
     try {
-      TenantContext.where(tenantId).call(() -> {
+      StoreContext.where(sellerStoreProvider.resolveStoreId(currentUser)).call(() -> {
         filterChain.doFilter(request, response);
         return null;
       });

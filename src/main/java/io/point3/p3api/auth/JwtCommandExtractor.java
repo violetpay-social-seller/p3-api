@@ -2,14 +2,16 @@ package io.point3.p3api.auth;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.user.application.registration.CompleteRegistrationCommand;
 import io.point3.p3api.user.application.sync.SyncCommand;
+import io.point3.p3api.user.domain.type.UserRole;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtSyncCommandExtractor {
+public class JwtCommandExtractor {
 
-  public SyncCommand extract(Jwt jwt) {
+  public SyncCommand extractSync(Jwt jwt) {
     if (jwt == null) {
       throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
@@ -23,6 +25,22 @@ public class JwtSyncCommandExtractor {
     validateNotBlank(name, "name");
 
     return SyncCommand.of(cognitoSub, email, name);
+  }
+
+  public CompleteRegistrationCommand extractRegistration(Jwt jwt, UserRole role) {
+    if (jwt == null) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED);
+    }
+
+    String cognitoSub = jwt.getSubject();
+    String email = jwt.getClaimAsString("email");
+    String name = jwt.getClaimAsString("name");
+
+    validateNotBlank(cognitoSub, "cognitoSub");
+    validateNotBlank(email, "email");
+    validateNotBlank(name, "name");
+
+    return CompleteRegistrationCommand.of(cognitoSub, email, name, role);
   }
 
   private void validateNotBlank(String value, String paramName) {

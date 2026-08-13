@@ -1,8 +1,7 @@
 package io.point3.p3api.user.domain.type;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum UserRole {
@@ -11,12 +10,21 @@ public enum UserRole {
   OPERATOR("operator");
 
   private final String value;
+
+  public static UserRole signUpRoleOf(String value) {
+    UserRole userRole = of(value);
+
+    if (userRole == OPERATOR) {
+      throw new IllegalArgumentException("관리자 가입은 따로");
+    }
+
+    return userRole;
+  }
+
   public static UserRole of(String value) {
     return Arrays.stream(values())
-            .filter(role -> role.value.equals(value))
-            .findFirst()
-            .orElseThrow(() ->
-                    new IllegalArgumentException("Invalid order status: " + value)
-            );
+        .filter(role -> role.value.equals(value))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Invalid user role: " + value));
   }
 }

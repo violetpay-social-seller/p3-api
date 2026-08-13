@@ -23,7 +23,7 @@ public class CurrentUserRender {
     String cognitoSub = jwt.getSubject();
 
     return userRender
-        .findByCognitoSub(cognitoSub)
+        .findActiveByCognitoSub(cognitoSub)
         .map(CurrentUser::from)
         .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
   }

@@ -19,6 +19,11 @@ public class UserPersistenceAdapter implements UserRender, UserPersistencePort {
   }
 
   @Override
+  public Optional<User> findActiveByCognitoSub(String cognitoSub) {
+    return userJpaRepository.findActiveByCognitoSub(cognitoSub);
+  }
+
+  @Override
   public User save(User user) {
     return userJpaRepository.save(user);
   }

@@ -1,6 +1,7 @@
 package io.point3.p3api.common.tenant.seller.filter;
 
 import io.point3.p3api.auth.infrastructure.security.CurrentUserRender;
+import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.context.StoreContext;
 import io.point3.p3api.common.tenant.seller.provider.SellerStoreProvider;
@@ -41,6 +42,8 @@ public class StoreContextFilter extends OncePerRequestFilter {
 
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     CurrentUser currentUser = currentUserRender.read(authentication);
+
+    RoleGuard.requireSeller(currentUser);
 
     try {
       StoreContext.where(sellerStoreProvider.resolveStoreId(currentUser)).call(() -> {

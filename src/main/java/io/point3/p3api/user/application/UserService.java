@@ -26,18 +26,23 @@ public class UserService implements UserSyncUseCase, UserRegistrationUseCase {
   public UserSyncResult sync(SyncCommand command) {
     return userRender
         .findByCognitoSub(command.cognitoSub())
-        .map(UserSyncResult::registered)
+        .map(user -> {
+          ensureActive(user);
+          return UserSyncResult.registered(user);
+        })
         .orElseGet(UserSyncResult::unregistered);
   }
 
   @Override
+  @Transactional
   public UserSyncResult completeRegistration(CompleteRegistrationCommand command) {
-      // 멱등성 유지를 위한 구조
+    // 멱등성 유지를 위한 구조
     return userRender
         .findByCognitoSub(command.cognitoSub())
-            // 이미 회원이 있을 경우 막음
+        // 이미 회원이 있을 경우 막음
         .map(user -> {
-            // 이미 Buyer인 회원이 Seller로 재요청도 막음 - 어차피 생성까지는 안가지만 UX상 응답위해
+            ensureActive(user);
+          // 이미 Buyer인 회원이 Seller로 재요청도 막음 - 어차피 생성까지는 안가지만 UX상 응답위해
           if (user.getRole() != command.role()) {
             throw new BaseException(CommonErrorCode.INVALID_INPUT, "User role does not match");
           }
@@ -45,5 +50,11 @@ public class UserService implements UserSyncUseCase, UserRegistrationUseCase {
         })
         .orElseGet(() -> UserSyncResult.registered(userPersistencePort.save(
             User.create(command.cognitoSub(), command.email(), command.name(), command.role()))));
+  }
+
+  private void ensureActive(User user) {
+    if (!user.isActive()) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED, "User is not active");
+    }
   }
 }

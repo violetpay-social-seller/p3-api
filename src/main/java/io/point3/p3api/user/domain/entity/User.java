@@ -58,10 +58,6 @@ public class User {
     this.status = UserStatus.ACTIVE;
   }
 
-  public static User create(String cognitoSub, String email, String name) {
-    return create(cognitoSub, email, name, UserRole.BUYER);
-  }
-
   public static User create(String cognitoSub, String email, String name, UserRole role) {
     Objects.requireNonNull(cognitoSub, "cognitoSub");
     Objects.requireNonNull(email, "email");

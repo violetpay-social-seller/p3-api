@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface UserJpaRepository extends JpaRepository<User, UUID> {
 
   Optional<User> findByCognitoSub(String cognitoSub);
+
+  Optional<User> findActiveByCognitoSub(String cognitoSub);
 }

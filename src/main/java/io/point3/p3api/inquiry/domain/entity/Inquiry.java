@@ -1,14 +1,12 @@
 package io.point3.p3api.inquiry.domain.entity;
 
-import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -18,7 +16,12 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "inquiries")
+@Table(
+    name = "inquiries",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uk_inquiries_store_buyer",
+            columnNames = {"store_id", "buyer_user_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Inquiry {
@@ -36,10 +39,6 @@ public class Inquiry {
   @Column(name = "context_product_id")
   private UUID contextProductId;
 
-  @Enumerated(EnumType.STRING)
-  @Column(name = "status", nullable = false, length = 30)
-  private InquiryStatus status;
-
   @Column(name = "buyer_last_read_at")
   private Instant buyerLastReadAt;
 
@@ -50,14 +49,10 @@ public class Inquiry {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
-  @Column(name = "closed_at")
-  private Instant closedAt;
-
   private Inquiry(UUID storeId, UUID buyerUserId, UUID contextProductId) {
     this.storeId = storeId;
     this.buyerUserId = buyerUserId;
     this.contextProductId = contextProductId;
-    this.status = InquiryStatus.OPEN;
   }
 
   public static Inquiry create(UUID storeId, UUID buyerUserId, UUID contextProductId) {
@@ -65,11 +60,5 @@ public class Inquiry {
     Objects.requireNonNull(buyerUserId, "buyerUserId");
 
     return new Inquiry(storeId, buyerUserId, contextProductId);
-  }
-
-  public void close(Instant closedAt) {
-    Objects.requireNonNull(closedAt, "closedAt");
-    this.status = InquiryStatus.CLOSED;
-    this.closedAt = closedAt;
   }
 }

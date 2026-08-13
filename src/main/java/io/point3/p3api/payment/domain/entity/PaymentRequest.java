@@ -36,9 +36,6 @@ public class PaymentRequest {
   @Column(name = "requested_by", nullable = false)
   private UUID requestedBy;
 
-  @Column(name = "amount", nullable = false)
-  private long amount;
-
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
   private PaymentRequestStatus status;
@@ -50,26 +47,20 @@ public class PaymentRequest {
   @Column(name = "expires_at")
   private Instant expiresAt;
 
-  private PaymentRequest(
-      UUID inquiryId, UUID confirmationId, UUID requestedBy, long amount, Instant expiresAt) {
+  private PaymentRequest(UUID inquiryId, UUID confirmationId, UUID requestedBy, Instant expiresAt) {
     this.inquiryId = inquiryId;
     this.confirmationId = confirmationId;
     this.requestedBy = requestedBy;
-    this.amount = amount;
     this.expiresAt = expiresAt;
     this.status = PaymentRequestStatus.PENDING;
   }
 
   public static PaymentRequest create(
-      UUID inquiryId, UUID confirmationId, UUID requestedBy, long amount, Instant expiresAt) {
+      UUID inquiryId, UUID confirmationId, UUID requestedBy, Instant expiresAt) {
     Objects.requireNonNull(inquiryId, "inquiryId");
     Objects.requireNonNull(confirmationId, "confirmationId");
     Objects.requireNonNull(requestedBy, "requestedBy");
 
-    if (amount < 0) {
-      throw new IllegalArgumentException("amount must be greater than or equal to 0");
-    }
-
-    return new PaymentRequest(inquiryId, confirmationId, requestedBy, amount, expiresAt);
+    return new PaymentRequest(inquiryId, confirmationId, requestedBy, expiresAt);
   }
 }

@@ -154,11 +154,10 @@ CREATE TABLE inquiries (
     store_id UUID NOT NULL,
     buyer_user_id UUID NOT NULL,
     context_product_id UUID,
-    status VARCHAR(30) NOT NULL,
     buyer_last_read_at TIMESTAMPTZ,
     seller_last_read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
-    closed_at TIMESTAMPTZ,
+    CONSTRAINT uk_inquiries_store_buyer UNIQUE (store_id, buyer_user_id),
     CONSTRAINT fk_inquiries_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
     CONSTRAINT fk_inquiries_buyer_user_id FOREIGN KEY (buyer_user_id) REFERENCES users (id),
     CONSTRAINT fk_inquiries_context_product_id FOREIGN KEY (context_product_id) REFERENCES products (id) ON DELETE SET NULL
@@ -219,14 +218,12 @@ CREATE TABLE payment_requests (
     inquiry_id UUID NOT NULL,
     confirmation_id UUID NOT NULL,
     requested_by UUID NOT NULL,
-    amount BIGINT NOT NULL,
     status VARCHAR(30) NOT NULL,
     requested_at TIMESTAMPTZ NOT NULL,
     expires_at TIMESTAMPTZ,
     CONSTRAINT fk_payment_requests_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_payment_requests_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
-    CONSTRAINT fk_payment_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users (id),
-    CONSTRAINT ck_payment_requests_amount CHECK (amount >= 0)
+    CONSTRAINT fk_payment_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users (id)
 );
 
 CREATE TABLE payment_attempts (
@@ -310,7 +307,6 @@ CREATE INDEX ix_product_option_groups_product_id ON product_option_groups (produ
 CREATE INDEX ix_product_options_option_group_id ON product_options (option_group_id);
 CREATE INDEX ix_order_form_templates_store_id_active ON order_form_templates (store_id, active);
 CREATE INDEX ix_order_form_fields_template_id ON order_form_fields (template_id);
-CREATE INDEX ix_inquiries_store_id_status ON inquiries (store_id, status);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_inquiries_context_product_id ON inquiries (context_product_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);

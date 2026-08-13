@@ -13,6 +13,20 @@ services:
     volumes:
       - p3-postgres-data:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7.4-alpine
+    container_name: p3-redis
+
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - p3-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   app:
     build:
       context: .
@@ -32,12 +46,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_SSL: ${REDIS_SSL}
       AWS_PROFILE: p3-dev
       AWS_REGION: ap-northeast-2
       COGNITO_ISSUER_URI: ${COGNITO_ISSUER_URI}
+    depends_on:
+      redis:
+        condition: service_healthy
 
 
 
 volumes:
   p3-postgres-data:
-
+  p3-redis-data:

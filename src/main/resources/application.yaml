@@ -7,6 +7,13 @@ spring:
     username: ${POSTGRES_USER:p3}
     password: ${POSTGRES_PASSWORD:p3}
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+
   cloud:
     aws:
       region:

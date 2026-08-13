@@ -1,4 +1,4 @@
-package io.point3.p3api.auth.controller;
+package io.point3.p3api.auth;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;

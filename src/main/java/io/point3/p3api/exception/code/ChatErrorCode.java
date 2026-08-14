@@ -6,6 +6,11 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ChatErrorCode implements ErrorCode {
+  CHAT_INQUIRY_NOT_FOUND(
+      "CHAT_INQUIRY_NOT_FOUND_404",
+      "Chat inquiry not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/chat/inquiry-not-found"),
   CHAT_PARTICIPANT_FORBIDDEN(
       "CHAT_PARTICIPANT_FORBIDDEN_403",
       "Chat room participant required",

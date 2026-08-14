@@ -4,8 +4,9 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.inquiry.application.InquiryChatService;
-import io.point3.p3api.inquiry.application.InquiryChatService.ChatTimelinePage;
+import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
+import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
+import io.point3.p3api.inquiry.application.chat.seller.SellerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SellerInquiryChatController {
 
-  private final InquiryChatService inquiryChatService;
+  private final SellerInquiryChatUseCase sellerInquiryChatUseCase;
 
   @PostMapping("/messages")
   public ApiResponse<ChatTimelineItemResponse> sendMessage(
@@ -36,7 +37,7 @@ public class SellerInquiryChatController {
       @Valid @RequestBody SendChatMessageRequest request) {
     return ApiResponse.ok(
         ChatTimelineItemResponse.from(
-            inquiryChatService.sendSellerMessage(
+            sellerInquiryChatUseCase.sendMessage(
                 inquiryId, storeId, currentUser.userId(), request.content())));
   }
 
@@ -48,8 +49,10 @@ public class SellerInquiryChatController {
       @RequestParam(required = false) Instant cursorCreatedAt,
       @RequestParam(required = false) UUID cursorId,
       @RequestParam(required = false) Integer size) {
-    ChatTimelinePage page = inquiryChatService.getSellerTimeline(
-        inquiryId, storeId, cursorCreatedAt, cursorId, size);
+    ChatTimelinePage page = sellerInquiryChatUseCase.getTimeline(
+        inquiryId,
+        storeId,
+        new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
     return ApiResponse.ok(ChatTimelinePageResponse.from(page));
   }
 }

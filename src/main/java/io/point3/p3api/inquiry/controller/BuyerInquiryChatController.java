@@ -4,8 +4,9 @@ import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.inquiry.application.InquiryChatService;
-import io.point3.p3api.inquiry.application.InquiryChatService.ChatTimelinePage;
+import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
+import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
+import io.point3.p3api.inquiry.application.chat.buyer.BuyerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class BuyerInquiryChatController {
 
-  private final InquiryChatService inquiryChatService;
+  private final BuyerInquiryChatUseCase buyerInquiryChatUseCase;
 
   @PostMapping("/messages")
   public ApiResponse<ChatTimelineItemResponse> sendMessage(
@@ -37,7 +38,7 @@ public class BuyerInquiryChatController {
 
     return ApiResponse.ok(
         ChatTimelineItemResponse.from(
-            inquiryChatService.sendBuyerMessage(inquiryId, currentUser.userId(), request.content())));
+            buyerInquiryChatUseCase.sendMessage(inquiryId, currentUser.userId(), request.content())));
   }
 
   @GetMapping("/events")
@@ -49,8 +50,10 @@ public class BuyerInquiryChatController {
       @RequestParam(required = false) Integer size) {
     RoleGuard.requireBuyer(currentUser);
 
-    ChatTimelinePage page = inquiryChatService.getBuyerTimeline(
-        inquiryId, currentUser.userId(), cursorCreatedAt, cursorId, size);
+    ChatTimelinePage page = buyerInquiryChatUseCase.getTimeline(
+        inquiryId,
+        currentUser.userId(),
+        new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
     return ApiResponse.ok(ChatTimelinePageResponse.from(page));
   }
 }

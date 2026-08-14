@@ -7,6 +7,7 @@ import io.point3.p3api.inquiry.application.submit.SubmitPreOrderCommand;
 import io.point3.p3api.inquiry.application.submit.SubmitPreOrderResult;
 import io.point3.p3api.inquiry.application.submit.SubmitPreOrderUseCase;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.product.application.port.ProductPersistencePort;
 import io.point3.p3api.product.domain.entity.Product;
 import io.point3.p3api.product.domain.type.ProductStatus;
@@ -22,21 +23,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class InquiryService implements SubmitPreOrderUseCase {
 
+    private final ProductContextResolver productContextResolver;
+    private final OrderFormSubmissionProcessor orderFormSubmissionProcessor;
     private final InquiryPersistencePort inquiryPersistencePort;
-    private final ProductPersistencePort productPersistencePort;
+    private final InquiryEventPublisher inquiryEventPublisher;
 
     @Override
     public SubmitPreOrderResult submit(SubmitPreOrderCommand command) {
-        UUID contextProductId = null;
-
-         // 구매자가 주문서에서 제출한 상품의 유효성 검증
-        if (command.productId() != null) {
-            Product product = productPersistencePort
-                    .findByIdAndStoreIdAndStatus(command.productId(), command.storeId(), ProductStatus.VISIBLE)
-                    .orElseThrow(() -> new BaseException(ProductErrorCode.PRODUCT_NOT_FOUND));
-
-            contextProductId = product.getId();
-        }
+        UUID contextProductId = productContextResolver.resolve(
+                command.storeId(), command.productId());
 
         // 채팅방 기존 채팅방 있으면 재사용 | 없으면 채팅방 생성
         Inquiry inquiry = inquiryPersistencePort
@@ -51,7 +46,15 @@ public class InquiryService implements SubmitPreOrderUseCase {
             inquiry.clearContextProduct();
         }
 
-        Inquiry saved = inquiryPersistencePort.save(inquiry);
-        return SubmitPreOrderResult.from(saved);
+        Inquiry savedInquiry = inquiryPersistencePort.save(inquiry);
+
+        OrderFormSubmission submission = orderFormSubmissionProcessor.submit(command, savedInquiry.getId());
+
+        inquiryEventPublisher.publishOrderFormSubmission(
+                savedInquiry.getId(),
+                command.buyerUserId(),
+                submission.getId());
+
+        return SubmitPreOrderResult.from(savedInquiry);
     }
 }

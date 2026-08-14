@@ -18,4 +18,14 @@ public class InquiryDomainEventPublisher {
   public void publishOrderFormSubmission(UUID inquiryId, UUID buyerUserId, UUID submissionId) {
     chatEventPort.save(ChatEvent.orderFormSubmission(inquiryId, buyerUserId, submissionId));
   }
+
+  public void publishOrderConfirmation(
+      UUID inquiryId, UUID senderUserId, UUID orderConfirmationId) {
+    chatEventPort.save(
+        ChatEvent.orderConfirmation(inquiryId, senderUserId, orderConfirmationId));
+  }
+
+  public void publishPaymentRequest(UUID inquiryId, UUID senderUserId, UUID paymentRequestId) {
+    chatEventPort.save(ChatEvent.paymentRequest(inquiryId, senderUserId, paymentRequestId));
+  }
 }

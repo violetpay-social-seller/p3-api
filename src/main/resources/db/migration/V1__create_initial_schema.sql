@@ -316,7 +316,9 @@ CREATE INDEX ix_products_store_id_status ON products (store_id, status);
 CREATE INDEX ix_product_assets_product_id ON product_assets (product_id);
 CREATE INDEX ix_product_option_groups_product_id ON product_option_groups (product_id);
 CREATE INDEX ix_product_options_option_group_id ON product_options (option_group_id);
-CREATE INDEX ix_order_form_templates_store_id_active ON order_form_templates (store_id, active);
+CREATE UNIQUE INDEX uk_order_form_templates_store_active
+    ON order_form_templates (store_id)
+    WHERE active;
 CREATE INDEX ix_order_form_fields_template_id ON order_form_fields (template_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_inquiries_context_product_id ON inquiries (context_product_id);

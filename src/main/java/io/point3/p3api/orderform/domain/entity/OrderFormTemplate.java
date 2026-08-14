@@ -55,6 +55,11 @@ public class OrderFormTemplate {
     return new OrderFormTemplate(storeId, name);
   }
 
+  public void updateName(String name) {
+    Objects.requireNonNull(name, "name");
+    this.name = name;
+  }
+
   public void inactive() {
     this.active = false;
   }

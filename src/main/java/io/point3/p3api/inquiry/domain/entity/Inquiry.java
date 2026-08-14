@@ -49,6 +49,14 @@ public class Inquiry {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
+  public void changeContextProduct(UUID productId) {
+    this.contextProductId = Objects.requireNonNull(productId, "productId");
+  }
+
+  public void clearContextProduct() {
+    this.contextProductId = null;
+  }
+
   private Inquiry(UUID storeId, UUID buyerUserId, UUID contextProductId) {
     this.storeId = storeId;
     this.buyerUserId = buyerUserId;

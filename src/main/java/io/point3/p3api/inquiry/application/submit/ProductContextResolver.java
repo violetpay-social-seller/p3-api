@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application;
+package io.point3.p3api.inquiry.application.submit;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ProductErrorCode;

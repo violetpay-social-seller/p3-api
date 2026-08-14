@@ -1,16 +1,9 @@
 package io.point3.p3api.inquiry.application;
 
-import io.point3.p3api.exception.BaseException;
-import io.point3.p3api.exception.code.ProductErrorCode;
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
-import io.point3.p3api.inquiry.application.submit.SubmitPreOrderCommand;
-import io.point3.p3api.inquiry.application.submit.SubmitPreOrderResult;
-import io.point3.p3api.inquiry.application.submit.SubmitPreOrderUseCase;
+import io.point3.p3api.inquiry.application.submit.*;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
-import io.point3.p3api.product.application.port.ProductPersistencePort;
-import io.point3.p3api.product.domain.entity.Product;
-import io.point3.p3api.product.domain.type.ProductStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -22,6 +22,9 @@ public class OrderFormAnswerValidator {
 
     private static final int MAX_IMAGE_COUNT = 5;
 
+    /**
+     * 전체 검증 진입점 - 필드 정의와 제출 답변 매핑
+     */
     public void validate(
             List<OrderFormFieldResult> fields,
             List<SubmitPreOrderCommand.FormAnswer> answers) {
@@ -40,6 +43,9 @@ public class OrderFormAnswerValidator {
         }
     }
 
+    /**
+     * 제출된 fieldId가 현재 주문서 양식에 실제로 존재하는 필드인지 확인
+     */
     private void ensureNoUnknownFields(
             Map<UUID, OrderFormFieldResult> fieldMap,
             Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap) {
@@ -48,6 +54,9 @@ public class OrderFormAnswerValidator {
         }
     }
 
+    /**
+     * 답변 필수인 필드가 정확히 제출되었는지
+     */
     private void ensureRequiredFieldsAnswered(
             List<OrderFormFieldResult> fields,
             Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap) {
@@ -61,6 +70,9 @@ public class OrderFormAnswerValidator {
         }
     }
 
+    /**
+     * 필드 타입에 따라서 실제 값 검증 메서드로 분기 없으면 Optional필드(필수x)로 보고 통과
+     */
     private void validateValue(OrderFormFieldResult field, JsonNode value) {
         if (isEmpty(value)) {
             return;
@@ -75,6 +87,8 @@ public class OrderFormAnswerValidator {
             case IMAGE -> validateImage(value);
         }
     }
+
+    // ================타입에 따른 실제 값 검증============================
 
     private boolean isEmpty(JsonNode value) {
         if (value == null || value.isNull()) {

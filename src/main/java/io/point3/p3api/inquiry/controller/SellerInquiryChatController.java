@@ -10,6 +10,7 @@ import io.point3.p3api.inquiry.application.chat.seller.SellerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
+import io.point3.p3api.inquiry.controller.response.InquiryChatDetailResponse;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.UUID;
@@ -28,6 +29,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class SellerInquiryChatController {
 
   private final SellerInquiryChatUseCase sellerInquiryChatUseCase;
+
+  @GetMapping
+  public ApiResponse<InquiryChatDetailResponse> getDetail(
+      @PathVariable UUID inquiryId,
+      @Authenticated CurrentUser currentUser,
+      @CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(
+        InquiryChatDetailResponse.from(sellerInquiryChatUseCase.getDetail(inquiryId, storeId)));
+  }
 
   @PostMapping("/messages")
   public ApiResponse<ChatTimelineItemResponse> sendMessage(

@@ -41,7 +41,7 @@ public class UserService implements UserSyncUseCase, UserRegistrationUseCase {
         .findByCognitoSub(command.cognitoSub())
         // 이미 회원이 있을 경우 막음
         .map(user -> {
-            ensureActive(user);
+          ensureActive(user);
           // 이미 Buyer인 회원이 Seller로 재요청도 막음 - 어차피 생성까지는 안가지만 UX상 응답위해
           if (user.getRole() != command.role()) {
             throw new BaseException(CommonErrorCode.INVALID_INPUT, "User role does not match");

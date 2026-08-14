@@ -37,9 +37,8 @@ public class OrderFormService
 
     validateFields(command.fields());
 
-    OrderFormTemplate template =
-        orderFormPersistencePort.saveTemplate(
-            OrderFormTemplate.create(command.storeId(), command.name()));
+    OrderFormTemplate template = orderFormPersistencePort.saveTemplate(
+        OrderFormTemplate.create(command.storeId(), command.name()));
     List<OrderFormField> fields =
         orderFormPersistencePort.saveFields(toFields(template.getId(), command.fields()));
 

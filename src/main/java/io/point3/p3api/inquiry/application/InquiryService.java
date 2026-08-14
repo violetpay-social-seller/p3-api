@@ -19,7 +19,7 @@ public class InquiryService implements SubmitPreOrderUseCase {
     private final ProductContextResolver productContextResolver;
     private final OrderFormSubmissionProcessor orderFormSubmissionProcessor;
     private final InquiryPersistencePort inquiryPersistencePort;
-    private final InquiryEventPublisher inquiryEventPublisher;
+    private final InquiryDomainEventPublisher inquiryEventPublisher;
 
     @Override
     public SubmitPreOrderResult submit(SubmitPreOrderCommand command) {

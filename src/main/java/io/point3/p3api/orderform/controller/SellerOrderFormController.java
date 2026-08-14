@@ -58,8 +58,7 @@ public class SellerOrderFormController {
       @CurrentStoreId UUID storeId,
       @PathVariable UUID templateId,
       @Valid @RequestBody OrderFormUpdateRequest request) {
-    OrderFormResult result =
-        orderFormUpdateUseCase.update(toCommand(storeId, templateId, request));
+    OrderFormResult result = orderFormUpdateUseCase.update(toCommand(storeId, templateId, request));
     return ApiResponse.ok(OrderFormResponse.from(result));
   }
 
@@ -80,19 +79,25 @@ public class SellerOrderFormController {
         storeId, templateId, request.name(), toUpdateFields(request.fields()));
   }
 
-  private List<CreateOrderFormCommand.Field> toCreateFields(
-      List<OrderFormFieldRequest> fields) {
+  private List<CreateOrderFormCommand.Field> toCreateFields(List<OrderFormFieldRequest> fields) {
     return fields.stream()
         .map(field -> new CreateOrderFormCommand.Field(
-            field.label(), field.fieldType(), field.required(), field.settings(), field.sortOrder()))
+            field.label(),
+            field.fieldType(),
+            field.required(),
+            field.settings(),
+            field.sortOrder()))
         .toList();
   }
 
-  private List<UpdateOrderFormCommand.Field> toUpdateFields(
-      List<OrderFormFieldRequest> fields) {
+  private List<UpdateOrderFormCommand.Field> toUpdateFields(List<OrderFormFieldRequest> fields) {
     return fields.stream()
         .map(field -> new UpdateOrderFormCommand.Field(
-            field.label(), field.fieldType(), field.required(), field.settings(), field.sortOrder()))
+            field.label(),
+            field.fieldType(),
+            field.required(),
+            field.settings(),
+            field.sortOrder()))
         .toList();
   }
 }

@@ -22,11 +22,10 @@ public class SendChatMessage {
 
     ChatMessage savedChatMessage = chatMessagePort.save(chatMessage);
 
-    chatEventPort.save(
-        ChatEvent.message(
-            savedChatMessage.getInquiryId(),
-            savedChatMessage.getSenderUserId(),
-            savedChatMessage.getId()));
+    chatEventPort.save(ChatEvent.message(
+        savedChatMessage.getInquiryId(),
+        savedChatMessage.getSenderUserId(),
+        savedChatMessage.getId()));
 
     return savedChatMessage;
   }

@@ -10,23 +10,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class SendChatMessage {
+public class SendChatMessageService implements SendChatMessageUseCase {
 
   private final ChatMessagePort chatMessagePort;
   private final ChatEventPort chatEventPort;
 
+  @Override
   @Transactional
-  public ChatMessage execute(SendChatMessageCommand command) {
+  public SendChatMessageResult execute(SendChatMessageCommand command) {
     ChatMessage chatMessage =
         ChatMessage.create(command.inquiryId(), command.senderUserId(), command.content());
 
     ChatMessage savedChatMessage = chatMessagePort.save(chatMessage);
 
-    chatEventPort.save(ChatEvent.message(
-        savedChatMessage.getInquiryId(),
-        savedChatMessage.getSenderUserId(),
-        savedChatMessage.getId()));
+    ChatEvent savedChatEvent = chatEventPort.save(
+        ChatEvent.message(
+            savedChatMessage.getInquiryId(),
+            savedChatMessage.getSenderUserId(),
+            savedChatMessage.getId()));
 
-    return savedChatMessage;
+    return new SendChatMessageResult(savedChatMessage, savedChatEvent);
   }
 }

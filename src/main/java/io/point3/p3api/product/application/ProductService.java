@@ -23,14 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class ProductService
-    implements ProductCreateUseCase, ProductUpdateUseCase, ProductDeleteUseCase, ProductQueryUseCase {
+    implements ProductCreateUseCase,
+        ProductUpdateUseCase,
+        ProductDeleteUseCase,
+        ProductQueryUseCase {
 
   private final ProductPersistencePort productPersistencePort;
 
   @Override
   public ProductResult create(ProductCreateCommand command) {
-    Product product =
-        Product.create(command.storeId(), command.name(), command.description(), command.basePrice());
+    Product product = Product.create(
+        command.storeId(), command.name(), command.description(), command.basePrice());
 
     return ProductResult.from(productPersistencePort.save(product));
   }

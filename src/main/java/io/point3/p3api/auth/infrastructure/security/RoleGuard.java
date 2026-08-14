@@ -10,16 +10,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RoleGuard {
 
-    public static void requireSeller(CurrentUser currentUser) {
-        requiredRole(currentUser, UserRole.SELLER);
-    }
-    public static void requireBuyer(CurrentUser currentUser) {
-        requiredRole(currentUser, UserRole.BUYER);
-    }
+  public static void requireSeller(CurrentUser currentUser) {
+    requiredRole(currentUser, UserRole.SELLER);
+  }
 
-    private static void requiredRole(CurrentUser currentUser, UserRole role) {
-        if (currentUser == null || currentUser.role() != role) {
-            throw new BaseException(CommonErrorCode.UNAUTHORIZED);
-        }
+  public static void requireBuyer(CurrentUser currentUser) {
+    requiredRole(currentUser, UserRole.BUYER);
+  }
+
+  private static void requiredRole(CurrentUser currentUser, UserRole role) {
+    if (currentUser == null || currentUser.role() != role) {
+      throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
+  }
 }

@@ -16,8 +16,7 @@ public interface ProductPersistencePort {
 
   Optional<Product> findByIdAndStoreId(UUID productId, UUID storeId);
 
-  Optional<Product> findByIdAndStoreIdAndStatus(
-      UUID productId, UUID storeId, ProductStatus status);
+  Optional<Product> findByIdAndStoreIdAndStatus(UUID productId, UUID storeId, ProductStatus status);
 
   void delete(Product product);
 }

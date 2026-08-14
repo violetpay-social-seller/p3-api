@@ -7,17 +7,14 @@ import java.util.List;
 import java.util.UUID;
 
 public record SubmitPreOrderRequest(
-        UUID productId,
-        @NotNull UUID clientRequestId,
-        @NotNull UUID orderFormTemplateId,
-        @Valid @NotNull List<FormAnswer> formAnswers,
-        @Valid @NotNull List<ProductOptionSelection> productOptionSelections) {
+    UUID productId,
+    @NotNull UUID clientRequestId,
+    @NotNull UUID orderFormTemplateId,
+    @Valid @NotNull List<FormAnswer> formAnswers,
+    @Valid @NotNull List<ProductOptionSelection> productOptionSelections) {
 
-    public record FormAnswer(
-            @NotNull UUID fieldId,
-            @NotNull JsonNode value) {}
+  public record FormAnswer(@NotNull UUID fieldId, @NotNull JsonNode value) {}
 
-    public record ProductOptionSelection(
-            @NotNull UUID optionGroupId,
-            @NotNull List<UUID> optionIds) {}
+  public record ProductOptionSelection(
+      @NotNull UUID optionGroupId, @NotNull List<UUID> optionIds) {}
 }

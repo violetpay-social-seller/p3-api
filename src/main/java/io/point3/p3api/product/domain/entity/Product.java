@@ -64,11 +64,18 @@ public class Product {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(name, "name");
 
-    if (basePrice != null && basePrice < 0) {
-      throw new IllegalArgumentException("basePrice must be greater than or equal to 0");
-    }
+    validateBasePrice(basePrice);
 
     return new Product(storeId, name, description, basePrice);
+  }
+
+  public void updateBasicInfo(String name, String description, Long basePrice) {
+    Objects.requireNonNull(name, "name");
+    validateBasePrice(basePrice);
+
+    this.name = name;
+    this.description = description;
+    this.basePrice = basePrice;
   }
 
   public void show() {
@@ -77,5 +84,11 @@ public class Product {
 
   public void hide() {
     this.status = ProductStatus.HIDDEN;
+  }
+
+  private static void validateBasePrice(Long basePrice) {
+    if (basePrice != null && basePrice < 0) {
+      throw new IllegalArgumentException("basePrice must be greater than or equal to 0");
+    }
   }
 }

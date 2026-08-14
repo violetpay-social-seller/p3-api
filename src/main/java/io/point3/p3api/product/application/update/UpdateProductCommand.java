@@ -1,4 +1,6 @@
 package io.point3.p3api.product.application.update;
 
-public record UpdateProductCommand() {
-}
+import java.util.UUID;
+
+public record UpdateProductCommand(
+    UUID storeId, UUID productId, String name, String description, Long basePrice) {}

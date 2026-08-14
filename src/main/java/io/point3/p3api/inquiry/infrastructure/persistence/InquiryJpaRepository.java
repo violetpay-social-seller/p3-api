@@ -7,5 +7,5 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InquiryJpaRepository extends JpaRepository<Inquiry, UUID> {
-    Optional<Inquiry> findByStoreIdAndBuyerUserId(UUID storeId, UUID userId);
+    Optional<Inquiry> findByStoreIdAndBuyerUserId(UUID storeId, UUID buyerUserId);
 }

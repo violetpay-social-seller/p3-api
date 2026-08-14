@@ -23,7 +23,7 @@ public class InquiryPersistenceAdapter implements InquiryPersistencePort {
     }
 
     @Override
-    public Optional<Inquiry> findByStoreIdAndBuyerUserId(UUID storeId, UUID userId) {
-        return inquiryJpaRepository.findByStoreIdAndBuyerUserId(storeId, userId);
+    public Optional<Inquiry> findByStoreIdAndBuyerUserId(UUID storeId, UUID buyerUserId) {
+        return inquiryJpaRepository.findByStoreIdAndBuyerUserId(storeId, buyerUserId);
     }
 }

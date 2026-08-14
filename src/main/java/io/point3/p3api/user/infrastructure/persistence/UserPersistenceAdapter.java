@@ -4,6 +4,7 @@ import io.point3.p3api.user.application.port.UserPersistencePort;
 import io.point3.p3api.user.application.render.UserRender;
 import io.point3.p3api.user.domain.entity.User;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -26,5 +27,10 @@ public class UserPersistenceAdapter implements UserRender, UserPersistencePort {
   @Override
   public User save(User user) {
     return userJpaRepository.save(user);
+  }
+
+  @Override
+  public Optional<User> findById(UUID userId) {
+    return userJpaRepository.findById(userId);
   }
 }

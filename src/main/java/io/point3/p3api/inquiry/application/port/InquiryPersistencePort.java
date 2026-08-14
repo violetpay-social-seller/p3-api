@@ -8,5 +8,7 @@ public interface InquiryPersistencePort {
 
   Inquiry save(Inquiry inquiry);
 
+  Optional<Inquiry> findById(UUID inquiryId);
+
   Optional<Inquiry> findByStoreIdAndBuyerUserId(UUID storeId, UUID userId);
 }

@@ -185,6 +185,17 @@ CREATE TABLE chat_messages (
     CONSTRAINT fk_chat_messages_sender_user_id FOREIGN KEY (sender_user_id) REFERENCES users (id)
 );
 
+CREATE TABLE chat_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    inquiry_id UUID NOT NULL,
+    sender_user_id UUID,
+    type VARCHAR(30) NOT NULL,
+    reference_id UUID NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT fk_chat_events_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
+    CONSTRAINT fk_chat_events_sender_user_id FOREIGN KEY (sender_user_id) REFERENCES users (id)
+);
+
 CREATE TABLE chat_message_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     message_id UUID NOT NULL,
@@ -311,6 +322,7 @@ CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_inquiries_context_product_id ON inquiries (context_product_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
+CREATE INDEX ix_chat_events_inquiry_id_created_at_id ON chat_events (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);
 CREATE INDEX ix_order_confirmations_inquiry_id_created_at ON order_confirmations (inquiry_id, created_at);
 CREATE INDEX ix_payment_requests_inquiry_id_status ON payment_requests (inquiry_id, status);

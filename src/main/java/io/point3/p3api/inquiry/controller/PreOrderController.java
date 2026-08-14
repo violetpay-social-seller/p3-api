@@ -32,9 +32,29 @@ public class PreOrderController {
       @Valid @RequestBody SubmitPreOrderRequest request) {
     RoleGuard.requireBuyer(currentUser);
 
-    SubmitPreOrderResult result = submitPreOrderUseCase.submit(
-        SubmitPreOrderCommand.of(storeId, currentUser.userId(), request.productId()));
+    SubmitPreOrderResult result =
+            submitPreOrderUseCase.submit(toCommand(storeId, currentUser, request));
 
     return ApiResponse.ok(SubmitPreOrderResponse.from(result));
+  }
+
+  private SubmitPreOrderCommand toCommand(
+          UUID storeId, CurrentUser currentUser, SubmitPreOrderRequest request) {
+    return SubmitPreOrderCommand.of(
+            storeId,
+            currentUser.userId(),
+            request.productId(),
+            request.clientRequestId(),
+            request.orderFormTemplateId(),
+            request.formAnswers().stream()
+                    .map(answer -> new SubmitPreOrderCommand.FormAnswer(
+                            answer.fieldId(),
+                            answer.value()))
+                    .toList(),
+            request.productOptionSelections().stream()
+                    .map(selection -> new SubmitPreOrderCommand.ProductOptionSelection(
+                            selection.optionGroupId(),
+                            selection.optionIds()))
+                    .toList());
   }
 }

@@ -38,6 +38,8 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers("/error", "/actuator/health", "/ws")
             .permitAll()
+            .requestMatchers(HttpMethod.GET, "/stores/**")
+            .permitAll()
             .anyRequest()
             .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

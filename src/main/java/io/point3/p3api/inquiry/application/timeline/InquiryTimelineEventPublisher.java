@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application;
+package io.point3.p3api.inquiry.application.timeline;
 
 import io.point3.p3api.chat.application.port.ChatEventPort;
 import io.point3.p3api.chat.domain.entity.ChatEvent;

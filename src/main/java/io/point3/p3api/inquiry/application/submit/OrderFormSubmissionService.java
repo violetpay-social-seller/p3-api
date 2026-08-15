@@ -2,6 +2,7 @@ package io.point3.p3api.inquiry.application.submit;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
+import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
@@ -10,6 +11,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+/**
+ * 주문서 제출 검증/스냅샷/저장 담당
+ */
 @Component
 @RequiredArgsConstructor
 public class OrderFormSubmissionService {

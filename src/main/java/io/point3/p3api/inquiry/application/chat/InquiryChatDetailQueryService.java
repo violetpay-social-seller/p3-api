@@ -1,7 +1,8 @@
-package io.point3.p3api.inquiry.application.chat.detail;
+package io.point3.p3api.inquiry.application.chat;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ChatErrorCode;
+import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.product.application.port.ProductPersistencePort;
 import io.point3.p3api.product.domain.entity.Product;

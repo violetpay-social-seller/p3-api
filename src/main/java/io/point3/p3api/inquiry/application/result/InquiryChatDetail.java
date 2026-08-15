@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application.chat.detail;
+package io.point3.p3api.inquiry.application.result;
 
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.store.domain.entity.Store;

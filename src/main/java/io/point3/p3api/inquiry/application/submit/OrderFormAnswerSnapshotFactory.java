@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import java.util.Comparator;
 import java.util.List;

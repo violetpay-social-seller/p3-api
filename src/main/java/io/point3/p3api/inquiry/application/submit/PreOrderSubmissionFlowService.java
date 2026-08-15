@@ -1,7 +1,9 @@
 package io.point3.p3api.inquiry.application.submit;
 
-import io.point3.p3api.inquiry.application.InquiryTimelineEventPublisher;
-import io.point3.p3api.inquiry.application.open.OpenInquiryCommand;
+import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
+import io.point3.p3api.inquiry.application.result.SubmitPreOrderResult;
+import io.point3.p3api.inquiry.application.timeline.InquiryTimelineEventPublisher;
+import io.point3.p3api.inquiry.application.command.OpenInquiryCommand;
 import io.point3.p3api.inquiry.application.open.OpenInquiryUseCase;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
@@ -14,7 +16,7 @@ import java.util.UUID;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class PreOrderSubmissionFlowService {
+public class PreOrderSubmissionFlowService implements SubmitPreOrderUseCase{
 
     private final ProductContextResolver productContextResolver;
     private final OpenInquiryUseCase openInquiryUseCase;

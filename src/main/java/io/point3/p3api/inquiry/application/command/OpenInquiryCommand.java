@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application.open;
+package io.point3.p3api.inquiry.application.command;
 
 import java.util.UUID;
 

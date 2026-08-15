@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application.chat.seller;
+package io.point3.p3api.inquiry.application.chat;
 
 import io.point3.p3api.chat.application.send.SendChatMessageCommand;
 import io.point3.p3api.chat.application.send.SendChatMessageResult;
@@ -6,10 +6,10 @@ import io.point3.p3api.chat.application.send.SendChatMessageUseCase;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQueryUseCase;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
-import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
-import io.point3.p3api.inquiry.application.chat.detail.InquiryChatDetail;
-import io.point3.p3api.inquiry.application.chat.detail.InquiryChatDetailQueryUseCase;
+
 import java.util.UUID;
+
+import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

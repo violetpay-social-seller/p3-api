@@ -1,6 +1,6 @@
 package io.point3.p3api.inquiry.controller.response;
 
-import io.point3.p3api.inquiry.application.chat.detail.InquiryChatDetail;
+import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import java.time.Instant;
 import java.util.UUID;
 

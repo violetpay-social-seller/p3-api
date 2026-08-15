@@ -1,12 +1,12 @@
 package io.point3.p3api.chat.application.timeline.query;
 
-import io.point3.p3api.chat.application.port.ChatEventPort;
 import io.point3.p3api.chat.application.port.ChatMessagePort;
-import io.point3.p3api.chat.application.timeline.result.ChatTimelineItem;
+import io.point3.p3api.chat.application.port.ChatTimelineItemPort;
+import io.point3.p3api.chat.application.timeline.result.ChatTimelineItemResult;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
-import io.point3.p3api.chat.domain.entity.ChatEvent;
 import io.point3.p3api.chat.domain.entity.ChatMessage;
-import io.point3.p3api.chat.domain.type.ChatEventType;
+import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
   private static final int DEFAULT_PAGE_SIZE = 20;
   private static final int MAX_PAGE_SIZE = 100;
 
-  private final ChatEventPort chatEventPort;
+  private final ChatTimelineItemPort chatTimelineItemPort;
   private final ChatMessagePort chatMessagePort;
 
   @Override
@@ -33,32 +33,36 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
     validateCursor(query);
 
     int size = resolvePageSize(query.size());
-    List<ChatEvent> chatEvents = chatEventPort.findTimeline(
+    List<ChatTimelineItem> chatTimelineItems = chatTimelineItemPort.findTimeline(
         inquiryId, query.cursorCreatedAt(), query.cursorId(), size + 1);
-    boolean hasNext = chatEvents.size() > size;
-    List<ChatEvent> pageEvents = hasNext ? chatEvents.subList(0, size) : chatEvents;
+    boolean hasNext = chatTimelineItems.size() > size;
+    List<ChatTimelineItem> pageItems =
+        hasNext ? chatTimelineItems.subList(0, size) : chatTimelineItems;
 
-    Map<UUID, ChatMessage> chatMessages = findMessages(pageEvents);
-    List<ChatTimelineItem> items = pageEvents.stream()
-        .map(chatEvent -> ChatTimelineItem.from(chatEvent, chatMessages.get(chatEvent.getReferenceId())))
+    Map<UUID, ChatMessage> chatMessages = findMessages(pageItems);
+    List<ChatTimelineItemResult> items = pageItems.stream()
+        .map(chatTimelineItem -> ChatTimelineItemResult.from(
+            chatTimelineItem, chatMessages.get(chatTimelineItem.getReferenceId())))
         .toList();
 
-    ChatEvent lastEvent = hasNext ? pageEvents.getLast() : null;
+    ChatTimelineItem lastItem = hasNext ? pageItems.getLast() : null;
     return new ChatTimelinePage(
         items,
         hasNext,
-        lastEvent == null ? null : lastEvent.getCreatedAt(),
-        lastEvent == null ? null : lastEvent.getId());
+        lastItem == null ? null : lastItem.getCreatedAt(),
+        lastItem == null ? null : lastItem.getId());
   }
 
-  private Map<UUID, ChatMessage> findMessages(List<ChatEvent> chatEvents) {
-    List<UUID> messageIds = chatEvents.stream()
-        .filter(chatEvent -> chatEvent.getType() == ChatEventType.MESSAGE)
-        .map(ChatEvent::getReferenceId)
+  private Map<UUID, ChatMessage> findMessages(List<ChatTimelineItem> chatTimelineItems) {
+    List<UUID> messageIds = chatTimelineItems.stream()
+        .filter(chatTimelineItem -> chatTimelineItem.getType() == ChatTimelineItemType.MESSAGE)
+        .map(ChatTimelineItem::getReferenceId)
         .toList();
 
     Map<UUID, ChatMessage> messages = new HashMap<>();
-    chatMessagePort.findAllById(messageIds).forEach(message -> messages.put(message.getId(), message));
+    chatMessagePort
+        .findAllById(messageIds)
+        .forEach(message -> messages.put(message.getId(), message));
     return messages;
   }
 

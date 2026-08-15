@@ -1,9 +1,9 @@
-package io.point3.p3api.inquiry.application.chat.buyer;
+package io.point3.p3api.inquiry.application.chat;
 
 import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
-import io.point3.p3api.inquiry.application.chat.detail.InquiryChatDetail;
+import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import java.util.UUID;
 
 public interface BuyerInquiryChatUseCase {

@@ -1,9 +1,9 @@
 package io.point3.p3api.chat.application.send;
 
-import io.point3.p3api.chat.application.port.ChatEventPort;
 import io.point3.p3api.chat.application.port.ChatMessagePort;
-import io.point3.p3api.chat.domain.entity.ChatEvent;
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.chat.domain.entity.ChatMessage;
+import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SendChatMessageService implements SendChatMessageUseCase {
 
   private final ChatMessagePort chatMessagePort;
-  private final ChatEventPort chatEventPort;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
 
   @Override
   @Transactional
@@ -23,12 +23,11 @@ public class SendChatMessageService implements SendChatMessageUseCase {
 
     ChatMessage savedChatMessage = chatMessagePort.save(chatMessage);
 
-    ChatEvent savedChatEvent = chatEventPort.save(
-        ChatEvent.message(
-            savedChatMessage.getInquiryId(),
-            savedChatMessage.getSenderUserId(),
-            savedChatMessage.getId()));
+    ChatTimelineItem savedChatTimelineItem = chatTimelineItemPublisher.publishMessage(
+        savedChatMessage.getInquiryId(),
+        savedChatMessage.getSenderUserId(),
+        savedChatMessage.getId());
 
-    return new SendChatMessageResult(savedChatMessage, savedChatEvent);
+    return new SendChatMessageResult(savedChatMessage, savedChatTimelineItem);
   }
 }

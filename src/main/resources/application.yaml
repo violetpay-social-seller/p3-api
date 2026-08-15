@@ -27,8 +27,11 @@ spring:
         jwt:
           issuer-uri: ${COGNITO_ISSUER_URI}
 p3:
+  cors:
+    allowed-origins: ${P3_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
   websocket:
-    allowed-origins: ${P3_WEBSOCKET_ALLOWED_ORIGINS}
+    allowed-origins: ${P3_WEBSOCKET_ALLOWED_ORIGINS:http://localhost:3000}
 
   asset:
     storage:

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class OrderFormSubmissionProcessor {
+public class OrderFormSubmissionService {
 
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;

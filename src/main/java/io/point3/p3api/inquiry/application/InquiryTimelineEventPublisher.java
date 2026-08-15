@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class InquiryDomainEventPublisher {
+public class InquiryTimelineEventPublisher {
 
   private final ChatEventPort chatEventPort;
 

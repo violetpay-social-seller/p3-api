@@ -15,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class InquiryService implements SubmitPreOrderUseCase {
 
   private final ProductContextResolver productContextResolver;
-  private final OrderFormSubmissionProcessor orderFormSubmissionProcessor;
+  private final OrderFormSubmissionService orderFormSubmissionProcessor;
   private final InquiryPersistencePort inquiryPersistencePort;
-  private final InquiryDomainEventPublisher inquiryEventPublisher;
+  private final InquiryTimelineEventPublisher inquiryEventPublisher;
 
   @Override
   public SubmitPreOrderResult submit(SubmitPreOrderCommand command) {

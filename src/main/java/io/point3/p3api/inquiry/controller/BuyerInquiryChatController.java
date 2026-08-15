@@ -3,9 +3,9 @@ package io.point3.p3api.inquiry.controller;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
-import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
+import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.chat.BuyerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
@@ -35,9 +35,8 @@ public class BuyerInquiryChatController {
       @PathVariable UUID inquiryId, @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
 
-    return ApiResponse.ok(
-        InquiryChatDetailResponse.from(
-            buyerInquiryChatUseCase.getDetail(inquiryId, currentUser.userId())));
+    return ApiResponse.ok(InquiryChatDetailResponse.from(
+        buyerInquiryChatUseCase.getDetail(inquiryId, currentUser.userId())));
   }
 
   @PostMapping("/messages")
@@ -47,9 +46,8 @@ public class BuyerInquiryChatController {
       @Valid @RequestBody SendChatMessageRequest request) {
     RoleGuard.requireBuyer(currentUser);
 
-    return ApiResponse.ok(
-        ChatTimelineItemResponse.from(
-            buyerInquiryChatUseCase.sendMessage(inquiryId, currentUser.userId(), request.content())));
+    return ApiResponse.ok(ChatTimelineItemResponse.from(
+        buyerInquiryChatUseCase.sendMessage(inquiryId, currentUser.userId(), request.content())));
   }
 
   @GetMapping("/events")
@@ -62,9 +60,7 @@ public class BuyerInquiryChatController {
     RoleGuard.requireBuyer(currentUser);
 
     ChatTimelinePage page = buyerInquiryChatUseCase.getTimeline(
-        inquiryId,
-        currentUser.userId(),
-        new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
+        inquiryId, currentUser.userId(), new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
     return ApiResponse.ok(ChatTimelinePageResponse.from(page));
   }
 }

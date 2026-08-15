@@ -2,10 +2,10 @@ package io.point3.p3api.inquiry.controller;
 
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
-import io.point3.p3api.common.tenant.web.CurrentStoreId;
-import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
+import io.point3.p3api.common.tenant.web.CurrentStoreId;
+import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.chat.SellerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
@@ -45,10 +45,8 @@ public class SellerInquiryChatController {
       @Authenticated CurrentUser currentUser,
       @CurrentStoreId UUID storeId,
       @Valid @RequestBody SendChatMessageRequest request) {
-    return ApiResponse.ok(
-        ChatTimelineItemResponse.from(
-            sellerInquiryChatUseCase.sendMessage(
-                inquiryId, storeId, currentUser.userId(), request.content())));
+    return ApiResponse.ok(ChatTimelineItemResponse.from(sellerInquiryChatUseCase.sendMessage(
+        inquiryId, storeId, currentUser.userId(), request.content())));
   }
 
   @GetMapping("/events")
@@ -60,9 +58,7 @@ public class SellerInquiryChatController {
       @RequestParam(required = false) UUID cursorId,
       @RequestParam(required = false) Integer size) {
     ChatTimelinePage page = sellerInquiryChatUseCase.getTimeline(
-        inquiryId,
-        storeId,
-        new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
+        inquiryId, storeId, new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
     return ApiResponse.ok(ChatTimelinePageResponse.from(page));
   }
 }

@@ -5,5 +5,5 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 
 public interface OpenInquiryUseCase {
 
-    Inquiry open(OpenInquiryCommand command);
+  Inquiry open(OpenInquiryCommand command);
 }

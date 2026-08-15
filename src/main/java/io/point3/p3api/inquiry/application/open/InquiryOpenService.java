@@ -15,20 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class InquiryOpenService implements OpenInquiryUseCase {
 
-    private final InquiryPersistencePort inquiryPersistencePort;
+  private final InquiryPersistencePort inquiryPersistencePort;
 
-    @Override
-    public Inquiry open(OpenInquiryCommand command) {
-        Inquiry inquiry = inquiryPersistencePort
-                .findByStoreIdAndBuyerUserId(command.storeId(), command.buyerUserId())
-                .orElseGet(() -> Inquiry.create(command.storeId(), command.buyerUserId(), null));
+  @Override
+  public Inquiry open(OpenInquiryCommand command) {
+    Inquiry inquiry = inquiryPersistencePort
+        .findByStoreIdAndBuyerUserId(command.storeId(), command.buyerUserId())
+        .orElseGet(() -> Inquiry.create(command.storeId(), command.buyerUserId(), null));
 
-        if (command.contextProductId() != null) {
-            inquiry.changeContextProduct(command.contextProductId());
-        } else {
-            inquiry.clearContextProduct();
-        }
-
-        return inquiryPersistencePort.save(inquiry);
+    if (command.contextProductId() != null) {
+      inquiry.changeContextProduct(command.contextProductId());
+    } else {
+      inquiry.clearContextProduct();
     }
+
+    return inquiryPersistencePort.save(inquiry);
+  }
 }

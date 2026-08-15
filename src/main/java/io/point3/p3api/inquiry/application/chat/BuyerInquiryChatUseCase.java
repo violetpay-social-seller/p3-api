@@ -4,7 +4,6 @@ import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
-
 import java.util.UUID;
 
 public interface BuyerInquiryChatUseCase {

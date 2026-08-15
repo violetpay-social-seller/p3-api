@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record ChatTimelinePage(
-    List<ChatTimelineItem> items,
+    List<ChatTimelineItemResult> items,
     boolean hasNext,
     Instant nextCursorCreatedAt,
     UUID nextCursorId) {}

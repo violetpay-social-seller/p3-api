@@ -52,6 +52,9 @@ services:
       AWS_PROFILE: p3-dev
       AWS_REGION: ap-northeast-2
       COGNITO_ISSUER_URI: ${COGNITO_ISSUER_URI}
+      P3_CORS_ALLOWED_ORIGINS: ${P3_CORS_ALLOWED_ORIGINS}
+      P3_WEBSOCKET_ALLOWED_ORIGINS: ${P3_WEBSOCKET_ALLOWED_ORIGINS}
+      P3_DELIVERY_BASE_URL: ${P3_DELIVERY_BASE_URL}
     depends_on:
       redis:
         condition: service_healthy

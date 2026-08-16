@@ -40,7 +40,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   private final ObjectMapper objectMapper;
 
   @Override
-  public SendOrderConfirmationResult sent(SendOrderConfirmationCommand command) {
+  public SendOrderConfirmationResult send(SendOrderConfirmationCommand command) {
 
     // 채팅방이 해당 스토어 소유인지 검증
     Inquiry inquiry =

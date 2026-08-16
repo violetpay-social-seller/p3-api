@@ -15,7 +15,12 @@ public enum ProductErrorCode implements ErrorCode {
       "PRODUCT_STATUS_FORBIDDEN_400",
       "Product status can not be changed",
       HttpStatus.BAD_REQUEST,
-      "/errors/product/status-forbidden");
+      "/errors/product/status-forbidden"),
+  PRODUCT_OPTION_INVALID(
+      "PRODUCT_OPTION_INVALID_400",
+      "Product option selection is invalid",
+      HttpStatus.BAD_REQUEST,
+      "/errors/product/option-invalid");
 
   private final String code;
   private final String title;

@@ -3,5 +3,8 @@ package io.point3.p3api.order.domain.type;
 public enum OrderConfirmationStatus {
   DRAFT,
   SENT,
-  REPLACED
+  REVISION_REQUESTED,
+  REPLACED,
+  PAYMENT_REQUESTED,
+  PAID
 }

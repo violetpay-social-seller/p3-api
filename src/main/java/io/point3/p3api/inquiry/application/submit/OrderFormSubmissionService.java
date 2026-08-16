@@ -22,6 +22,7 @@ public class OrderFormSubmissionService {
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
+  private final OrderFormProductSnapshotFactory productSnapshotFactory;
 
   public OrderFormSubmission submit(SubmitPreOrderCommand command, UUID inquiryId) {
     OrderFormResult activeForm = orderFormQueryUseCase.getActiveTemplate(command.storeId());
@@ -33,9 +34,18 @@ public class OrderFormSubmissionService {
     orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
 
     String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
+    OrderFormProductSnapshotFactory.ProductSubmissionSnapshot productSnapshot =
+        productSnapshotFactory.create(
+            command.storeId(), command.productId(), command.productOptionSelections());
 
     OrderFormSubmission submission = OrderFormSubmission.create(
-        inquiryId, activeForm.id(), command.buyerUserId(), answersSnapshot);
+        inquiryId,
+        activeForm.id(),
+        command.buyerUserId(),
+        productSnapshot.productId(),
+        productSnapshot.productSnapshot(),
+        productSnapshot.productOptionSnapshot(),
+        answersSnapshot);
 
     return submissionPersistencePort.save(submission);
   }

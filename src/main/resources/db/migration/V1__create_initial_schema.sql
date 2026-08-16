@@ -168,11 +168,15 @@ CREATE TABLE order_form_submissions (
     inquiry_id UUID NOT NULL,
     template_id UUID NOT NULL,
     submitted_by UUID NOT NULL,
+    product_id UUID,
+    product_snapshot JSONB,
+    product_option_snapshot JSONB,
     answers JSONB NOT NULL,
     submitted_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_form_submissions_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_order_form_submissions_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id),
-    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id)
+    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
+    CONSTRAINT fk_order_form_submissions_product_id FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL
 );
 
 CREATE TABLE chat_messages (
@@ -210,17 +214,25 @@ CREATE TABLE chat_message_assets (
 CREATE TABLE order_confirmations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     inquiry_id UUID NOT NULL,
+    order_form_submission_id UUID,
     created_by UUID NOT NULL,
     menu_name VARCHAR(150) NOT NULL,
     option_summary TEXT NOT NULL,
     amount BIGINT NOT NULL,
     pickup_at TIMESTAMPTZ NOT NULL,
     store_name_snapshot VARCHAR(100) NOT NULL,
+    order_summary JSONB,
+    additional_items JSONB,
+    seller_note TEXT,
     status VARCHAR(30) NOT NULL,
     sent_at TIMESTAMPTZ,
+    revision_requested_at TIMESTAMPTZ,
+    replaced_by_confirmation_id UUID,
     created_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_confirmations_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_confirmations_order_form_submission_id FOREIGN KEY (order_form_submission_id) REFERENCES order_form_submissions (id) ON DELETE SET NULL,
     CONSTRAINT fk_order_confirmations_created_by FOREIGN KEY (created_by) REFERENCES users (id),
+    CONSTRAINT fk_order_confirmations_replaced_by_confirmation_id FOREIGN KEY (replaced_by_confirmation_id) REFERENCES order_confirmations (id),
     CONSTRAINT ck_order_confirmations_amount CHECK (amount >= 0)
 );
 
@@ -323,10 +335,12 @@ CREATE INDEX ix_order_form_fields_template_id ON order_form_fields (template_id)
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_inquiries_context_product_id ON inquiries (context_product_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
+CREATE INDEX ix_order_form_submissions_product_id ON order_form_submissions (product_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);
 CREATE INDEX ix_order_confirmations_inquiry_id_created_at ON order_confirmations (inquiry_id, created_at);
+CREATE INDEX ix_order_confirmations_order_form_submission_id ON order_confirmations (order_form_submission_id);
 CREATE INDEX ix_payment_requests_inquiry_id_status ON payment_requests (inquiry_id, status);
 CREATE INDEX ix_payment_attempts_payment_request_id ON payment_attempts (payment_request_id);
 CREATE INDEX ix_orders_store_id_pickup_at ON orders (store_id, pickup_at);

@@ -2,7 +2,10 @@ package io.point3.p3api.product.infrastructure.persistence;
 
 import io.point3.p3api.product.application.port.ProductPersistencePort;
 import io.point3.p3api.product.domain.entity.Product;
+import io.point3.p3api.product.domain.entity.ProductOption;
+import io.point3.p3api.product.domain.entity.ProductOptionGroup;
 import io.point3.p3api.product.domain.type.ProductStatus;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductPersistenceAdapter implements ProductPersistencePort {
 
   private final ProductJpaRepository productJpaRepository;
+  private final ProductOptionGroupJpaRepository productOptionGroupJpaRepository;
+  private final ProductOptionJpaRepository productOptionJpaRepository;
 
   @Override
   public Product save(Product product) {
@@ -45,6 +50,23 @@ public class ProductPersistenceAdapter implements ProductPersistencePort {
   public Optional<Product> findByIdAndStoreIdAndStatus(
       UUID productId, UUID storeId, ProductStatus status) {
     return productJpaRepository.findByIdAndStoreIdAndStatus(productId, storeId, status);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProductOptionGroup> findOptionGroupsByProductId(UUID productId) {
+    return productOptionGroupJpaRepository.findAllByProductIdOrderBySortOrderAsc(productId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<ProductOption> findActiveOptionsByOptionGroupIds(Collection<UUID> optionGroupIds) {
+    if (optionGroupIds.isEmpty()) {
+      return List.of();
+    }
+
+    return productOptionJpaRepository.findAllByOptionGroupIdInAndActiveTrueOrderBySortOrderAsc(
+        optionGroupIds);
   }
 
   @Override

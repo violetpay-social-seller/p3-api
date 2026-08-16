@@ -1,7 +1,10 @@
 package io.point3.p3api.product.application.port;
 
 import io.point3.p3api.product.domain.entity.Product;
+import io.point3.p3api.product.domain.entity.ProductOption;
+import io.point3.p3api.product.domain.entity.ProductOptionGroup;
 import io.point3.p3api.product.domain.type.ProductStatus;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +20,10 @@ public interface ProductPersistencePort {
   Optional<Product> findByIdAndStoreId(UUID productId, UUID storeId);
 
   Optional<Product> findByIdAndStoreIdAndStatus(UUID productId, UUID storeId, ProductStatus status);
+
+  List<ProductOptionGroup> findOptionGroupsByProductId(UUID productId);
+
+  List<ProductOption> findActiveOptionsByOptionGroupIds(Collection<UUID> optionGroupIds);
 
   void delete(Product product);
 }

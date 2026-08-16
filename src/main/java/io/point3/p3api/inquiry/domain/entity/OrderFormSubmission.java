@@ -33,6 +33,15 @@ public class OrderFormSubmission {
   @Column(name = "submitted_by", nullable = false)
   private UUID submittedBy;
 
+  @Column(name = "product_id")
+  private UUID productId;
+
+  @Column(name = "product_snapshot", columnDefinition = "jsonb")
+  private String productSnapshot;
+
+  @Column(name = "product_option_snapshot", columnDefinition = "jsonb")
+  private String productOptionSnapshot;
+
   @Column(name = "answers", nullable = false, columnDefinition = "jsonb")
   private String answers;
 
@@ -40,20 +49,43 @@ public class OrderFormSubmission {
   @Column(name = "submitted_at", nullable = false, updatable = false)
   private Instant submittedAt;
 
-  private OrderFormSubmission(UUID inquiryId, UUID templateId, UUID submittedBy, String answers) {
+  private OrderFormSubmission(
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      UUID productId,
+      String productSnapshot,
+      String productOptionSnapshot,
+      String answers) {
     this.inquiryId = inquiryId;
     this.templateId = templateId;
     this.submittedBy = submittedBy;
+    this.productId = productId;
+    this.productSnapshot = productSnapshot;
+    this.productOptionSnapshot = productOptionSnapshot;
     this.answers = answers;
   }
 
   public static OrderFormSubmission create(
-      UUID inquiryId, UUID templateId, UUID submittedBy, String answers) {
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      UUID productId,
+      String productSnapshot,
+      String productOptionSnapshot,
+      String answers) {
     Objects.requireNonNull(inquiryId, "inquiryId");
     Objects.requireNonNull(templateId, "templateId");
     Objects.requireNonNull(submittedBy, "submittedBy");
     Objects.requireNonNull(answers, "answers");
 
-    return new OrderFormSubmission(inquiryId, templateId, submittedBy, answers);
+    return new OrderFormSubmission(
+        inquiryId,
+        templateId,
+        submittedBy,
+        productId,
+        productSnapshot,
+        productOptionSnapshot,
+        answers);
   }
 }

@@ -30,6 +30,9 @@ public class OrderConfirmation {
   @Column(name = "inquiry_id", nullable = false)
   private UUID inquiryId;
 
+  @Column(name = "order_form_submission_id")
+  private UUID orderFormSubmissionId;
+
   @Column(name = "created_by", nullable = false)
   private UUID createdBy;
 
@@ -48,6 +51,15 @@ public class OrderConfirmation {
   @Column(name = "store_name_snapshot", nullable = false, length = 100)
   private String storeNameSnapshot;
 
+  @Column(name = "order_summary", columnDefinition = "jsonb")
+  private String orderSummary;
+
+  @Column(name = "additional_items", columnDefinition = "jsonb")
+  private String additionalItems;
+
+  @Column(name = "seller_note", columnDefinition = "text")
+  private String sellerNote;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
   private OrderConfirmationStatus status;
@@ -55,36 +67,54 @@ public class OrderConfirmation {
   @Column(name = "sent_at")
   private Instant sentAt;
 
+  @Column(name = "revision_requested_at")
+  private Instant revisionRequestedAt;
+
+  @Column(name = "replaced_by_confirmation_id")
+  private UUID replacedByConfirmationId;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
   private OrderConfirmation(
       UUID inquiryId,
+      UUID orderFormSubmissionId,
       UUID createdBy,
       String menuName,
       String optionSummary,
       long amount,
       Instant pickupAt,
-      String storeNameSnapshot) {
+      String storeNameSnapshot,
+      String orderSummary,
+      String additionalItems,
+      String sellerNote) {
     this.inquiryId = inquiryId;
+    this.orderFormSubmissionId = orderFormSubmissionId;
     this.createdBy = createdBy;
     this.menuName = menuName;
     this.optionSummary = optionSummary;
     this.amount = amount;
     this.pickupAt = pickupAt;
     this.storeNameSnapshot = storeNameSnapshot;
+    this.orderSummary = orderSummary;
+    this.additionalItems = additionalItems;
+    this.sellerNote = sellerNote;
     this.status = OrderConfirmationStatus.DRAFT;
   }
 
   public static OrderConfirmation create(
       UUID inquiryId,
+      UUID orderFormSubmissionId,
       UUID createdBy,
       String menuName,
       String optionSummary,
       long amount,
       Instant pickupAt,
-      String storeNameSnapshot) {
+      String storeNameSnapshot,
+      String orderSummary,
+      String additionalItems,
+      String sellerNote) {
     Objects.requireNonNull(inquiryId, "inquiryId");
     Objects.requireNonNull(createdBy, "createdBy");
     Objects.requireNonNull(menuName, "menuName");
@@ -97,7 +127,17 @@ public class OrderConfirmation {
     }
 
     return new OrderConfirmation(
-        inquiryId, createdBy, menuName, optionSummary, amount, pickupAt, storeNameSnapshot);
+        inquiryId,
+        orderFormSubmissionId,
+        createdBy,
+        menuName,
+        optionSummary,
+        amount,
+        pickupAt,
+        storeNameSnapshot,
+        orderSummary,
+        additionalItems,
+        sellerNote);
   }
 
   public void sent(Instant sentAt) {
@@ -106,7 +146,23 @@ public class OrderConfirmation {
     this.sentAt = sentAt;
   }
 
-  public void replace() {
+  public void requestRevision(Instant revisionRequestedAt) {
+    Objects.requireNonNull(revisionRequestedAt, "revisionRequestedAt");
+    this.status = OrderConfirmationStatus.REVISION_REQUESTED;
+    this.revisionRequestedAt = revisionRequestedAt;
+  }
+
+  public void replaceWith(UUID replacedByConfirmationId) {
+    Objects.requireNonNull(replacedByConfirmationId, "replacedByConfirmationId");
     this.status = OrderConfirmationStatus.REPLACED;
+    this.replacedByConfirmationId = replacedByConfirmationId;
+  }
+
+  public void markPaymentRequested() {
+    this.status = OrderConfirmationStatus.PAYMENT_REQUESTED;
+  }
+
+  public void markPaid() {
+    this.status = OrderConfirmationStatus.PAID;
   }
 }

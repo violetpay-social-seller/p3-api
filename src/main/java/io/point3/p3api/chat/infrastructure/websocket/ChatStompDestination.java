@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ChatStompDestination {
 
+  public static final String MESSAGE_MAPPING = "/inquiries/{inquiryId}/messages";
+
   private static final String INQUIRIES_PATH = "/inquiries/";
   private static final String MESSAGES_PATH = "/messages";
 

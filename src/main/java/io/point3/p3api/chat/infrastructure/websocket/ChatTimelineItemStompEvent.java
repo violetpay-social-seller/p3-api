@@ -1,5 +1,6 @@
 package io.point3.p3api.chat.infrastructure.websocket;
 
+import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.time.Instant;
 import java.util.UUID;
@@ -10,4 +11,14 @@ public record ChatTimelineItemStompEvent(
     ChatTimelineItemType type,
     UUID senderUserId,
     Instant createdAt,
-    String content) {}
+    String content) {
+
+  public static ChatTimelineItemStompEvent from(SendChatMessageResult result) {
+    return new ChatTimelineItemStompEvent(
+        result.chatTimelineItem().getId(),
+        result.chatTimelineItem().getType(),
+        result.chatTimelineItem().getSenderUserId(),
+        result.chatTimelineItem().getCreatedAt(),
+        result.chatMessage().getContent());
+  }
+}

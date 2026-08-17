@@ -1,5 +1,6 @@
 package io.point3.p3api.inquiry.application.draft;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormDraftCommand;
 
 import java.time.LocalDate;
@@ -13,9 +14,13 @@ public record OrderFormDraftData(
         LocalDate pickupDate,
         LocalTime pickupTime,
         boolean noticeAgreed,
-        List<CreateOrderFormDraftCommand.FormAnswer> formAnswers,
-        List<UUID> referenceAssetIds
+        List<FormAnswer> formAnswers,
+        List<ReferenceAsset> referenceAssets
 ) {
+
+    public record FormAnswer(UUID fieldId, JsonNode value) {}
+
+    public record ReferenceAsset(UUID assetId, String source, int sortOrder) {}
 
     public static OrderFormDraftData from(CreateOrderFormDraftCommand command) {
         return new OrderFormDraftData(
@@ -24,7 +29,11 @@ public record OrderFormDraftData(
                 command.pickupDate(),
                 command.pickupTime(),
                 command.noticeAgreed(),
-                command.formAnswers(),
-                command.referenceAssetIds());
+                command.formAnswers().stream()
+                        .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
+                        .toList(),
+                command.referenceAssets().stream()
+                        .map(asset -> new ReferenceAsset(asset.assetId(), asset.source(), asset.sortOrder()))
+                        .toList());
     }
 }

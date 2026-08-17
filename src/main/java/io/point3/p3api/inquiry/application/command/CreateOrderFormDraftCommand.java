@@ -15,7 +15,9 @@ public record CreateOrderFormDraftCommand(
         LocalTime pickupTime,
         boolean noticeAgreed,
         List<FormAnswer> formAnswers,
-        List<UUID> referenceAssetIds
+        List<ReferenceAsset> referenceAssets
 ) {
     public record FormAnswer(UUID fieldId, JsonNode value) {}
+
+    public record ReferenceAsset(UUID assetId, String source, int sortOrder) {}
 }

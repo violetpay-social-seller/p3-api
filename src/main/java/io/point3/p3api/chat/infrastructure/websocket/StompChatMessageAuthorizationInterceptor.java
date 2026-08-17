@@ -35,11 +35,8 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
     }
 
     String destination = accessor.getDestination();
-    if (destination == null || !destination.startsWith(CHAT_MESSAGE_PREFIX)) {
-      return message;
-    }
-
     try {
+      validateSendDestination(destination);
       UUID inquiryId = extractInquiryId(destination);
       Principal principal = accessor.getUser();
       if (!(principal instanceof Authentication authentication)) {
@@ -51,6 +48,12 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
     } catch (RuntimeException e) {
       throw new MessageDeliveryException(
           message, "STOMP chat message requires an inquiry participant", e);
+    }
+  }
+
+  private void validateSendDestination(String destination) {
+    if (destination == null || !destination.startsWith(CHAT_MESSAGE_PREFIX)) {
+      throw new BaseException(CommonErrorCode.INVALID_INPUT);
     }
   }
 

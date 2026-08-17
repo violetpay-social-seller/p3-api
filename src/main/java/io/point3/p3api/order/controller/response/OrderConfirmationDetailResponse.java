@@ -1,14 +1,11 @@
 package io.point3.p3api.order.controller.response;
 
-import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
-import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
-import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import java.time.Instant;
 import java.util.UUID;
 
-public record OrderConfirmationResponse(
+public record OrderConfirmationDetailResponse(
     UUID confirmationId,
     UUID inquiryId,
     UUID orderFormSubmissionId,
@@ -22,15 +19,12 @@ public record OrderConfirmationResponse(
     String sellerNote,
     OrderConfirmationStatus status,
     Instant sentAt,
-    UUID timelineEventId,
-    ChatTimelineItemType timelineEventType,
-    Instant timelineEventCreatedAt) {
+    Instant revisionRequestedAt,
+    UUID replacedByConfirmationId,
+    Instant createdAt) {
 
-  public static OrderConfirmationResponse from(SendOrderConfirmationResult result) {
-    OrderConfirmation confirmation = result.orderConfirmation();
-    ChatTimelineItem timelineItem = result.chatTimelineItem();
-
-    return new OrderConfirmationResponse(
+  public static OrderConfirmationDetailResponse from(OrderConfirmation confirmation) {
+    return new OrderConfirmationDetailResponse(
         confirmation.getId(),
         confirmation.getInquiryId(),
         confirmation.getOrderFormSubmissionId(),
@@ -44,8 +38,8 @@ public record OrderConfirmationResponse(
         confirmation.getSellerNote(),
         confirmation.getStatus(),
         confirmation.getSentAt(),
-        timelineItem.getId(),
-        timelineItem.getType(),
-        timelineItem.getCreatedAt());
+        confirmation.getRevisionRequestedAt(),
+        confirmation.getReplacedByConfirmationId(),
+        confirmation.getCreatedAt());
   }
 }

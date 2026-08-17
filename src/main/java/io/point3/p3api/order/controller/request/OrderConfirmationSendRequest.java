@@ -10,16 +10,14 @@ import java.util.List;
 import java.util.UUID;
 
 public record OrderConfirmationSendRequest(
-        @NotNull UUID orderFormSubmissionId,
-        @NotBlank @Size(max = 150) String confirmationTitle,
-        @NotBlank String summaryText,
-        @Min(0) long amount,
-        @NotNull Instant pickupAt,
-        @Valid @NotNull List<AdditionalItem> additionalItems,
-        String sellerNote) {
+    @NotNull UUID orderFormSubmissionId,
+    @NotBlank @Size(max = 150) String confirmationTitle,
+    @NotBlank String summaryText,
+    @Min(0) long amount,
+    @NotNull Instant pickupAt,
+    @Valid @NotNull List<AdditionalItem> additionalItems,
+    String sellerNote) {
 
-    public record AdditionalItem(
-            @NotBlank @Size(max = 100) String label,
-            @NotBlank String value,
-            Long amount) {}
+  public record AdditionalItem(
+      @NotBlank @Size(max = 100) String label, @NotBlank String value, Long amount) {}
 }

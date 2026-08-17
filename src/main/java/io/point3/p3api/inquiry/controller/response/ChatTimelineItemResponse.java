@@ -7,12 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record ChatTimelineItemResponse(
-    UUID eventId,
-    ChatTimelineItemType type,
-    UUID senderUserId,
-    Instant createdAt,
-    String content
-) {
+    UUID eventId, ChatTimelineItemType type, UUID senderUserId, Instant createdAt, String content) {
 
   public static ChatTimelineItemResponse from(SendChatMessageResult result) {
     return new ChatTimelineItemResponse(

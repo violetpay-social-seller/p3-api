@@ -30,7 +30,7 @@ public class BuyerInquiryChatService implements BuyerInquiryChatUseCase {
   public SendChatMessageResult sendMessage(UUID inquiryId, UUID buyerUserId, String content) {
     inquiryChatAccessService.getBuyerInquiry(inquiryId, buyerUserId);
     return sendChatMessageUseCase.execute(
-        new SendChatMessageCommand(inquiryId, buyerUserId, content));
+        SendChatMessageCommand.of(inquiryId, buyerUserId, content));
   }
 
   @Override

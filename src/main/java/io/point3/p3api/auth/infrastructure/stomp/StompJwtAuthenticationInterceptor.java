@@ -1,4 +1,4 @@
-package io.point3.p3api.auth.infrastructure.websocket;
+package io.point3.p3api.auth.infrastructure.stomp;
 
 import io.point3.p3api.auth.infrastructure.security.CurrentUserRender;
 import io.point3.p3api.exception.BaseException;

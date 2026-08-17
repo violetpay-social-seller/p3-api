@@ -1,4 +1,4 @@
-package io.point3.p3api.chat.infrastructure.websocket;
+package io.point3.p3api.chat.infrastructure.stomp;
 
 import io.point3.p3api.auth.infrastructure.security.CurrentUserRender;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;

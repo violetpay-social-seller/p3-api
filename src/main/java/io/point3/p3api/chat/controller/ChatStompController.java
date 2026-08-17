@@ -1,9 +1,12 @@
-package io.point3.p3api.chat.infrastructure.websocket;
+package io.point3.p3api.chat.controller;
 
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.chat.application.send.SendChatMessageCommand;
 import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.application.send.SendChatMessageUseCase;
+import io.point3.p3api.chat.controller.request.SendChatMessageStompRequest;
+import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
+import io.point3.p3api.chat.infrastructure.stomp.ChatStompParticipantAuthorizationService;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import jakarta.validation.Valid;
@@ -41,6 +44,7 @@ public class ChatStompController {
         SendChatMessageCommand.of(inquiryId, currentUser.userId(), request.content()));
 
     messagingTemplate.convertAndSend(
-        ChatStompDestination.topicDestination(inquiryId), ChatTimelineItemStompEvent.from(result));
+        ChatStompDestination.topicDestination(inquiryId),
+        ChatTimelineItemStompResponse.from(result));
   }
 }

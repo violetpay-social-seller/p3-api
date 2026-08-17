@@ -1,4 +1,4 @@
-package io.point3.p3api.chat.infrastructure.websocket;
+package io.point3.p3api.chat.infrastructure.stomp;
 
 import java.security.Principal;
 import java.util.UUID;

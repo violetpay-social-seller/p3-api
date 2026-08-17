@@ -1,8 +1,8 @@
 package io.point3.p3api.common.websocket;
 
-import io.point3.p3api.auth.infrastructure.websocket.StompJwtAuthenticationInterceptor;
-import io.point3.p3api.chat.infrastructure.websocket.StompChatMessageAuthorizationInterceptor;
-import io.point3.p3api.chat.infrastructure.websocket.StompChatSubscriptionAuthorizationInterceptor;
+import io.point3.p3api.auth.infrastructure.stomp.StompJwtAuthenticationInterceptor;
+import io.point3.p3api.chat.infrastructure.stomp.StompChatMessageAuthorizationInterceptor;
+import io.point3.p3api.chat.infrastructure.stomp.StompChatSubscriptionAuthorizationInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

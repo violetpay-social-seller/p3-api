@@ -1,10 +1,10 @@
-package io.point3.p3api.chat.infrastructure.websocket;
+package io.point3.p3api.chat.controller;
 
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-/** STOMP 채팅 메시지 송신 및 구독 목적지를 제공 */
+/** STOMP 채팅 메시지 송신 및 구독 목적지를 제공한다. */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ChatStompDestination {
 

@@ -23,14 +23,14 @@ public class OrderFormAnswerValidator {
   private static final int MAX_IMAGE_COUNT = 5;
 
   public void validate(
-          List<OrderFormFieldResult> fields,
-          List<CreateOrderFormSubmissionCommand.FormAnswer> answers) {
+      List<OrderFormFieldResult> fields,
+      List<CreateOrderFormSubmissionCommand.FormAnswer> answers) {
     Map<UUID, OrderFormFieldResult> fieldMap =
-            fields.stream().collect(Collectors.toMap(OrderFormFieldResult::id, Function.identity()));
+        fields.stream().collect(Collectors.toMap(OrderFormFieldResult::id, Function.identity()));
 
     Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap = answers.stream()
-            .collect(Collectors.toMap(
-                    CreateOrderFormSubmissionCommand.FormAnswer::fieldId, Function.identity()));
+        .collect(Collectors.toMap(
+            CreateOrderFormSubmissionCommand.FormAnswer::fieldId, Function.identity()));
 
     ensureNoUnknownFields(fieldMap, answerMap);
     ensureRequiredFieldsAnswered(fields, answerMap);
@@ -42,16 +42,16 @@ public class OrderFormAnswerValidator {
   }
 
   private void ensureNoUnknownFields(
-          Map<UUID, OrderFormFieldResult> fieldMap,
-          Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
+      Map<UUID, OrderFormFieldResult> fieldMap,
+      Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
     if (!fieldMap.keySet().containsAll(answerMap.keySet())) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_UNKNOWN_FIELD);
     }
   }
 
   private void ensureRequiredFieldsAnswered(
-          List<OrderFormFieldResult> fields,
-          Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
+      List<OrderFormFieldResult> fields,
+      Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
     for (OrderFormFieldResult field : fields) {
       if (field.required()) {
         CreateOrderFormSubmissionCommand.FormAnswer answer = answerMap.get(field.id());

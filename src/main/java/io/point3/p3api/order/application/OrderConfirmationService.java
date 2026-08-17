@@ -106,11 +106,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     OrderSummarySnapshot snapshot = new OrderSummarySnapshot(
-        submission.getId(),
-        submission.getProductId(),
-        submission.getProductSnapshot(),
-        submission.getProductOptionSnapshot(),
-        submission.getAnswers());
+        submission.getId(), submission.getAnswers(), submission.getReferenceAssets());
 
     return write(snapshot);
   }
@@ -132,9 +128,5 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   }
 
   private record OrderSummarySnapshot(
-      UUID orderFormSubmissionId,
-      UUID productId,
-      String productSnapshot,
-      String productOptionSnapshot,
-      String answers) {}
+      UUID orderFormSubmissionId, String answers, String referenceAssets) {}
 }

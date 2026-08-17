@@ -9,10 +9,8 @@ public record OrderFormSubmissionResponse(
     UUID inquiryId,
     UUID templateId,
     UUID submittedBy,
-    UUID productId,
-    String productSnapshot,
-    String productOptionSnapshot,
     String answers,
+    String referenceAssets,
     Instant submittedAt) {
 
   public static OrderFormSubmissionResponse from(OrderFormSubmission submission) {
@@ -21,10 +19,8 @@ public record OrderFormSubmissionResponse(
         submission.getInquiryId(),
         submission.getTemplateId(),
         submission.getSubmittedBy(),
-        submission.getProductId(),
-        submission.getProductSnapshot(),
-        submission.getProductOptionSnapshot(),
         submission.getAnswers(),
+        submission.getReferenceAssets(),
         submission.getSubmittedAt());
   }
 }

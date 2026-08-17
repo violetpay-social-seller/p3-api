@@ -7,31 +7,23 @@ import java.util.List;
 import java.util.UUID;
 
 public record CreateOrderFormSubmissionCommand(
-        UUID storeId,
-        UUID buyerUserId,
-        UUID inquiryId,
-        UUID orderFormTemplateId,
-        List<FormAnswer> formAnswers,
-        PickupRequest pickupRequest,
-        NoticeAgreement noticeAgreement,
-        SubmissionReference reference
-) {
-    public record FormAnswer(UUID fieldId, JsonNode value) {}
+    UUID storeId,
+    UUID buyerUserId,
+    UUID inquiryId,
+    UUID orderFormTemplateId,
+    List<FormAnswer> formAnswers,
+    PickupRequest pickupRequest,
+    NoticeAgreement noticeAgreement,
+    List<ReferenceAsset> referenceAssets) {
+  public record FormAnswer(UUID fieldId, JsonNode value) {}
 
-    public record PickupRequest(
-            LocalDate pickupDate,
-            LocalTime pickupTime
-    ) {}
+  public record PickupRequest(LocalDate pickupDate, LocalTime pickupTime) {}
 
-    public record NoticeAgreement(
-            boolean agreed
-    ) {}
+  public record NoticeAgreement(boolean agreed) {}
 
-    public record SubmissionReference(
-            List<UUID> referenceAssetIds
-    ) {
-        public static SubmissionReference empty() {
-            return new SubmissionReference(List.of());
-        }
-    }
+  public record ReferenceAsset(UUID assetId, String source, int sortOrder) {}
+
+  public static List<ReferenceAsset> emptyReferenceAssets() {
+    return List.of();
+  }
 }

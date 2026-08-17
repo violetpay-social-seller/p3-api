@@ -6,6 +6,7 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
+import io.point3.p3api.inquiry.application.query.SellerOrderFormSubmissionQueryUseCase;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.order.controller.response.OrderFormSubmissionResponse;
@@ -22,34 +23,24 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SellerOrderFormSubmissionController {
 
-  private final InquiryChatAccessService inquiryChatAccessService;
-  private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
+  private final SellerOrderFormSubmissionQueryUseCase sellerOrderFormSubmissionQueryUseCase;
 
   @GetMapping("/{submissionId}")
   public ApiResponse<OrderFormSubmissionResponse> getSubmission(
       @PathVariable UUID inquiryId, @PathVariable UUID submissionId, @CurrentStoreId UUID storeId) {
-    Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-
-    OrderFormSubmission submission = orderFormSubmissionPersistencePort
-        .findById(submissionId)
-        .orElseThrow(() -> new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND));
-
-    if (!submission.getInquiryId().equals(inquiry.getId())) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND);
-    }
-
-    return ApiResponse.ok(OrderFormSubmissionResponse.from(submission));
+    return ApiResponse.ok(OrderFormSubmissionResponse.from(
+            sellerOrderFormSubmissionQueryUseCase.getSubmission(inquiryId, submissionId, storeId)
+    ));
   }
 
   @GetMapping
   public ApiResponse<List<OrderFormSubmissionResponse>> getSubmissions(
       @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
-    Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-
-    List<OrderFormSubmission> submissions =
-        orderFormSubmissionPersistencePort.findAllByInquiryId(inquiryId);
-
     return ApiResponse.ok(
-        submissions.stream().map(OrderFormSubmissionResponse::from).toList());
+            sellerOrderFormSubmissionQueryUseCase
+                    .getSubmissions(inquiryId, storeId)
+                    .stream()
+                    .map(OrderFormSubmissionResponse::from)
+                    .toList());
   }
 }

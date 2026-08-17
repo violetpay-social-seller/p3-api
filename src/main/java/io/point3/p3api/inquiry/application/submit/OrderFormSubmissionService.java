@@ -3,12 +3,10 @@ package io.point3.p3api.inquiry.application.submit;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
-import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,13 +15,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseCase{
+public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseCase {
 
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
-  private final OrderFormProductSnapshotFactory productSnapshotFactory;
+  private final OrderFormReferenceSnapshotFactory referenceSnapshotFactory;
 
   @Override
   public OrderFormSubmission create(CreateOrderFormSubmissionCommand command) {
@@ -33,10 +31,22 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
 
     orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
 
-    return null;
+    String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
+
+    String referenceAssets = referenceSnapshotFactory.create(command.referenceAssets());
+
+    OrderFormSubmission submission = OrderFormSubmission.create(
+        command.inquiryId(),
+        activeForm.id(),
+        command.buyerUserId(),
+        answersSnapshot,
+        referenceAssets);
+
+    return submissionPersistencePort.save(submission);
   }
 
-  private static void validateOrderFormSubmissionRequirements(CreateOrderFormSubmissionCommand command, OrderFormResult activeForm) {
+  private static void validateOrderFormSubmissionRequirements(
+      CreateOrderFormSubmissionCommand command, OrderFormResult activeForm) {
     if (!activeForm.id().equals(command.orderFormTemplateId())) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND);
     }

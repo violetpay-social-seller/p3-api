@@ -5,5 +5,5 @@ import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 
 public interface OrderFormSubmissionCreateUseCase {
 
-    OrderFormSubmission create(CreateOrderFormSubmissionCommand command);
+  OrderFormSubmission create(CreateOrderFormSubmissionCommand command);
 }

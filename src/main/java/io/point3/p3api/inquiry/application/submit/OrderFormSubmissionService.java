@@ -2,6 +2,7 @@ package io.point3.p3api.inquiry.application.submit;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
+import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class OrderFormSubmissionService {
+public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseCase{
 
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
@@ -24,29 +25,24 @@ public class OrderFormSubmissionService {
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
   private final OrderFormProductSnapshotFactory productSnapshotFactory;
 
-  public OrderFormSubmission submit(SubmitPreOrderCommand command, UUID inquiryId) {
+  @Override
+  public OrderFormSubmission create(CreateOrderFormSubmissionCommand command) {
     OrderFormResult activeForm = orderFormQueryUseCase.getActiveTemplate(command.storeId());
 
+    validateOrderFormSubmissionRequirements(command, activeForm);
+
+    orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
+
+    return null;
+  }
+
+  private static void validateOrderFormSubmissionRequirements(CreateOrderFormSubmissionCommand command, OrderFormResult activeForm) {
     if (!activeForm.id().equals(command.orderFormTemplateId())) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND);
     }
 
-    orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
-
-    String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
-    OrderFormProductSnapshotFactory.ProductSubmissionSnapshot productSnapshot =
-        productSnapshotFactory.create(
-            command.storeId(), command.productId(), command.productOptionSelections());
-
-    OrderFormSubmission submission = OrderFormSubmission.create(
-        inquiryId,
-        activeForm.id(),
-        command.buyerUserId(),
-        productSnapshot.productId(),
-        productSnapshot.productSnapshot(),
-        productSnapshot.productOptionSnapshot(),
-        answersSnapshot);
-
-    return submissionPersistencePort.save(submission);
+    if (!command.noticeAgreement().agreed()) {
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_NOTICE_AGREEMENT_REQUIRED);
+    }
   }
 }

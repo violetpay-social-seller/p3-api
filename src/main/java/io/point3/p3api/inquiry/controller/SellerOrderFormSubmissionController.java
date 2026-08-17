@@ -2,13 +2,7 @@ package io.point3.p3api.inquiry.controller;
 
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.exception.BaseException;
-import io.point3.p3api.exception.code.OrderFormErrorCode;
-import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
-import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
-import io.point3.p3api.inquiry.application.query.SellerOrderFormSubmissionQueryUseCase;
-import io.point3.p3api.inquiry.domain.entity.Inquiry;
-import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.inquiry.application.submission.query.SellerOrderFormSubmissionQueryUseCase;
 import io.point3.p3api.order.controller.response.OrderFormSubmissionResponse;
 import java.util.List;
 import java.util.UUID;
@@ -29,18 +23,15 @@ public class SellerOrderFormSubmissionController {
   public ApiResponse<OrderFormSubmissionResponse> getSubmission(
       @PathVariable UUID inquiryId, @PathVariable UUID submissionId, @CurrentStoreId UUID storeId) {
     return ApiResponse.ok(OrderFormSubmissionResponse.from(
-            sellerOrderFormSubmissionQueryUseCase.getSubmission(inquiryId, submissionId, storeId)
-    ));
+        sellerOrderFormSubmissionQueryUseCase.getSubmission(inquiryId, submissionId, storeId)));
   }
 
   @GetMapping
   public ApiResponse<List<OrderFormSubmissionResponse>> getSubmissions(
       @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
     return ApiResponse.ok(
-            sellerOrderFormSubmissionQueryUseCase
-                    .getSubmissions(inquiryId, storeId)
-                    .stream()
-                    .map(OrderFormSubmissionResponse::from)
-                    .toList());
+        sellerOrderFormSubmissionQueryUseCase.getSubmissions(inquiryId, storeId).stream()
+            .map(OrderFormSubmissionResponse::from)
+            .toList());
   }
 }

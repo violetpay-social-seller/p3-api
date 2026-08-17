@@ -7,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * 상담 시작 시 기존 문의방을 재사용하거나 새로 생성하고 상품 컨텍스트를 설정
- */
+/** 상담 시작 시 기존 문의방을 재사용하거나 새로 생성한다. */
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -23,11 +21,7 @@ public class InquiryOpenService implements OpenInquiryUseCase {
         .findByStoreIdAndBuyerUserId(command.storeId(), command.buyerUserId())
         .orElseGet(() -> Inquiry.create(command.storeId(), command.buyerUserId(), null));
 
-    if (command.contextProductId() != null) {
-      inquiry.changeContextProduct(command.contextProductId());
-    } else {
-      inquiry.clearContextProduct();
-    }
+    inquiry.clearContextProduct();
 
     return inquiryPersistencePort.save(inquiry);
   }

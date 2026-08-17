@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application.submit;
+package io.point3.p3api.inquiry.application.submission.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.exception.BaseException;

@@ -1,4 +1,4 @@
-package io.point3.p3api.inquiry.application.submit;
+package io.point3.p3api.inquiry.application.submission.snapshot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

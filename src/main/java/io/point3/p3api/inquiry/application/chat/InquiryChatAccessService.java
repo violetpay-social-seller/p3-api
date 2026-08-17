@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * buyer/seller가 inquiry 접근 가능한지 검증
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

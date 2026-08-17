@@ -94,13 +94,13 @@ public class OrderFormService
 
   private void validateFields(List<? extends OrderFormFieldCommand> fields) {
     if (fields == null || fields.isEmpty()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
     }
 
     for (int index = 0; index < fields.size(); index++) {
       OrderFormFieldCommand field = fields.get(index);
       if (field.sortOrder() != index) {
-        throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+        throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
       }
       validateSettings(field.settings());
     }
@@ -114,10 +114,10 @@ public class OrderFormService
     try {
       JsonNode node = objectMapper.readTree(settings);
       if (!node.isObject()) {
-        throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+        throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
       }
     } catch (JsonProcessingException e) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
     }
   }
 

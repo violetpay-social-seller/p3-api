@@ -1,10 +1,10 @@
-package io.point3.p3api.inquiry.application.submit;
+package io.point3.p3api.inquiry.application.submission.snapshot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
-import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
+import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import java.util.Comparator;
 import java.util.List;
@@ -31,15 +31,17 @@ public class OrderFormAnswerSnapshotFactory {
    * @param answers 구매자 제출 답변
    */
   public String create(
-      List<OrderFormFieldResult> fields, List<SubmitPreOrderCommand.FormAnswer> answers) {
-    Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap = answers.stream()
-        .collect(Collectors.toMap(SubmitPreOrderCommand.FormAnswer::fieldId, Function.identity()));
+      List<OrderFormFieldResult> fields,
+      List<CreateOrderFormSubmissionCommand.FormAnswer> answers) {
+    Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap = answers.stream()
+        .collect(Collectors.toMap(
+            CreateOrderFormSubmissionCommand.FormAnswer::fieldId, Function.identity()));
 
     List<AnswerSnapshot> snapshots = fields.stream()
         .sorted(Comparator.comparingInt(OrderFormFieldResult::sortOrder))
         .filter(field -> answerMap.containsKey(field.id()))
         .map(field -> {
-          SubmitPreOrderCommand.FormAnswer answer = answerMap.get(field.id());
+          CreateOrderFormSubmissionCommand.FormAnswer answer = answerMap.get(field.id());
           return new AnswerSnapshot(
               field.id(),
               field.label(),

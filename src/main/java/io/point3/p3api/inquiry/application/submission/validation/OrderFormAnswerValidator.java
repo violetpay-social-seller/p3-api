@@ -1,9 +1,9 @@
-package io.point3.p3api.inquiry.application.submit;
+package io.point3.p3api.inquiry.application.submission.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
-import io.point3.p3api.inquiry.application.command.SubmitPreOrderCommand;
+import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -22,55 +22,46 @@ public class OrderFormAnswerValidator {
 
   private static final int MAX_IMAGE_COUNT = 5;
 
-  /**
-   * 전체 검증 진입점 - 필드 정의와 제출 답변 매핑
-   */
   public void validate(
-      List<OrderFormFieldResult> fields, List<SubmitPreOrderCommand.FormAnswer> answers) {
+      List<OrderFormFieldResult> fields,
+      List<CreateOrderFormSubmissionCommand.FormAnswer> answers) {
     Map<UUID, OrderFormFieldResult> fieldMap =
         fields.stream().collect(Collectors.toMap(OrderFormFieldResult::id, Function.identity()));
 
-    Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap = answers.stream()
-        .collect(Collectors.toMap(SubmitPreOrderCommand.FormAnswer::fieldId, Function.identity()));
+    Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap = answers.stream()
+        .collect(Collectors.toMap(
+            CreateOrderFormSubmissionCommand.FormAnswer::fieldId, Function.identity()));
 
     ensureNoUnknownFields(fieldMap, answerMap);
     ensureRequiredFieldsAnswered(fields, answerMap);
 
-    for (SubmitPreOrderCommand.FormAnswer answer : answers) {
+    for (CreateOrderFormSubmissionCommand.FormAnswer answer : answers) {
       OrderFormFieldResult field = fieldMap.get(answer.fieldId());
       validateValue(field, answer.value());
     }
   }
 
-  /**
-   * 제출된 fieldId가 현재 주문서 양식에 실제로 존재하는 필드인지 확인
-   */
   private void ensureNoUnknownFields(
       Map<UUID, OrderFormFieldResult> fieldMap,
-      Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap) {
+      Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
     if (!fieldMap.keySet().containsAll(answerMap.keySet())) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_UNKNOWN_FIELD);
     }
   }
 
-  /**
-   * 답변 필수인 필드가 정확히 제출되었는지
-   */
   private void ensureRequiredFieldsAnswered(
-      List<OrderFormFieldResult> fields, Map<UUID, SubmitPreOrderCommand.FormAnswer> answerMap) {
+      List<OrderFormFieldResult> fields,
+      Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
     for (OrderFormFieldResult field : fields) {
       if (field.required()) {
-        SubmitPreOrderCommand.FormAnswer answer = answerMap.get(field.id());
+        CreateOrderFormSubmissionCommand.FormAnswer answer = answerMap.get(field.id());
         if (answer == null || isEmpty(answer.value())) {
-          throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+          throw new BaseException(OrderFormErrorCode.ORDER_FORM_REQUIRED_FIELD_MISSING);
         }
       }
     }
   }
 
-  /**
-   * 필드 타입에 따라서 실제 값 검증 메서드로 분기 없으면 Optional필드(필수x)로 보고 통과
-   */
   private void validateValue(OrderFormFieldResult field, JsonNode value) {
     if (isEmpty(value)) {
       return;
@@ -85,8 +76,6 @@ public class OrderFormAnswerValidator {
       case IMAGE -> validateImage(value);
     }
   }
-
-  // ================타입에 따른 실제 값 검증============================
 
   private boolean isEmpty(JsonNode value) {
     if (value == null || value.isNull()) {
@@ -106,77 +95,81 @@ public class OrderFormAnswerValidator {
 
   private void validateText(JsonNode value) {
     if (!value.isTextual()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
   }
 
   private void validateNumber(JsonNode value) {
     if (!value.isNumber()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
   }
 
   private void validateDate(JsonNode value) {
     if (!value.isTextual()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
 
     try {
       LocalDate.parse(value.asText());
     } catch (DateTimeParseException e) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
   }
 
   private void validateTime(JsonNode value) {
     if (!value.isTextual()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
 
     try {
       LocalTime.parse(value.asText());
     } catch (DateTimeParseException e) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
   }
 
   private void validateDateTime(JsonNode value) {
     if (!value.isTextual()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
 
     try {
       OffsetDateTime.parse(value.asText());
     } catch (DateTimeParseException e) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
   }
 
   private void validateImage(JsonNode value) {
     if (!value.isArray()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throwInvalidFieldValue();
     }
 
     if (value.size() > MAX_IMAGE_COUNT) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_IMAGE_COUNT_EXCEEDED);
     }
 
     HashSet<String> assetIds = new HashSet<>();
     value.forEach(node -> {
       if (!node.isTextual()) {
-        throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+        throwInvalidFieldValue();
       }
 
       String assetId = node.asText();
       try {
         UUID.fromString(assetId);
       } catch (IllegalArgumentException e) {
-        throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+        throwInvalidFieldValue();
       }
 
       if (!assetIds.add(assetId)) {
-        throw new BaseException(OrderFormErrorCode.ORDER_FORM_INVALID_FIELD);
+        throwInvalidFieldValue();
       }
     });
+  }
+
+  private void throwInvalidFieldValue() {
+    throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
   }
 }

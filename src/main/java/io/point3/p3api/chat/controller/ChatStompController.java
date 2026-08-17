@@ -4,8 +4,8 @@ import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.chat.application.send.SendChatMessageCommand;
 import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.application.send.SendChatMessageUseCase;
+import io.point3.p3api.chat.application.port.ChatMessageRealtimePublisherPort;
 import io.point3.p3api.chat.controller.request.SendChatMessageStompRequest;
-import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
 import io.point3.p3api.chat.infrastructure.stomp.ChatStompParticipantAuthorizationService;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
@@ -27,7 +26,7 @@ public class ChatStompController {
 
   private final ChatStompParticipantAuthorizationService participantAuthorizationService;
   private final SendChatMessageUseCase sendChatMessageUseCase;
-  private final SimpMessagingTemplate messagingTemplate;
+  private final ChatMessageRealtimePublisherPort chatMessageRealtimePublisherPort;
 
   @MessageMapping(ChatStompDestination.MESSAGE_MAPPING)
   public void sendMessage(
@@ -43,8 +42,6 @@ public class ChatStompController {
     SendChatMessageResult result = sendChatMessageUseCase.execute(
         SendChatMessageCommand.of(inquiryId, currentUser.userId(), request.content()));
 
-    messagingTemplate.convertAndSend(
-        ChatStompDestination.topicDestination(inquiryId),
-        ChatTimelineItemStompResponse.from(result));
+    chatMessageRealtimePublisherPort.publish(result);
   }
 }

@@ -38,7 +38,7 @@ public class ChatStompController {
     CurrentUser currentUser = participantAuthorizationService.requireParticipant(
         authentication, inquiryId);
     SendChatMessageResult result = sendChatMessageUseCase.execute(
-        new SendChatMessageCommand(inquiryId, currentUser.userId(), request.content()));
+        SendChatMessageCommand.of(inquiryId, currentUser.userId(), request.content()));
 
     messagingTemplate.convertAndSend(
         ChatStompDestination.topicDestination(inquiryId), ChatTimelineItemStompEvent.from(result));

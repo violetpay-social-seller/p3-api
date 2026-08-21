@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record OrderFormFieldResult(
     UUID id,
-    UUID templateId,
+    UUID groupId,
     String label,
     FieldType fieldType,
     boolean required,
@@ -16,7 +16,7 @@ public record OrderFormFieldResult(
   public static OrderFormFieldResult from(OrderFormField field) {
     return new OrderFormFieldResult(
         field.getId(),
-        field.getTemplateId(),
+        field.getGroupId(),
         field.getLabel(),
         field.getFieldType(),
         field.isRequired(),

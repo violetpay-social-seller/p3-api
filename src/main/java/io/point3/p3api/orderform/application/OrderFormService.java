@@ -13,6 +13,7 @@ import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.application.update.OrderFormUpdateUseCase;
 import io.point3.p3api.orderform.application.update.UpdateOrderFormCommand;
 import io.point3.p3api.orderform.domain.entity.OrderFormField;
+import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.UUID;
@@ -39,8 +40,9 @@ public class OrderFormService
 
     OrderFormTemplate template = orderFormPersistencePort.saveTemplate(
         OrderFormTemplate.create(command.storeId(), command.name()));
+    OrderFormFieldGroup group = orderFormPersistencePort.saveGroup(defaultGroup(template.getId()));
     List<OrderFormField> fields =
-        orderFormPersistencePort.saveFields(toFields(template.getId(), command.fields()));
+        orderFormPersistencePort.saveFields(toFields(group.getId(), command.fields()));
 
     return OrderFormResult.from(template, fields);
   }
@@ -51,9 +53,10 @@ public class OrderFormService
     validateFields(command.fields());
 
     template.updateName(command.name());
-    orderFormPersistencePort.deleteFieldsByTemplateId(template.getId());
+    orderFormPersistencePort.deleteGroupsByTemplateId(template.getId());
+    OrderFormFieldGroup group = orderFormPersistencePort.saveGroup(defaultGroup(template.getId()));
     List<OrderFormField> fields =
-        orderFormPersistencePort.saveFields(toFields(template.getId(), command.fields()));
+        orderFormPersistencePort.saveFields(toFields(group.getId(), command.fields()));
 
     return OrderFormResult.from(template, fields);
   }
@@ -121,11 +124,14 @@ public class OrderFormService
     }
   }
 
-  private List<OrderFormField> toFields(
-      UUID templateId, List<? extends OrderFormFieldCommand> fields) {
+  private OrderFormFieldGroup defaultGroup(UUID templateId) {
+    return OrderFormFieldGroup.create(templateId, "기본 정보", null, 0);
+  }
+
+  private List<OrderFormField> toFields(UUID groupId, List<? extends OrderFormFieldCommand> fields) {
     return fields.stream()
         .map(field -> OrderFormField.create(
-            templateId,
+            groupId,
             field.label(),
             field.fieldType(),
             field.required(),

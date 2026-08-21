@@ -2,6 +2,7 @@ package io.point3.p3api.orderform.infrastructure.persistence;
 
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
 import io.point3.p3api.orderform.domain.entity.OrderFormField;
+import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.Optional;
@@ -16,11 +17,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
 
   private final OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
+  private final OrderFormFieldGroupJpaRepository orderFormFieldGroupJpaRepository;
   private final OrderFormFieldJpaRepository orderFormFieldJpaRepository;
 
   @Override
   public OrderFormTemplate saveTemplate(OrderFormTemplate template) {
     return orderFormTemplateJpaRepository.save(template);
+  }
+
+  @Override
+  public OrderFormFieldGroup saveGroup(OrderFormFieldGroup group) {
+    return orderFormFieldGroupJpaRepository.save(group);
   }
 
   @Override
@@ -49,12 +56,16 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
   @Override
   @Transactional(readOnly = true)
   public List<OrderFormField> findFieldsByTemplateId(UUID templateId) {
-    return orderFormFieldJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId);
+    List<UUID> groupIds =
+        orderFormFieldGroupJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId).stream()
+            .map(OrderFormFieldGroup::getId)
+            .toList();
+    return orderFormFieldJpaRepository.findAllByGroupIdInOrderBySortOrderAsc(groupIds);
   }
 
   @Override
-  public void deleteFieldsByTemplateId(UUID templateId) {
-    orderFormFieldJpaRepository.deleteByTemplateId(templateId);
-    orderFormFieldJpaRepository.flush();
+  public void deleteGroupsByTemplateId(UUID templateId) {
+    orderFormFieldGroupJpaRepository.deleteByTemplateId(templateId);
+    orderFormFieldGroupJpaRepository.flush();
   }
 }

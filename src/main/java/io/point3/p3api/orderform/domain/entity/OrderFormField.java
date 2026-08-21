@@ -21,8 +21,8 @@ import lombok.NoArgsConstructor;
     name = "order_form_fields",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_order_form_fields_template_sort_order",
-            columnNames = {"template_id", "sort_order"}))
+            name = "uk_order_form_fields_group_sort_order",
+            columnNames = {"group_id", "sort_order"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderFormField {
@@ -31,8 +31,8 @@ public class OrderFormField {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "template_id", nullable = false)
-  private UUID templateId;
+  @Column(name = "group_id", nullable = false)
+  private UUID groupId;
 
   @Column(name = "label", nullable = false, length = 150)
   private String label;
@@ -51,13 +51,13 @@ public class OrderFormField {
   private int sortOrder;
 
   private OrderFormField(
-      UUID templateId,
+      UUID groupId,
       String label,
       FieldType fieldType,
       boolean required,
       String settings,
       int sortOrder) {
-    this.templateId = templateId;
+    this.groupId = groupId;
     this.label = label;
     this.fieldType = fieldType;
     this.required = required;
@@ -66,13 +66,13 @@ public class OrderFormField {
   }
 
   public static OrderFormField create(
-      UUID templateId,
+      UUID groupId,
       String label,
       FieldType fieldType,
       boolean required,
       String settings,
       int sortOrder) {
-    Objects.requireNonNull(templateId, "templateId");
+    Objects.requireNonNull(groupId, "groupId");
     Objects.requireNonNull(label, "label");
     Objects.requireNonNull(fieldType, "fieldType");
 
@@ -80,6 +80,6 @@ public class OrderFormField {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormField(templateId, label, fieldType, required, settings, sortOrder);
+    return new OrderFormField(groupId, label, fieldType, required, settings, sortOrder);
   }
 }

@@ -12,6 +12,7 @@ public record CreateOrderFormDraftCommand(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
+    UUID selectedGalleryItemId,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
   public record FormAnswer(UUID fieldId, JsonNode value) {}

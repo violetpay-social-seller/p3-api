@@ -1,6 +1,7 @@
 package io.point3.p3api.orderform.application.port;
 
 import io.point3.p3api.orderform.domain.entity.OrderFormField;
+import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +10,8 @@ import java.util.UUID;
 public interface OrderFormPersistencePort {
 
   OrderFormTemplate saveTemplate(OrderFormTemplate template);
+
+  OrderFormFieldGroup saveGroup(OrderFormFieldGroup group);
 
   List<OrderFormField> saveFields(List<OrderFormField> fields);
 
@@ -20,5 +23,5 @@ public interface OrderFormPersistencePort {
 
   List<OrderFormField> findFieldsByTemplateId(UUID templateId);
 
-  void deleteFieldsByTemplateId(UUID templateId);
+  void deleteGroupsByTemplateId(UUID templateId);
 }

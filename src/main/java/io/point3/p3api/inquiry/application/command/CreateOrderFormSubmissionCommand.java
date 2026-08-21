@@ -14,6 +14,7 @@ public record CreateOrderFormSubmissionCommand(
     List<FormAnswer> formAnswers,
     PickupRequest pickupRequest,
     NoticeAgreement noticeAgreement,
+    UUID selectedGalleryItemId,
     List<ReferenceAsset> referenceAssets) {
   public record FormAnswer(UUID fieldId, JsonNode value) {}
 

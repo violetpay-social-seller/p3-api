@@ -114,17 +114,40 @@ CREATE TABLE order_form_templates (
     CONSTRAINT fk_order_form_templates_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
 );
 
-CREATE TABLE order_form_fields (
+CREATE TABLE order_form_field_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     template_id UUID NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    sort_order INTEGER NOT NULL,
+    CONSTRAINT uk_order_form_field_groups_template_sort_order UNIQUE (template_id, sort_order),
+    CONSTRAINT fk_order_form_field_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_groups_sort_order CHECK (sort_order >= 0)
+);
+
+CREATE TABLE order_form_fields (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL,
     label VARCHAR(150) NOT NULL,
     field_type VARCHAR(30) NOT NULL,
     required BOOLEAN NOT NULL DEFAULT FALSE,
     settings JSONB,
     sort_order INTEGER NOT NULL,
-    CONSTRAINT uk_order_form_fields_template_sort_order UNIQUE (template_id, sort_order),
-    CONSTRAINT fk_order_form_fields_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT uk_order_form_fields_group_sort_order UNIQUE (group_id, sort_order),
+    CONSTRAINT fk_order_form_fields_group_id FOREIGN KEY (group_id) REFERENCES order_form_field_groups (id) ON DELETE CASCADE,
     CONSTRAINT ck_order_form_fields_sort_order CHECK (sort_order >= 0)
+);
+
+CREATE TABLE order_form_field_options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    field_id UUID NOT NULL,
+    label VARCHAR(100) NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    sort_order INTEGER NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk_order_form_field_options_field_sort_order UNIQUE (field_id, sort_order),
+    CONSTRAINT fk_order_form_field_options_field_id FOREIGN KEY (field_id) REFERENCES order_form_fields (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_options_sort_order CHECK (sort_order >= 0)
 );
 
 CREATE TABLE inquiries (
@@ -144,12 +167,15 @@ CREATE TABLE order_form_submissions (
     inquiry_id UUID NOT NULL,
     template_id UUID NOT NULL,
     submitted_by UUID NOT NULL,
+    selected_gallery_item_id UUID,
+    selected_gallery_snapshot JSONB,
     answers JSONB NOT NULL,
     reference_assets JSONB,
     submitted_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_form_submissions_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_order_form_submissions_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id),
-    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id)
+    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
+    CONSTRAINT fk_order_form_submissions_selected_gallery_item_id FOREIGN KEY (selected_gallery_item_id) REFERENCES store_gallery_items (id) ON DELETE SET NULL
 );
 
 CREATE TABLE chat_messages (
@@ -302,9 +328,13 @@ CREATE INDEX ix_store_gallery_items_store_id_status ON store_gallery_items (stor
 CREATE UNIQUE INDEX uk_order_form_templates_store_active
     ON order_form_templates (store_id)
     WHERE active;
-CREATE INDEX ix_order_form_fields_template_id ON order_form_fields (template_id);
+CREATE INDEX ix_order_form_field_groups_template_id ON order_form_field_groups (template_id);
+CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
+CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
+CREATE INDEX ix_order_form_submissions_selected_gallery_item_id
+    ON order_form_submissions (selected_gallery_item_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);

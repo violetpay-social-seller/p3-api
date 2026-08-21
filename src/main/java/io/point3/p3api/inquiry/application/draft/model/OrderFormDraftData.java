@@ -16,6 +16,7 @@ public record OrderFormDraftData(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
+    UUID selectedGalleryItemId,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
 
@@ -30,6 +31,7 @@ public record OrderFormDraftData(
         command.pickupDate(),
         command.pickupTime(),
         command.noticeAgreed(),
+        command.selectedGalleryItemId(),
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
             .toList(),

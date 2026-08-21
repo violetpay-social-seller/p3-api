@@ -15,6 +15,7 @@ public record CreateOrderFormDraftRequest(
     @NotNull LocalDate pickupDate,
     @NotNull LocalTime pickupTime,
     boolean noticeAgreed,
+    UUID selectedGalleryItemId,
     @Valid @NotNull List<FormAnswer> formAnswers,
     @Valid @NotNull List<ReferenceAsset> referenceAssets) {
 

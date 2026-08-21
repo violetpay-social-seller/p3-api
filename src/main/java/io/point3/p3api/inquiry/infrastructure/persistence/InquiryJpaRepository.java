@@ -1,8 +1,8 @@
 package io.point3.p3api.inquiry.infrastructure.persistence;
 
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 

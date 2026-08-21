@@ -50,8 +50,8 @@ public class SellerRepresentativeImageController {
   @GetMapping("/{imageId}")
   public ApiResponse<RepresentativeImageResponse> getImage(
       @CurrentStoreId UUID storeId, @PathVariable UUID imageId) {
-    return ApiResponse.ok(RepresentativeImageResponse.from(
-        queryUseCase.getSellerImage(storeId, imageId)));
+    return ApiResponse.ok(
+        RepresentativeImageResponse.from(queryUseCase.getSellerImage(storeId, imageId)));
   }
 
   @PatchMapping("/{imageId}")
@@ -59,8 +59,8 @@ public class SellerRepresentativeImageController {
       @CurrentStoreId UUID storeId,
       @PathVariable UUID imageId,
       @Valid @RequestBody RepresentativeImageUpdateRequest request) {
-    return ApiResponse.ok(RepresentativeImageResponse.from(updateUseCase.update(
-        new UpdateRepresentativeImageCommand(
+    return ApiResponse.ok(
+        RepresentativeImageResponse.from(updateUseCase.update(new UpdateRepresentativeImageCommand(
             storeId, imageId, request.sortOrder(), request.status()))));
   }
 

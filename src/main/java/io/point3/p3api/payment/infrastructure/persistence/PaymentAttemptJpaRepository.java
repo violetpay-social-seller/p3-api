@@ -8,5 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentAttemptJpaRepository extends JpaRepository<PaymentAttempt, UUID> {
   Optional<PaymentAttempt> findByPoint3SessionId(String point3SessionId);
+
   List<PaymentAttempt> findAllByConfirmationIdOrderByCreatedAtDesc(UUID confirmationId);
 }

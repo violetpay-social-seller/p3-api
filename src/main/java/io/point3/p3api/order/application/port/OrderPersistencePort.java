@@ -7,8 +7,12 @@ import java.util.UUID;
 
 public interface OrderPersistencePort {
   Order save(Order order);
+
   Optional<Order> findById(UUID orderId);
+
   Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId);
+
   List<Order> findAllByBuyerUserId(UUID buyerUserId);
+
   List<Order> findAllByStoreId(UUID storeId);
 }

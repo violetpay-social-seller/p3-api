@@ -7,6 +7,8 @@ import java.util.UUID;
 
 public interface RefundPersistencePort {
   Refund save(Refund refund);
+
   Optional<Refund> findById(UUID refundId);
+
   List<Refund> findAllByOrderId(UUID orderId);
 }

@@ -7,12 +7,12 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
 import io.point3.p3api.order.application.state.OrderConfirmationStateUseCase;
 import io.point3.p3api.order.controller.response.OrderConfirmationDetailResponse;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -52,8 +52,8 @@ public class BuyerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
-        orderConfirmationStateUseCase.markBuyerViewed(
+    return ApiResponse.ok(
+        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.markBuyerViewed(
             inquiryId, confirmationId, currentUser.userId())));
   }
 
@@ -63,8 +63,8 @@ public class BuyerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
-        orderConfirmationStateUseCase.requestRevision(
+    return ApiResponse.ok(
+        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.requestRevision(
             inquiryId, confirmationId, currentUser.userId())));
   }
 }

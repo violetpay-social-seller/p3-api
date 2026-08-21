@@ -14,12 +14,12 @@ import io.point3.p3api.order.controller.request.OrderConfirmationSendRequest;
 import io.point3.p3api.order.controller.response.OrderConfirmationDetailResponse;
 import io.point3.p3api.order.controller.response.OrderConfirmationResponse;
 import jakarta.validation.Valid;
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,9 +37,10 @@ public class SellerOrderConfirmationController {
   @GetMapping
   public ApiResponse<List<OrderConfirmationDetailResponse>> getHistory(
       @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(orderConfirmationQueryUseCase.getSellerHistory(inquiryId, storeId).stream()
-        .map(OrderConfirmationDetailResponse::from)
-        .toList());
+    return ApiResponse.ok(
+        orderConfirmationQueryUseCase.getSellerHistory(inquiryId, storeId).stream()
+            .map(OrderConfirmationDetailResponse::from)
+            .toList());
   }
 
   @PostMapping
@@ -70,8 +71,9 @@ public class SellerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @CurrentStoreId UUID storeId,
       @Valid @RequestBody OrderConfirmationReplaceRequest request) {
-    return ApiResponse.ok(OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.replace(
-        inquiryId, confirmationId, request.replacementConfirmationId(), storeId)));
+    return ApiResponse.ok(
+        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.replace(
+            inquiryId, confirmationId, request.replacementConfirmationId(), storeId)));
   }
 
   private SendOrderConfirmationCommand toCommand(

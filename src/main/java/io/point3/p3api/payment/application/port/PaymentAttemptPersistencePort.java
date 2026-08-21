@@ -7,7 +7,10 @@ import java.util.UUID;
 
 public interface PaymentAttemptPersistencePort {
   PaymentAttempt save(PaymentAttempt paymentAttempt);
+
   Optional<PaymentAttempt> findById(UUID paymentAttemptId);
+
   Optional<PaymentAttempt> findByPoint3SessionId(String point3SessionId);
+
   List<PaymentAttempt> findAllByConfirmationId(UUID confirmationId);
 }

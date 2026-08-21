@@ -37,8 +37,8 @@ public class RepresentativeImageService
   public RepresentativeImageResult create(CreateRepresentativeImageCommand command) {
     validateImageLimit(command.storeId());
     validateAsset(command.assetId());
-    StoreRepresentativeImage image = StoreRepresentativeImage.create(
-        command.storeId(), command.assetId(), command.sortOrder());
+    StoreRepresentativeImage image =
+        StoreRepresentativeImage.create(command.storeId(), command.assetId(), command.sortOrder());
     return RepresentativeImageResult.from(representativeImagePersistencePort.save(image));
   }
 
@@ -95,8 +95,7 @@ public class RepresentativeImageService
     }
   }
 
-  private void changeStatus(
-      StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
+  private void changeStatus(StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
     if (status == StoreRepresentativeImageStatus.ACTIVE) {
       image.show();
       return;

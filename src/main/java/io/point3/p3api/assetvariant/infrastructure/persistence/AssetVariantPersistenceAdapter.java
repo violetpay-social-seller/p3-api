@@ -2,9 +2,9 @@ package io.point3.p3api.assetvariant.infrastructure.persistence;
 
 import io.point3.p3api.assetvariant.application.port.AssetVariantPersistencePort;
 import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
 import java.util.List;
 import java.util.UUID;
-import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
   Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId);
+
   List<Order> findAllByBuyerUserIdOrderByCreatedAtDesc(UUID buyerUserId);
+
   List<Order> findAllByStoreIdOrderByCreatedAtDesc(UUID storeId);
 }

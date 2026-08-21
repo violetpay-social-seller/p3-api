@@ -18,20 +18,18 @@ public class OrderConfirmationStateService implements OrderConfirmationStateUseC
   private final OrderConfirmationQueryUseCase orderConfirmationQueryUseCase;
 
   @Override
-  public OrderConfirmation markBuyerViewed(
-      UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
-    OrderConfirmation confirmation = orderConfirmationQueryUseCase.getBuyerConfirmation(
-        inquiryId, confirmationId, buyerUserId);
+  public OrderConfirmation markBuyerViewed(UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
+    OrderConfirmation confirmation =
+        orderConfirmationQueryUseCase.getBuyerConfirmation(inquiryId, confirmationId, buyerUserId);
     requireStatus(confirmation, OrderConfirmationStatus.SENT);
     confirmation.markBuyerViewed(Instant.now());
     return confirmation;
   }
 
   @Override
-  public OrderConfirmation requestRevision(
-      UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
-    OrderConfirmation confirmation = orderConfirmationQueryUseCase.getBuyerConfirmation(
-        inquiryId, confirmationId, buyerUserId);
+  public OrderConfirmation requestRevision(UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
+    OrderConfirmation confirmation =
+        orderConfirmationQueryUseCase.getBuyerConfirmation(inquiryId, confirmationId, buyerUserId);
     requireStatus(confirmation, OrderConfirmationStatus.SENT);
     confirmation.requestRevision(Instant.now());
     return confirmation;
@@ -40,8 +38,8 @@ public class OrderConfirmationStateService implements OrderConfirmationStateUseC
   @Override
   public OrderConfirmation replace(
       UUID inquiryId, UUID confirmationId, UUID replacementConfirmationId, UUID storeId) {
-    OrderConfirmation confirmation = orderConfirmationQueryUseCase.getSellerConfirmation(
-        inquiryId, confirmationId, storeId);
+    OrderConfirmation confirmation =
+        orderConfirmationQueryUseCase.getSellerConfirmation(inquiryId, confirmationId, storeId);
     OrderConfirmation replacement = orderConfirmationQueryUseCase.getSellerConfirmation(
         inquiryId, replacementConfirmationId, storeId);
     requireStatus(confirmation, OrderConfirmationStatus.REVISION_REQUESTED);

@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -11,7 +12,10 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
 import io.point3.p3api.seller.application.create.SellerOnboardingCreateUseCase;
+import io.point3.p3api.seller.application.query.SellerOnboardingCurrentQueryUseCase;
+import io.point3.p3api.seller.application.reapply.SellerOnboardingReapplicationUseCase;
 import io.point3.p3api.seller.application.result.SellerOnboardingResult;
+import io.point3.p3api.seller.application.result.SellerOnboardingDetailResult;
 import io.point3.p3api.seller.domain.type.SellerOnboardingStatus;
 import io.point3.p3api.user.domain.type.UserRole;
 import java.time.Instant;
@@ -31,6 +35,10 @@ class SellerOnboardingControllerWebTest {
 
   private final SellerOnboardingCreateUseCase sellerOnboardingCreateUseCase = mock(
       SellerOnboardingCreateUseCase.class);
+  private final SellerOnboardingCurrentQueryUseCase sellerOnboardingCurrentQueryUseCase = mock(
+      SellerOnboardingCurrentQueryUseCase.class);
+  private final SellerOnboardingReapplicationUseCase sellerOnboardingReapplicationUseCase = mock(
+      SellerOnboardingReapplicationUseCase.class);
 
   private MockMvc mockMvc;
   private CurrentUser currentUser;
@@ -39,11 +47,66 @@ class SellerOnboardingControllerWebTest {
   void setUp() {
     currentUser = new CurrentUser(UUID.randomUUID(), "판매자", UserRole.SELLER);
     SellerOnboardingController controller = new SellerOnboardingController(
-        sellerOnboardingCreateUseCase);
+        sellerOnboardingCreateUseCase,
+        sellerOnboardingCurrentQueryUseCase,
+        sellerOnboardingReapplicationUseCase);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
         .setCustomArgumentResolvers(new CurrentSellerArgumentResolver())
         .build();
+  }
+
+  @Test
+  @DisplayName("판매자는 자신의 최신 입점 신청 상태를 조회할 수 있다")
+  void getsCurrentOnboarding() throws Exception {
+    UUID onboardingId = UUID.randomUUID();
+    when(sellerOnboardingCurrentQueryUseCase.getCurrentOnboarding(currentUser.userId())).thenReturn(
+        new SellerOnboardingDetailResult(
+            onboardingId,
+            currentUser.userId(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            null,
+            SellerOnboardingStatus.REJECTED,
+            "사업자 정보가 충분하지 않습니다.",
+            Instant.parse("2026-08-22T00:00:00Z"),
+            Instant.parse("2026-08-21T00:00:00Z")));
+
+    mockMvc.perform(get("/seller/onboardings/current"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.id").value(onboardingId.toString()))
+        .andExpect(jsonPath("$.data.status").value("REJECTED"))
+        .andExpect(jsonPath("$.data.rejectionReason").value("사업자 정보가 충분하지 않습니다."));
+  }
+
+  @Test
+  @DisplayName("판매자는 반려된 입점 신청을 재신청할 수 있다")
+  void reappliesOnboarding() throws Exception {
+    UUID onboardingId = UUID.randomUUID();
+    when(sellerOnboardingReapplicationUseCase.reapply(any())).thenReturn(new SellerOnboardingResult(
+        UUID.randomUUID(),
+        currentUser.userId(),
+        "P3 베이커리",
+        "010-1234-5678",
+        "서울특별시 중구",
+        null,
+        SellerOnboardingStatus.PENDING,
+        Instant.parse("2026-08-22T00:00:00Z")));
+
+    mockMvc.perform(post("/seller/onboardings/{onboardingId}/resubmissions", onboardingId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "storeName": "P3 베이커리",
+                  "phoneNumber": "010-1234-5678",
+                  "address": "서울특별시 중구"
+                }
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.status").value("PENDING"));
   }
 
   @Test

@@ -3,6 +3,7 @@ package io.point3.p3api.seller.application.port;
 import io.point3.p3api.seller.domain.entity.SellerOnboarding;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface SellerOnboardingPersistencePort {
@@ -10,6 +11,10 @@ public interface SellerOnboardingPersistencePort {
   SellerOnboarding save(SellerOnboarding sellerOnboarding);
 
   boolean existsPendingByApplicantUserId(UUID applicantUserId);
+
+  Optional<SellerOnboarding> findLatestByApplicantUserId(UUID applicantUserId);
+
+  Optional<SellerOnboarding> findByIdAndApplicantUserId(UUID onboardingId, UUID applicantUserId);
 
   boolean existsById(UUID onboardingId);
 

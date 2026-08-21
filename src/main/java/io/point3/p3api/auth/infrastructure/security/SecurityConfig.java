@@ -1,8 +1,11 @@
 package io.point3.p3api.auth.infrastructure.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.common.tenant.buyer.filter.PublicStoreContextFilter;
 import io.point3.p3api.common.tenant.buyer.provider.PublicStoreProvider;
+import io.point3.p3api.common.tenant.seller.filter.SellerOnboardingApprovalFilter;
 import io.point3.p3api.common.tenant.seller.filter.StoreContextFilter;
+import io.point3.p3api.common.tenant.seller.provider.SellerOnboardingApprovalProvider;
 import io.point3.p3api.common.tenant.seller.provider.SellerStoreProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,8 +26,13 @@ public class SecurityConfig {
       HttpSecurity http,
       CurrentUserRender currentUserRender,
       SellerStoreProvider sellerStoreProvider,
-      PublicStoreProvider publicStoreProvider)
+      PublicStoreProvider publicStoreProvider,
+      SellerOnboardingApprovalProvider sellerOnboardingApprovalProvider,
+      ObjectMapper objectMapper)
       throws Exception {
+    SellerOnboardingApprovalFilter sellerOnboardingApprovalFilter =
+        new SellerOnboardingApprovalFilter(
+            currentUserRender, sellerOnboardingApprovalProvider, objectMapper);
     StoreContextFilter storeContextFilter =
         new StoreContextFilter(currentUserRender, sellerStoreProvider);
     PublicStoreContextFilter publicStoreContextFilter =
@@ -40,10 +48,11 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers(HttpMethod.GET, "/stores/**")
             .permitAll()
-            .anyRequest()
-            .authenticated())
+        .anyRequest()
+        .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-        .addFilterAfter(storeContextFilter, BearerTokenAuthenticationFilter.class)
+        .addFilterAfter(sellerOnboardingApprovalFilter, BearerTokenAuthenticationFilter.class)
+        .addFilterAfter(storeContextFilter, SellerOnboardingApprovalFilter.class)
         .addFilterAfter(publicStoreContextFilter, BearerTokenAuthenticationFilter.class)
         .build();
   }

@@ -20,7 +20,17 @@ public enum SellerErrorCode implements ErrorCode {
       "SELLER_ONBOARDING_REVIEW_NOT_ALLOWED_409",
       "Seller onboarding review is not allowed",
       HttpStatus.CONFLICT,
-      "/errors/seller/onboarding-review-not-allowed");
+      "/errors/seller/onboarding-review-not-allowed"),
+  SELLER_ONBOARDING_REAPPLICATION_NOT_ALLOWED(
+      "SELLER_ONBOARDING_REAPPLICATION_NOT_ALLOWED_409",
+      "Seller onboarding reapplication is not allowed",
+      HttpStatus.CONFLICT,
+      "/errors/seller/onboarding-reapplication-not-allowed"),
+  SELLER_ONBOARDING_APPROVAL_REQUIRED(
+      "SELLER_ONBOARDING_APPROVAL_REQUIRED_403",
+      "Seller onboarding approval is required",
+      HttpStatus.FORBIDDEN,
+      "/errors/seller/onboarding-approval-required");
 
   private final String code;
   private final String title;

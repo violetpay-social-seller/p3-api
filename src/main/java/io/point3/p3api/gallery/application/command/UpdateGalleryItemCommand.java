@@ -6,8 +6,6 @@ import java.util.UUID;
 public record UpdateGalleryItemCommand(
     UUID storeId,
     UUID galleryItemId,
-    String title,
-    String description,
     int sortOrder,
     boolean featured,
     StoreGalleryItemStatus status) {}

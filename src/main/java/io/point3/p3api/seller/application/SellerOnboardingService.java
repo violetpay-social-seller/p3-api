@@ -5,10 +5,13 @@ import io.point3.p3api.exception.code.SellerErrorCode;
 import io.point3.p3api.seller.application.create.CreateSellerOnboardingCommand;
 import io.point3.p3api.seller.application.create.SellerOnboardingCreateUseCase;
 import io.point3.p3api.seller.application.port.SellerOnboardingPersistencePort;
+import io.point3.p3api.seller.application.query.SellerOnboardingCurrentQueryUseCase;
 import io.point3.p3api.seller.application.query.SellerOnboardingPendingQueryUseCase;
+import io.point3.p3api.seller.application.result.SellerOnboardingDetailResult;
 import io.point3.p3api.seller.application.result.SellerOnboardingResult;
 import io.point3.p3api.seller.domain.entity.SellerOnboarding;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class SellerOnboardingService
-    implements SellerOnboardingCreateUseCase, SellerOnboardingPendingQueryUseCase {
+    implements
+        SellerOnboardingCreateUseCase,
+        SellerOnboardingPendingQueryUseCase,
+        SellerOnboardingCurrentQueryUseCase {
 
   private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort;
 
@@ -43,5 +49,13 @@ public class SellerOnboardingService
     return sellerOnboardingPersistencePort.findPendingOrderByCreatedAtAsc().stream()
         .map(SellerOnboardingResult::from)
         .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public SellerOnboardingDetailResult getCurrentOnboarding(UUID applicantUserId) {
+    return sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId)
+        .map(SellerOnboardingDetailResult::from)
+        .orElseThrow(() -> new BaseException(SellerErrorCode.SELLER_ONBOARDING_NOT_FOUND));
   }
 }

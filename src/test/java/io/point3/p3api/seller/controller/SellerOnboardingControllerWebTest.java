@@ -60,7 +60,7 @@ class SellerOnboardingControllerWebTest {
         SellerOnboardingStatus.PENDING,
         Instant.parse("2026-08-21T00:00:00Z")));
 
-    mockMvc.perform(post("/seller/applications")
+    mockMvc.perform(post("/seller/onboardings")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {
@@ -79,7 +79,7 @@ class SellerOnboardingControllerWebTest {
   @Test
   @DisplayName("필수값 또는 형식이 잘못된 입점 신청 요청은 400을 반환한다")
   void rejectsInvalidRequest() throws Exception {
-    mockMvc.perform(post("/seller/applications")
+    mockMvc.perform(post("/seller/onboardings")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {
@@ -98,7 +98,7 @@ class SellerOnboardingControllerWebTest {
   void rejectsOnboardingForNonSeller() throws Exception {
     currentUser = new CurrentUser(UUID.randomUUID(), "구매자", UserRole.BUYER);
 
-    mockMvc.perform(post("/seller/applications")
+    mockMvc.perform(post("/seller/onboardings")
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {

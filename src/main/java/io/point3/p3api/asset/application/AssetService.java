@@ -3,19 +3,30 @@ package io.point3.p3api.asset.application;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.application.port.AssetStoragePort;
 import io.point3.p3api.asset.application.register.AssetRegisterUseCase;
+import io.point3.p3api.asset.application.delete.AssetDeleteUseCase;
+import io.point3.p3api.asset.application.query.AssetQueryUseCase;
+import io.point3.p3api.asset.application.result.AssetDetailResult;
 import io.point3.p3api.asset.application.register.RegisterAssetCommand;
 import io.point3.p3api.asset.application.result.RegistryAsset;
 import io.point3.p3api.asset.application.storage.AssetStorageKeyGenerator;
 import io.point3.p3api.asset.application.storage.StoreAssetCommand;
 import io.point3.p3api.asset.domain.entity.Asset;
 import java.util.UUID;
+import java.util.List;
+import java.util.Set;
+import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class AssetService implements AssetRegisterUseCase {
+public class AssetService implements AssetRegisterUseCase, AssetQueryUseCase, AssetDeleteUseCase {
+
+  private static final long MAX_SIZE_BYTES = 10 * 1024 * 1024;
+  private static final Set<String> ALLOWED_CONTENT_TYPES =
+      Set.of("image/jpeg", "image/png", "image/webp");
 
   private final AssetStoragePort assetStoragePort;
   private final AssetPersistencePort assetPersistencePort;
@@ -32,6 +43,7 @@ public class AssetService implements AssetRegisterUseCase {
 
   @Override
   public RegistryAsset register(RegisterAssetCommand command) {
+    validateUpload(command);
     UUID assetId = UUID.randomUUID();
     String objectKey = AssetStorageKeyGenerator.original(assetId, command.originalFilename());
 
@@ -48,6 +60,44 @@ public class AssetService implements AssetRegisterUseCase {
     Asset registeredAsset = assetPersistencePort.save(asset);
 
     return RegistryAsset.from(registeredAsset, resolveDeliveryUrl(objectKey));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public AssetDetailResult getAsset(UUID assetId, UUID uploadedBy) {
+    return toDetail(findOwnedAsset(assetId, uploadedBy));
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<AssetDetailResult> getMyAssets(UUID uploadedBy) {
+    return assetPersistencePort.findAllByUploadedBy(uploadedBy).stream()
+        .map(this::toDetail)
+        .toList();
+  }
+
+  @Override
+  public void delete(UUID assetId, UUID uploadedBy) {
+    findOwnedAsset(assetId, uploadedBy).delete();
+  }
+
+  private Asset findOwnedAsset(UUID assetId, UUID uploadedBy) {
+    return assetPersistencePort
+        .findByIdAndUploadedBy(assetId, uploadedBy)
+        .orElseThrow(() -> new BaseException(AssetErrorCode.ASSET_NOT_FOUND));
+  }
+
+  private AssetDetailResult toDetail(Asset asset) {
+    return AssetDetailResult.from(asset, resolveDeliveryUrl(asset.getObjectKey()));
+  }
+
+  private void validateUpload(RegisterAssetCommand command) {
+    if (!ALLOWED_CONTENT_TYPES.contains(command.contentType())) {
+      throw new BaseException(AssetErrorCode.ASSET_CONTENT_TYPE_NOT_ALLOWED);
+    }
+    if (command.sizeBytes() > MAX_SIZE_BYTES) {
+      throw new BaseException(AssetErrorCode.ASSET_SIZE_EXCEEDED);
+    }
   }
 
   private String resolveDeliveryUrl(String storageKey) {

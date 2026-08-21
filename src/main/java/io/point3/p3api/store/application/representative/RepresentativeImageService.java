@@ -70,15 +70,27 @@ public class RepresentativeImageService
 
   @Override
   public RepresentativeImageResult update(UpdateRepresentativeImageCommand command) {
+    Store store = findStore(command.storeId());
     StoreRepresentativeImage image = findImage(command.storeId(), command.representativeImageId());
+
     image.changeSortOrder(command.sortOrder());
-    changeStatus(image, command.status());
+    changeStatus(store, image, command.status());
     return RepresentativeImageResult.from(image);
   }
 
   @Override
   public void delete(UUID storeId, UUID imageId) {
-    representativeImagePersistencePort.delete(findImage(storeId, imageId));
+    Store store = findStore(storeId);
+    StoreRepresentativeImage image = findImage(storeId, imageId);
+
+    validateCanRemoveActiveRepresentativeImage(store, image);
+    representativeImagePersistencePort.delete(image);
+  }
+
+  private Store findStore(UUID storeId) {
+    return storePersistencePort
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
   }
 
   private StoreRepresentativeImage findImage(UUID storeId, UUID imageId) {
@@ -105,11 +117,29 @@ public class RepresentativeImageService
     }
   }
 
-  private void changeStatus(StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
+  private void changeStatus(
+      Store store, StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
     if (status == StoreRepresentativeImageStatus.ACTIVE) {
       image.show();
       return;
     }
+
+    validateCanRemoveActiveRepresentativeImage(store, image);
     image.hide();
+  }
+
+  private void validateCanRemoveActiveRepresentativeImage(
+      Store store, StoreRepresentativeImage image) {
+    if (!store.isActive()) {
+      return;
+    }
+
+    if (image.getStatus() != StoreRepresentativeImageStatus.ACTIVE) {
+      return;
+    }
+
+    if (representativeImagePersistencePort.findActiveByStoreId(store.getId()).size() <= 3) {
+      throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED);
+    }
   }
 }

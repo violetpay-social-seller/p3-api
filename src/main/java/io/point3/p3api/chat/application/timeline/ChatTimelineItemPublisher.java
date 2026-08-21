@@ -29,5 +29,4 @@ public class ChatTimelineItemPublisher {
     return chatTimelineItemPort.save(
         ChatTimelineItem.orderConfirmation(inquiryId, senderUserId, orderConfirmationId));
   }
-
 }

@@ -1,10 +1,9 @@
 package io.point3.p3api.chat.infrastructure.stomp;
 
-import java.security.Principal;
-import java.util.UUID;
-
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import java.security.Principal;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;

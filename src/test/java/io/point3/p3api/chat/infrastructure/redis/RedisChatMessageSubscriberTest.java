@@ -29,8 +29,8 @@ class RedisChatMessageSubscriberTest {
     when(message.getBody()).thenReturn("invalid".getBytes());
     when(eventSerializer.deserialize(message.getBody()))
         .thenThrow(new IllegalArgumentException("Invalid Redis payload"));
-    RedisChatMessageSubscriber subscriber = new RedisChatMessageSubscriber(
-        eventSerializer, messagingTemplate);
+    RedisChatMessageSubscriber subscriber =
+        new RedisChatMessageSubscriber(eventSerializer, messagingTemplate);
 
     assertDoesNotThrow(() -> subscriber.onMessage(message, null));
 
@@ -51,8 +51,8 @@ class RedisChatMessageSubscriberTest {
         .doNothing()
         .when(messagingTemplate)
         .convertAndSend(destination, event.message());
-    RedisChatMessageSubscriber subscriber = new RedisChatMessageSubscriber(
-        eventSerializer, messagingTemplate);
+    RedisChatMessageSubscriber subscriber =
+        new RedisChatMessageSubscriber(eventSerializer, messagingTemplate);
 
     assertDoesNotThrow(() -> subscriber.onMessage(message, null));
     assertDoesNotThrow(() -> subscriber.onMessage(message, null));

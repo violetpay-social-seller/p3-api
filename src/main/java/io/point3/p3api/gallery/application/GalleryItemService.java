@@ -39,8 +39,8 @@ public class GalleryItemService
   public GalleryItemResult create(CreateGalleryItemCommand command) {
     validateAssetOwnership(command.storeId(), command.assetId());
 
-    StoreGalleryItem item = StoreGalleryItem.create(
-        command.storeId(), command.assetId(), command.sortOrder());
+    StoreGalleryItem item =
+        StoreGalleryItem.create(command.storeId(), command.assetId(), command.sortOrder());
     changeFeatured(item, command.featured());
 
     return GalleryItemResult.from(galleryItemPersistencePort.save(item));

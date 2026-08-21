@@ -57,11 +57,7 @@ public class PaymentAttempt {
   private Instant completedAt;
 
   private PaymentAttempt(
-      UUID confirmationId,
-      UUID payerUserId,
-      String point3SessionId,
-      String payerId,
-      long amount) {
+      UUID confirmationId, UUID payerUserId, String point3SessionId, String payerId, long amount) {
     this.confirmationId = confirmationId;
     this.payerUserId = payerUserId;
     this.point3SessionId = point3SessionId;
@@ -71,11 +67,7 @@ public class PaymentAttempt {
   }
 
   public static PaymentAttempt create(
-      UUID confirmationId,
-      UUID payerUserId,
-      String point3SessionId,
-      String payerId,
-      long amount) {
+      UUID confirmationId, UUID payerUserId, String point3SessionId, String payerId, long amount) {
     Objects.requireNonNull(confirmationId, "confirmationId");
     Objects.requireNonNull(payerUserId, "payerUserId");
     Objects.requireNonNull(point3SessionId, "point3SessionId");

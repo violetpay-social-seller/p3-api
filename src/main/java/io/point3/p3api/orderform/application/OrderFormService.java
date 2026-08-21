@@ -128,7 +128,8 @@ public class OrderFormService
     return OrderFormFieldGroup.create(templateId, "기본 정보", null, 0);
   }
 
-  private List<OrderFormField> toFields(UUID groupId, List<? extends OrderFormFieldCommand> fields) {
+  private List<OrderFormField> toFields(
+      UUID groupId, List<? extends OrderFormFieldCommand> fields) {
     return fields.stream()
         .map(field -> OrderFormField.create(
             groupId,

@@ -74,10 +74,9 @@ public class RepresentativeImageService
     StoreRepresentativeImage image = findImage(command.storeId(), command.representativeImageId());
 
     image.changeSortOrder(command.sortOrder());
-    changeStatus(store,image, command.status());
+    changeStatus(store, image, command.status());
     return RepresentativeImageResult.from(image);
   }
-
 
   @Override
   public void delete(UUID storeId, UUID imageId) {
@@ -90,9 +89,10 @@ public class RepresentativeImageService
 
   private Store findStore(UUID storeId) {
     return storePersistencePort
-            .findById(storeId)
-            .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
   }
+
   private StoreRepresentativeImage findImage(UUID storeId, UUID imageId) {
     return representativeImagePersistencePort
         .findByIdAndStoreId(imageId, storeId)
@@ -117,7 +117,8 @@ public class RepresentativeImageService
     }
   }
 
-  private void changeStatus(Store store,StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
+  private void changeStatus(
+      Store store, StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
     if (status == StoreRepresentativeImageStatus.ACTIVE) {
       image.show();
       return;
@@ -127,7 +128,8 @@ public class RepresentativeImageService
     image.hide();
   }
 
-  private void validateCanRemoveActiveRepresentativeImage(Store store, StoreRepresentativeImage image) {
+  private void validateCanRemoveActiveRepresentativeImage(
+      Store store, StoreRepresentativeImage image) {
     if (!store.isActive()) {
       return;
     }

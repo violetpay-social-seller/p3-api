@@ -1,10 +1,10 @@
 package io.point3.p3api.chat.controller;
 
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
+import io.point3.p3api.chat.application.port.ChatMessageRealtimePublisherPort;
 import io.point3.p3api.chat.application.send.SendChatMessageCommand;
 import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.application.send.SendChatMessageUseCase;
-import io.point3.p3api.chat.application.port.ChatMessageRealtimePublisherPort;
 import io.point3.p3api.chat.controller.request.SendChatMessageStompRequest;
 import io.point3.p3api.chat.infrastructure.stomp.ChatStompParticipantAuthorizationService;
 import io.point3.p3api.exception.BaseException;
@@ -37,8 +37,8 @@ public class ChatStompController {
       throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
 
-    CurrentUser currentUser = participantAuthorizationService.requireParticipant(
-        authentication, inquiryId);
+    CurrentUser currentUser =
+        participantAuthorizationService.requireParticipant(authentication, inquiryId);
     SendChatMessageResult result = sendChatMessageUseCase.execute(
         SendChatMessageCommand.of(inquiryId, currentUser.userId(), request.content()));
 

@@ -16,8 +16,8 @@ import org.junit.jupiter.api.Test;
 
 class ChatMessageRedisEventSerializerTest {
 
-  private final ChatMessageRedisEventSerializer serializer = new ChatMessageRedisEventSerializer(
-      new ObjectMapper().findAndRegisterModules());
+  private final ChatMessageRedisEventSerializer serializer =
+      new ChatMessageRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
 
   @Test
   @DisplayName("Instant를 포함한 채팅 Redis 이벤트를 직렬화하고 원본대로 역직렬화한다")
@@ -32,8 +32,8 @@ class ChatMessageRedisEventSerializerTest {
             "안녕하세요"));
 
     String serialized = serializer.serialize(event);
-    ChatMessageRedisEvent deserialized = serializer.deserialize(
-        serialized.getBytes(StandardCharsets.UTF_8));
+    ChatMessageRedisEvent deserialized =
+        serializer.deserialize(serialized.getBytes(StandardCharsets.UTF_8));
 
     assertEquals(event, deserialized);
   }

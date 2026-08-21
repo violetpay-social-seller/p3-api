@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Redis에 보관되는 임시 주문서 데이터 모델  
+ * Redis에 보관되는 임시 주문서 데이터 모델
  */
 public record OrderFormDraftData(
     UUID storeId,

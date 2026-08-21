@@ -41,14 +41,16 @@ class RedisChatMessagePubSubIntegrationTest {
 
   @Container
   private static final GenericContainer<?> REDIS = new GenericContainer<>(
-      DockerImageName.parse("redis:7.4-alpine")).withExposedPorts(REDIS_PORT);
+          DockerImageName.parse("redis:7.4-alpine"))
+      .withExposedPorts(REDIS_PORT);
 
   private LettuceConnectionFactory connectionFactory;
   private RedisMessageListenerContainer listenerContainer;
 
   @BeforeEach
   void setUp() {
-    connectionFactory = new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(REDIS_PORT));
+    connectionFactory =
+        new LettuceConnectionFactory(REDIS.getHost(), REDIS.getMappedPort(REDIS_PORT));
     connectionFactory.afterPropertiesSet();
     connectionFactory.start();
   }
@@ -67,33 +69,30 @@ class RedisChatMessagePubSubIntegrationTest {
   void publishesRedisEventAndForwardsItToLocalStompTopic() throws InterruptedException {
     UUID inquiryId = UUID.randomUUID();
     ChatTimelineItemStompResponse response = new ChatTimelineItemStompResponse(
-        UUID.randomUUID(),
-        ChatTimelineItemType.MESSAGE,
-        UUID.randomUUID(),
-        Instant.now(),
-        "안녕하세요");
+        UUID.randomUUID(), ChatTimelineItemType.MESSAGE, UUID.randomUUID(), Instant.now(), "안녕하세요");
     CountDownLatch forwarded = new CountDownLatch(1);
     AtomicReference<String> destination = new AtomicReference<>();
     AtomicReference<ChatTimelineItemStompResponse> forwardedResponse = new AtomicReference<>();
     SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
     doAnswer(invocation -> {
-      destination.set(invocation.getArgument(0));
-      forwardedResponse.set(invocation.getArgument(1));
-      forwarded.countDown();
-      return null;
-    }).when(messagingTemplate).convertAndSend(
-        anyString(), any(ChatTimelineItemStompResponse.class));
+          destination.set(invocation.getArgument(0));
+          forwardedResponse.set(invocation.getArgument(1));
+          forwarded.countDown();
+          return null;
+        })
+        .when(messagingTemplate)
+        .convertAndSend(anyString(), any(ChatTimelineItemStompResponse.class));
 
-    ChatMessageRedisEventSerializer eventSerializer = new ChatMessageRedisEventSerializer(
-        new ObjectMapper().findAndRegisterModules());
-    RedisChatMessageSubscriber subscriber = new RedisChatMessageSubscriber(
-        eventSerializer, messagingTemplate);
+    ChatMessageRedisEventSerializer eventSerializer =
+        new ChatMessageRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
+    RedisChatMessageSubscriber subscriber =
+        new RedisChatMessageSubscriber(eventSerializer, messagingTemplate);
     listenerContainer = createListenerContainer(subscriber);
     listenerContainer.start();
     awaitListening();
 
-    RedisChatMessagePublisher publisher = new RedisChatMessagePublisher(
-        stringRedisTemplate(), eventSerializer);
+    RedisChatMessagePublisher publisher =
+        new RedisChatMessagePublisher(stringRedisTemplate(), eventSerializer);
     publisher.publish(sendResult(inquiryId, response));
 
     assertTrue(forwarded.await(5, TimeUnit.SECONDS), "STOMP topic으로 메시지가 전달되지 않았습니다.");
@@ -124,8 +123,7 @@ class RedisChatMessagePubSubIntegrationTest {
     return stringRedisTemplate;
   }
 
-  private SendChatMessageResult sendResult(
-      UUID inquiryId, ChatTimelineItemStompResponse response) {
+  private SendChatMessageResult sendResult(UUID inquiryId, ChatTimelineItemStompResponse response) {
     ChatMessage chatMessage = mock(ChatMessage.class);
     when(chatMessage.getInquiryId()).thenReturn(inquiryId);
     when(chatMessage.getContent()).thenReturn(response.content());

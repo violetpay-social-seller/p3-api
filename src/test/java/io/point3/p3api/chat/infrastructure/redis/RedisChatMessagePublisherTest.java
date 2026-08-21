@@ -29,13 +29,12 @@ class RedisChatMessagePublisherTest {
     doThrow(new IllegalStateException("Redis is unavailable"))
         .when(stringRedisTemplate)
         .convertAndSend(ChatRedisChannel.MESSAGES, "payload");
-    RedisChatMessagePublisher publisher = new RedisChatMessagePublisher(
-        stringRedisTemplate, eventSerializer);
+    RedisChatMessagePublisher publisher =
+        new RedisChatMessagePublisher(stringRedisTemplate, eventSerializer);
 
     assertDoesNotThrow(() -> publisher.publish(sendResult()));
 
-    verify(stringRedisTemplate).convertAndSend(
-        eq(ChatRedisChannel.MESSAGES), eq("payload"));
+    verify(stringRedisTemplate).convertAndSend(eq(ChatRedisChannel.MESSAGES), eq("payload"));
   }
 
   private SendChatMessageResult sendResult() {

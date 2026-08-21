@@ -78,10 +78,6 @@ public class SellerGalleryController {
   private UpdateGalleryItemCommand toCommand(
       UUID storeId, UUID galleryItemId, GalleryItemUpdateRequest request) {
     return new UpdateGalleryItemCommand(
-        storeId,
-        galleryItemId,
-        request.sortOrder(),
-        request.featured(),
-        request.status());
+        storeId, galleryItemId, request.sortOrder(), request.featured(), request.status());
   }
 }

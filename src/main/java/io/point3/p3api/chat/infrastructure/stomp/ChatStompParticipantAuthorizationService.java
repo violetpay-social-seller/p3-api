@@ -27,8 +27,9 @@ public class ChatStompParticipantAuthorizationService {
 
     switch (currentUser.role()) {
       case BUYER -> inquiryChatAccessService.getBuyerInquiry(inquiryId, currentUser.userId());
-      case SELLER -> inquiryChatAccessService.getSellerInquiry(
-          inquiryId, sellerStoreProvider.resolveStoreId(currentUser));
+      case SELLER ->
+        inquiryChatAccessService.getSellerInquiry(
+            inquiryId, sellerStoreProvider.resolveStoreId(currentUser));
       case OPERATOR -> throw new BaseException(CommonErrorCode.UNAUTHORIZED);
     }
 

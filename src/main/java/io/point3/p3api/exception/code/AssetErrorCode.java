@@ -17,7 +17,12 @@ public enum AssetErrorCode implements ErrorCode {
       "ASSET_SIZE_EXCEEDED_400",
       "Asset size exceeded",
       HttpStatus.BAD_REQUEST,
-      "/errors/asset/size-exceeded");
+      "/errors/asset/size-exceeded"),
+  ASSET_VARIANT_ALREADY_EXISTS(
+      "ASSET_VARIANT_ALREADY_EXISTS_409",
+      "Asset variant already exists",
+      HttpStatus.CONFLICT,
+      "/errors/asset/variant-already-exists");
 
   private final String code;
   private final String title;

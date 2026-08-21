@@ -68,11 +68,6 @@ public class ChatTimelineItem {
         inquiryId, senderUserId, ChatTimelineItemType.ORDER_CONFIRMATION, orderConfirmationId);
   }
 
-  public static ChatTimelineItem paymentRequest(
-      UUID inquiryId, UUID senderUserId, UUID paymentRequestId) {
-    return create(inquiryId, senderUserId, ChatTimelineItemType.PAYMENT_REQUEST, paymentRequestId);
-  }
-
   private static ChatTimelineItem create(
       UUID inquiryId, UUID senderUserId, ChatTimelineItemType type, UUID referenceId) {
     Objects.requireNonNull(inquiryId, "inquiryId");

@@ -226,6 +226,7 @@ CREATE TABLE order_confirmations (
     status VARCHAR(30) NOT NULL,
     sent_at TIMESTAMPTZ,
     revision_requested_at TIMESTAMPTZ,
+    buyer_viewed_at TIMESTAMPTZ,
     replaced_by_confirmation_id UUID,
     created_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_confirmations_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
@@ -235,22 +236,9 @@ CREATE TABLE order_confirmations (
     CONSTRAINT ck_order_confirmations_amount CHECK (amount >= 0)
 );
 
-CREATE TABLE payment_requests (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    inquiry_id UUID NOT NULL,
-    confirmation_id UUID NOT NULL,
-    requested_by UUID NOT NULL,
-    status VARCHAR(30) NOT NULL,
-    requested_at TIMESTAMPTZ NOT NULL,
-    expires_at TIMESTAMPTZ,
-    CONSTRAINT fk_payment_requests_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
-    CONSTRAINT fk_payment_requests_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
-    CONSTRAINT fk_payment_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users (id)
-);
-
 CREATE TABLE payment_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    payment_request_id UUID NOT NULL,
+    confirmation_id UUID NOT NULL,
     payer_user_id UUID NOT NULL,
     point3_session_id VARCHAR(128) NOT NULL,
     payer_id VARCHAR(128),
@@ -260,7 +248,7 @@ CREATE TABLE payment_attempts (
     created_at TIMESTAMPTZ NOT NULL,
     completed_at TIMESTAMPTZ,
     CONSTRAINT uk_payment_attempts_point3_session_id UNIQUE (point3_session_id),
-    CONSTRAINT fk_payment_attempts_payment_request_id FOREIGN KEY (payment_request_id) REFERENCES payment_requests (id),
+    CONSTRAINT fk_payment_attempts_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
     CONSTRAINT fk_payment_attempts_payer_user_id FOREIGN KEY (payer_user_id) REFERENCES users (id),
     CONSTRAINT ck_payment_attempts_amount CHECK (amount >= 0)
 );
@@ -340,8 +328,7 @@ CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_it
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);
 CREATE INDEX ix_order_confirmations_inquiry_id_created_at ON order_confirmations (inquiry_id, created_at);
 CREATE INDEX ix_order_confirmations_order_form_submission_id ON order_confirmations (order_form_submission_id);
-CREATE INDEX ix_payment_requests_inquiry_id_status ON payment_requests (inquiry_id, status);
-CREATE INDEX ix_payment_attempts_payment_request_id ON payment_attempts (payment_request_id);
+CREATE INDEX ix_payment_attempts_confirmation_id ON payment_attempts (confirmation_id);
 CREATE INDEX ix_orders_store_id_pickup_at ON orders (store_id, pickup_at);
 CREATE INDEX ix_orders_store_id_status ON orders (store_id, status);
 CREATE INDEX ix_orders_buyer_user_id_created_at ON orders (buyer_user_id, created_at);

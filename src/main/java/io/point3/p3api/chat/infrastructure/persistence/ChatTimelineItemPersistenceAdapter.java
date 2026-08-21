@@ -26,4 +26,14 @@ public class ChatTimelineItemPersistenceAdapter implements ChatTimelineItemPort 
     return chatTimelineItemJpaRepository.findTimeline(
         inquiryId, cursorCreatedAt, cursorId, PageRequest.of(0, limit));
   }
+
+  @Override
+  public long countUnread(UUID inquiryId, UUID readerUserId, Instant readAt) {
+    return chatTimelineItemJpaRepository.countUnread(inquiryId, readerUserId, readAt);
+  }
+
+  @Override
+  public Instant findLatestCreatedAt(UUID inquiryId) {
+    return chatTimelineItemJpaRepository.findLatestCreatedAt(inquiryId);
+  }
 }

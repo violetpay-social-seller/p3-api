@@ -11,4 +11,8 @@ public interface ChatTimelineItemPort {
 
   List<ChatTimelineItem> findTimeline(
       UUID inquiryId, Instant cursorCreatedAt, UUID cursorId, int limit);
+
+  long countUnread(UUID inquiryId, UUID readerUserId, Instant readAt);
+
+  Instant findLatestCreatedAt(UUID inquiryId);
 }

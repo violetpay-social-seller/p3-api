@@ -29,4 +29,19 @@ public interface ChatTimelineItemJpaRepository extends JpaRepository<ChatTimelin
       @Param("cursorCreatedAt") Instant cursorCreatedAt,
       @Param("cursorId") UUID cursorId,
       Pageable pageable);
+
+  @Query("""
+      select count(item)
+      from ChatTimelineItem item
+      where item.inquiryId = :inquiryId
+        and item.senderUserId <> :readerUserId
+        and (:readAt is null or item.createdAt > :readAt)
+      """)
+  long countUnread(
+      @Param("inquiryId") UUID inquiryId,
+      @Param("readerUserId") UUID readerUserId,
+      @Param("readAt") Instant readAt);
+
+  @Query("select max(item.createdAt) from ChatTimelineItem item where item.inquiryId = :inquiryId")
+  Instant findLatestCreatedAt(@Param("inquiryId") UUID inquiryId);
 }

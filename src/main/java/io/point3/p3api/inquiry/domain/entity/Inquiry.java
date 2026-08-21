@@ -57,4 +57,12 @@ public class Inquiry {
 
     return new Inquiry(storeId, buyerUserId);
   }
+
+  public void markBuyerRead(Instant readAt) {
+    this.buyerLastReadAt = Objects.requireNonNull(readAt, "readAt");
+  }
+
+  public void markSellerRead(Instant readAt) {
+    this.sellerLastReadAt = Objects.requireNonNull(readAt, "readAt");
+  }
 }

@@ -29,7 +29,7 @@ public class SellerOnboardingService implements SellerOnboardingCreateUseCase {
         command.storeName(),
         command.phoneNumber(),
         command.address(),
-        command.snsLinks());
+        command.snsLink());
 
     return SellerOnboardingResult.from(sellerOnboardingPersistencePort.save(sellerOnboarding));
   }

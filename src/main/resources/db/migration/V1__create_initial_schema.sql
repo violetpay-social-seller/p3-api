@@ -39,7 +39,7 @@ CREATE TABLE stores (
     description TEXT,
     contact VARCHAR(100),
     contact_visible BOOLEAN NOT NULL DEFAULT FALSE,
-    sns_links JSONB,
+    sns_link VARCHAR(500),
     business_hours JSONB,
     pickup_settings JSONB,
     address VARCHAR(255),

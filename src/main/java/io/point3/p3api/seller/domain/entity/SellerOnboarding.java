@@ -33,8 +33,8 @@ public class SellerOnboarding {
   @Column(name = "address", nullable = false, length = 255)
   private String address;
 
-  @Column(name = "sns_links", columnDefinition = "jsonb")
-  private String snsLinks;
+  @Column(name = "sns_link", length = 500)
+  private String snsLink;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
@@ -58,22 +58,22 @@ public class SellerOnboarding {
   private Instant updatedAt;
 
   private SellerOnboarding(
-      UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLinks) {
+      UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLink) {
     this.applicantUserId = applicantUserId;
     this.storeName = storeName;
     this.phoneNumber = phoneNumber;
     this.address = address;
-    this.snsLinks = snsLinks;
+    this.snsLink = snsLink;
     this.status = SellerOnboardingStatus.PENDING;
   }
 
   public static SellerOnboarding create(
-      UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLinks) {
+      UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLink) {
     Objects.requireNonNull(applicantUserId, "applicantUserId");
     Objects.requireNonNull(storeName, "storeName");
     Objects.requireNonNull(phoneNumber, "phoneNumber");
     Objects.requireNonNull(address, "address");
 
-    return new SellerOnboarding(applicantUserId, storeName, phoneNumber, address, snsLinks);
+    return new SellerOnboarding(applicantUserId, storeName, phoneNumber, address, snsLink);
   }
 }

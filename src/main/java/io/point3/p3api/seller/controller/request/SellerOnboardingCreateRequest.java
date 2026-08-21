@@ -3,7 +3,6 @@ package io.point3.p3api.seller.controller.request;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.util.List;
 
 public record SellerOnboardingCreateRequest(
     @NotBlank @Size(max = 100) String storeName,
@@ -13,12 +12,8 @@ public record SellerOnboardingCreateRequest(
             message = "phoneNumber must be a valid Korean mobile phone number")
         String phoneNumber,
     @NotBlank @Size(max = 255) String address,
-    @Size(max = 5)
-        List<
-                @NotBlank
-                    @Size(max = 500)
-                    @Pattern(
-                        regexp = "^https?://[^\\s]+$",
-                        message = "snsLinks must be a valid HTTP or HTTPS URL")
-                    String>
-            snsLinks) {}
+    @Size(max = 500)
+        @Pattern(
+            regexp = "^https?://[^\\s]+$",
+            message = "snsLink must be a valid HTTP or HTTPS URL")
+        String snsLink) {}

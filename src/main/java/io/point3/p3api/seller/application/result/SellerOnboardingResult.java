@@ -11,7 +11,7 @@ public record SellerOnboardingResult(
     String storeName,
     String phoneNumber,
     String address,
-    String snsLinks,
+    String snsLink,
     SellerOnboardingStatus status,
     Instant createdAt) {
 
@@ -22,7 +22,7 @@ public record SellerOnboardingResult(
         sellerOnboarding.getStoreName(),
         sellerOnboarding.getPhoneNumber(),
         sellerOnboarding.getAddress(),
-        sellerOnboarding.getSnsLinks(),
+        sellerOnboarding.getSnsLink(),
         sellerOnboarding.getStatus(),
         sellerOnboarding.getCreatedAt());
   }

@@ -7,6 +7,10 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
+  Optional<Order> findByIdAndBuyerUserId(UUID orderId, UUID buyerUserId);
+
+  Optional<Order> findByIdAndStoreId(UUID orderId, UUID storeId);
+
   Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId);
 
   List<Order> findAllByBuyerUserIdOrderByCreatedAtDesc(UUID buyerUserId);

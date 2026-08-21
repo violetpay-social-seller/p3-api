@@ -12,6 +12,7 @@ import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
 import io.point3.p3api.seller.application.create.SellerOnboardingCreateUseCase;
 import io.point3.p3api.seller.application.query.SellerOnboardingCurrentQueryUseCase;
+import io.point3.p3api.seller.application.reapply.SellerOnboardingReapplicationUseCase;
 import io.point3.p3api.seller.application.result.SellerOnboardingResult;
 import io.point3.p3api.seller.domain.type.SellerOnboardingStatus;
 import io.point3.p3api.user.domain.type.UserRole;
@@ -34,6 +35,8 @@ class SellerOnboardingControllerWebTest {
       SellerOnboardingCreateUseCase.class);
   private final SellerOnboardingCurrentQueryUseCase sellerOnboardingCurrentQueryUseCase = mock(
       SellerOnboardingCurrentQueryUseCase.class);
+  private final SellerOnboardingReapplicationUseCase sellerOnboardingReapplicationUseCase = mock(
+      SellerOnboardingReapplicationUseCase.class);
 
   private MockMvc mockMvc;
   private CurrentUser currentUser;
@@ -42,7 +45,9 @@ class SellerOnboardingControllerWebTest {
   void setUp() {
     currentUser = new CurrentUser(UUID.randomUUID(), "판매자", UserRole.SELLER);
     SellerOnboardingController controller = new SellerOnboardingController(
-        sellerOnboardingCreateUseCase, sellerOnboardingCurrentQueryUseCase);
+        sellerOnboardingCreateUseCase,
+        sellerOnboardingCurrentQueryUseCase,
+        sellerOnboardingReapplicationUseCase);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
         .setCustomArgumentResolvers(new CurrentSellerArgumentResolver())

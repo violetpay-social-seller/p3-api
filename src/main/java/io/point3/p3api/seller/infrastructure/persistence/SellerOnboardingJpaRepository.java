@@ -18,6 +18,8 @@ public interface SellerOnboardingJpaRepository extends JpaRepository<SellerOnboa
 
   Optional<SellerOnboarding> findFirstByApplicantUserIdOrderByCreatedAtDesc(UUID applicantUserId);
 
+  Optional<SellerOnboarding> findByIdAndApplicantUserId(UUID id, UUID applicantUserId);
+
   List<SellerOnboarding> findByStatusOrderByCreatedAtAsc(SellerOnboardingStatus status);
 
   @Modifying(flushAutomatically = true, clearAutomatically = true)

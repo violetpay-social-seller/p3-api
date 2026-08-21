@@ -39,6 +39,13 @@ public class SellerOnboardingPersistenceAdapter implements SellerOnboardingPersi
 
   @Override
   @Transactional(readOnly = true)
+  public Optional<SellerOnboarding> findByIdAndApplicantUserId(
+      UUID onboardingId, UUID applicantUserId) {
+    return sellerOnboardingJpaRepository.findByIdAndApplicantUserId(onboardingId, applicantUserId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
   public boolean existsById(UUID onboardingId) {
     return sellerOnboardingJpaRepository.existsById(onboardingId);
   }

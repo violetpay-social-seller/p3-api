@@ -40,12 +40,6 @@ public class StoreGalleryItem {
   @Column(name = "asset_id", nullable = false)
   private UUID assetId;
 
-  @Column(name = "title", length = 100)
-  private String title;
-
-  @Column(name = "description", columnDefinition = "text")
-  private String description;
-
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
@@ -64,19 +58,15 @@ public class StoreGalleryItem {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private StoreGalleryItem(
-      UUID storeId, UUID assetId, String title, String description, int sortOrder) {
+  private StoreGalleryItem(UUID storeId, UUID assetId, int sortOrder) {
     this.storeId = storeId;
     this.assetId = assetId;
-    this.title = title;
-    this.description = description;
     this.sortOrder = sortOrder;
     this.featured = false;
     this.status = StoreGalleryItemStatus.HIDDEN;
   }
 
-  public static StoreGalleryItem create(
-      UUID storeId, UUID assetId, String title, String description, int sortOrder) {
+  public static StoreGalleryItem create(UUID storeId, UUID assetId, int sortOrder) {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(assetId, "assetId");
 
@@ -84,12 +74,7 @@ public class StoreGalleryItem {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new StoreGalleryItem(storeId, assetId, title, description, sortOrder);
-  }
-
-  public void update(String title, String description) {
-    this.title = title;
-    this.description = description;
+    return new StoreGalleryItem(storeId, assetId, sortOrder);
   }
 
   public void changeSortOrder(int sortOrder) {

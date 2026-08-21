@@ -72,12 +72,7 @@ public class SellerGalleryController {
 
   private CreateGalleryItemCommand toCommand(UUID storeId, GalleryItemCreateRequest request) {
     return new CreateGalleryItemCommand(
-        storeId,
-        request.assetId(),
-        request.title(),
-        request.description(),
-        request.sortOrder(),
-        request.featured());
+        storeId, request.assetId(), request.sortOrder(), request.featured());
   }
 
   private UpdateGalleryItemCommand toCommand(
@@ -85,8 +80,6 @@ public class SellerGalleryController {
     return new UpdateGalleryItemCommand(
         storeId,
         galleryItemId,
-        request.title(),
-        request.description(),
         request.sortOrder(),
         request.featured(),
         request.status());

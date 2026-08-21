@@ -40,11 +40,7 @@ public class GalleryItemService
     validateAssetOwnership(command.storeId(), command.assetId());
 
     StoreGalleryItem item = StoreGalleryItem.create(
-        command.storeId(),
-        command.assetId(),
-        command.title(),
-        command.description(),
-        command.sortOrder());
+        command.storeId(), command.assetId(), command.sortOrder());
     changeFeatured(item, command.featured());
 
     return GalleryItemResult.from(galleryItemPersistencePort.save(item));
@@ -85,7 +81,6 @@ public class GalleryItemService
   @Override
   public GalleryItemResult update(UpdateGalleryItemCommand command) {
     StoreGalleryItem item = findItem(command.storeId(), command.galleryItemId());
-    item.update(command.title(), command.description());
     item.changeSortOrder(command.sortOrder());
     changeFeatured(item, command.featured());
     changeStatus(item, command.status());

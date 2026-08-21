@@ -91,8 +91,6 @@ CREATE TABLE store_gallery_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID NOT NULL,
     asset_id UUID NOT NULL,
-    title VARCHAR(100),
-    description TEXT,
     sort_order INTEGER NOT NULL,
     featured BOOLEAN NOT NULL DEFAULT FALSE,
     status VARCHAR(30) NOT NULL,

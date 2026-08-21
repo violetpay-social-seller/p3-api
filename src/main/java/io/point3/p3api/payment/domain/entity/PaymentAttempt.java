@@ -27,8 +27,8 @@ public class PaymentAttempt {
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "payment_request_id", nullable = false)
-  private UUID paymentRequestId;
+  @Column(name = "confirmation_id", nullable = false)
+  private UUID confirmationId;
 
   @Column(name = "payer_user_id", nullable = false)
   private UUID payerUserId;
@@ -57,12 +57,12 @@ public class PaymentAttempt {
   private Instant completedAt;
 
   private PaymentAttempt(
-      UUID paymentRequestId,
+      UUID confirmationId,
       UUID payerUserId,
       String point3SessionId,
       String payerId,
       long amount) {
-    this.paymentRequestId = paymentRequestId;
+    this.confirmationId = confirmationId;
     this.payerUserId = payerUserId;
     this.point3SessionId = point3SessionId;
     this.payerId = payerId;
@@ -71,12 +71,12 @@ public class PaymentAttempt {
   }
 
   public static PaymentAttempt create(
-      UUID paymentRequestId,
+      UUID confirmationId,
       UUID payerUserId,
       String point3SessionId,
       String payerId,
       long amount) {
-    Objects.requireNonNull(paymentRequestId, "paymentRequestId");
+    Objects.requireNonNull(confirmationId, "confirmationId");
     Objects.requireNonNull(payerUserId, "payerUserId");
     Objects.requireNonNull(point3SessionId, "point3SessionId");
 
@@ -84,7 +84,7 @@ public class PaymentAttempt {
       throw new IllegalArgumentException("amount must be greater than or equal to 0");
     }
 
-    return new PaymentAttempt(paymentRequestId, payerUserId, point3SessionId, payerId, amount);
+    return new PaymentAttempt(confirmationId, payerUserId, point3SessionId, payerId, amount);
   }
 
   public void succeed(String payerId, Instant completedAt) {

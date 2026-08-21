@@ -11,7 +11,6 @@ public record InquiryChatDetail(
     String storeName,
     String storeSlug,
     Participant participant,
-    ProductContext product,
     Instant myLastReadAt,
     Instant participantLastReadAt,
     Instant createdAt) {
@@ -20,7 +19,6 @@ public record InquiryChatDetail(
       Inquiry inquiry,
       Store store,
       Participant participant,
-      ProductContext product,
       Instant myLastReadAt,
       Instant participantLastReadAt) {
     return new InquiryChatDetail(
@@ -29,13 +27,10 @@ public record InquiryChatDetail(
         store.getName(),
         store.getSlug(),
         participant,
-        product,
         myLastReadAt,
         participantLastReadAt,
         inquiry.getCreatedAt());
   }
 
   public record Participant(UUID userId, String name) {}
-
-  public record ProductContext(UUID productId, String name) {}
 }

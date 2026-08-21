@@ -37,7 +37,6 @@ public class StoreService
 
     Store store = Store.create(command.ownerUserId(), command.name(), generateSlug(command.name()));
     store.updateProfileAsset(command.profileAssetId());
-    store.updateBannerAsset(command.bannerAssetId());
     store.updateBasicInfo(
         command.name(),
         command.description(),
@@ -46,6 +45,7 @@ public class StoreService
         command.snsLinks(),
         command.businessHours(),
         command.address());
+    store.updatePickupSettings(command.pickupSettings());
 
     return StoreResult.from(storePersistencePort.save(store));
   }
@@ -61,7 +61,6 @@ public class StoreService
     Store store = findStore(command.storeId());
 
     store.updateProfileAsset(command.profileAssetId());
-    store.updateBannerAsset(command.bannerAssetId());
     store.updateBasicInfo(
         command.name(),
         command.description(),
@@ -70,6 +69,7 @@ public class StoreService
         command.snsLinks(),
         command.businessHours(),
         command.address());
+    store.updatePickupSettings(command.pickupSettings());
 
     return StoreResult.from(store);
   }

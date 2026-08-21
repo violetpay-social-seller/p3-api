@@ -30,9 +30,4 @@ public class ChatTimelineItemPublisher {
         ChatTimelineItem.orderConfirmation(inquiryId, senderUserId, orderConfirmationId));
   }
 
-  public ChatTimelineItem publishPaymentRequest(
-      UUID inquiryId, UUID senderUserId, UUID paymentRequestId) {
-    return chatTimelineItemPort.save(
-        ChatTimelineItem.paymentRequest(inquiryId, senderUserId, paymentRequestId));
-  }
 }

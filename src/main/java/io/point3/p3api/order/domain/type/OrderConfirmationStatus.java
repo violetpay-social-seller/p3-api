@@ -5,6 +5,5 @@ public enum OrderConfirmationStatus {
   SENT,
   REVISION_REQUESTED,
   REPLACED,
-  PAYMENT_REQUESTED,
   PAID
 }

@@ -4,8 +4,6 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ChatErrorCode;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
-import io.point3.p3api.product.application.port.ProductPersistencePort;
-import io.point3.p3api.product.domain.entity.Product;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.user.application.port.UserPersistencePort;
@@ -22,7 +20,6 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
 
   private final StorePersistencePort storePersistencePort;
   private final UserPersistencePort userPersistencePort;
-  private final ProductPersistencePort productPersistencePort;
 
   @Override
   public InquiryChatDetail getBuyerDetail(Inquiry inquiry) {
@@ -33,7 +30,6 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(owner.getId(), owner.getName()),
-        findProductContext(inquiry, store),
         inquiry.getBuyerLastReadAt(),
         inquiry.getSellerLastReadAt());
   }
@@ -47,7 +43,6 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(buyer.getId(), buyer.getName()),
-        findProductContext(inquiry, store),
         inquiry.getSellerLastReadAt(),
         inquiry.getBuyerLastReadAt());
   }
@@ -62,20 +57,5 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
     return userPersistencePort
         .findById(userId)
         .orElseThrow(() -> new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND));
-  }
-
-  private InquiryChatDetail.ProductContext findProductContext(Inquiry inquiry, Store store) {
-    if (inquiry.getContextProductId() == null) {
-      return null;
-    }
-
-    return productPersistencePort
-        .findByIdAndStoreId(inquiry.getContextProductId(), store.getId())
-        .map(this::toProductContext)
-        .orElse(null);
-  }
-
-  private InquiryChatDetail.ProductContext toProductContext(Product product) {
-    return new InquiryChatDetail.ProductContext(product.getId(), product.getName());
   }
 }

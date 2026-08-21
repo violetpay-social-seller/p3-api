@@ -34,7 +34,6 @@ CREATE TABLE stores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     owner_user_id UUID NOT NULL,
     profile_asset_id UUID,
-    banner_asset_id UUID,
     name VARCHAR(100) NOT NULL,
     slug VARCHAR(120) NOT NULL,
     description TEXT,
@@ -42,15 +41,17 @@ CREATE TABLE stores (
     contact_visible BOOLEAN NOT NULL DEFAULT FALSE,
     sns_links JSONB,
     business_hours JSONB,
+    pickup_settings JSONB,
     address VARCHAR(255),
+    settlement_account_status VARCHAR(30) NOT NULL,
+    settlement_account_registered_at TIMESTAMPTZ,
     status VARCHAR(30) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT uk_stores_owner_user_id UNIQUE (owner_user_id),
     CONSTRAINT uk_stores_slug UNIQUE (slug),
     CONSTRAINT fk_stores_owner_user_id FOREIGN KEY (owner_user_id) REFERENCES users (id),
-    CONSTRAINT fk_stores_profile_asset_id FOREIGN KEY (profile_asset_id) REFERENCES assets (id) ON DELETE SET NULL,
-    CONSTRAINT fk_stores_banner_asset_id FOREIGN KEY (banner_asset_id) REFERENCES assets (id) ON DELETE SET NULL
+    CONSTRAINT fk_stores_profile_asset_id FOREIGN KEY (profile_asset_id) REFERENCES assets (id) ON DELETE SET NULL
 );
 
 CREATE TABLE asset_variants (
@@ -72,58 +73,35 @@ CREATE TABLE asset_variants (
     CONSTRAINT ck_asset_variants_size CHECK (size >= 0)
 );
 
-CREATE TABLE products (
+CREATE TABLE store_representative_images (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID NOT NULL,
-    name VARCHAR(150) NOT NULL,
-    description TEXT,
-    base_price BIGINT,
+    asset_id UUID NOT NULL,
+    sort_order INTEGER NOT NULL,
     status VARCHAR(30) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT fk_products_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
-    CONSTRAINT ck_products_base_price CHECK (base_price IS NULL OR base_price >= 0)
+    CONSTRAINT uk_store_representative_images_store_sort_order UNIQUE (store_id, sort_order),
+    CONSTRAINT fk_store_representative_images_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
+    CONSTRAINT fk_store_representative_images_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id),
+    CONSTRAINT ck_store_representative_images_sort_order CHECK (sort_order >= 0)
 );
 
-CREATE TABLE product_assets (
+CREATE TABLE store_gallery_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID NOT NULL,
+    store_id UUID NOT NULL,
     asset_id UUID NOT NULL,
+    title VARCHAR(100),
+    description TEXT,
     sort_order INTEGER NOT NULL,
-    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
-    CONSTRAINT uk_product_assets_product_sort_order UNIQUE (product_id, sort_order),
-    CONSTRAINT fk_product_assets_product_id FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
-    CONSTRAINT fk_product_assets_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id),
-    CONSTRAINT ck_product_assets_sort_order CHECK (sort_order >= 0)
-);
-
-CREATE UNIQUE INDEX uk_product_assets_primary
-    ON product_assets (product_id)
-    WHERE is_primary;
-
-CREATE TABLE product_option_groups (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    selection_type VARCHAR(30) NOT NULL,
-    required BOOLEAN NOT NULL DEFAULT FALSE,
-    sort_order INTEGER NOT NULL,
-    CONSTRAINT uk_product_option_groups_product_sort_order UNIQUE (product_id, sort_order),
-    CONSTRAINT fk_product_option_groups_product_id FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
-    CONSTRAINT ck_product_option_groups_sort_order CHECK (sort_order >= 0)
-);
-
-CREATE TABLE product_options (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    option_group_id UUID NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    additional_price BIGINT NOT NULL DEFAULT 0,
-    sort_order INTEGER NOT NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uk_product_options_group_sort_order UNIQUE (option_group_id, sort_order),
-    CONSTRAINT fk_product_options_option_group_id FOREIGN KEY (option_group_id) REFERENCES product_option_groups (id) ON DELETE CASCADE,
-    CONSTRAINT ck_product_options_additional_price CHECK (additional_price >= 0),
-    CONSTRAINT ck_product_options_sort_order CHECK (sort_order >= 0)
+    featured BOOLEAN NOT NULL DEFAULT FALSE,
+    status VARCHAR(30) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uk_store_gallery_items_store_sort_order UNIQUE (store_id, sort_order),
+    CONSTRAINT fk_store_gallery_items_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
+    CONSTRAINT fk_store_gallery_items_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id),
+    CONSTRAINT ck_store_gallery_items_sort_order CHECK (sort_order >= 0)
 );
 
 CREATE TABLE order_form_templates (
@@ -136,31 +114,52 @@ CREATE TABLE order_form_templates (
     CONSTRAINT fk_order_form_templates_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
 );
 
-CREATE TABLE order_form_fields (
+CREATE TABLE order_form_field_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     template_id UUID NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT,
+    sort_order INTEGER NOT NULL,
+    CONSTRAINT uk_order_form_field_groups_template_sort_order UNIQUE (template_id, sort_order),
+    CONSTRAINT fk_order_form_field_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_groups_sort_order CHECK (sort_order >= 0)
+);
+
+CREATE TABLE order_form_fields (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID NOT NULL,
     label VARCHAR(150) NOT NULL,
     field_type VARCHAR(30) NOT NULL,
     required BOOLEAN NOT NULL DEFAULT FALSE,
     settings JSONB,
     sort_order INTEGER NOT NULL,
-    CONSTRAINT uk_order_form_fields_template_sort_order UNIQUE (template_id, sort_order),
-    CONSTRAINT fk_order_form_fields_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT uk_order_form_fields_group_sort_order UNIQUE (group_id, sort_order),
+    CONSTRAINT fk_order_form_fields_group_id FOREIGN KEY (group_id) REFERENCES order_form_field_groups (id) ON DELETE CASCADE,
     CONSTRAINT ck_order_form_fields_sort_order CHECK (sort_order >= 0)
+);
+
+CREATE TABLE order_form_field_options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    field_id UUID NOT NULL,
+    label VARCHAR(100) NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    sort_order INTEGER NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uk_order_form_field_options_field_sort_order UNIQUE (field_id, sort_order),
+    CONSTRAINT fk_order_form_field_options_field_id FOREIGN KEY (field_id) REFERENCES order_form_fields (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_options_sort_order CHECK (sort_order >= 0)
 );
 
 CREATE TABLE inquiries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID NOT NULL,
     buyer_user_id UUID NOT NULL,
-    context_product_id UUID,
     buyer_last_read_at TIMESTAMPTZ,
     seller_last_read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT uk_inquiries_store_buyer UNIQUE (store_id, buyer_user_id),
     CONSTRAINT fk_inquiries_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
-    CONSTRAINT fk_inquiries_buyer_user_id FOREIGN KEY (buyer_user_id) REFERENCES users (id),
-    CONSTRAINT fk_inquiries_context_product_id FOREIGN KEY (context_product_id) REFERENCES products (id) ON DELETE SET NULL
+    CONSTRAINT fk_inquiries_buyer_user_id FOREIGN KEY (buyer_user_id) REFERENCES users (id)
 );
 
 CREATE TABLE order_form_submissions (
@@ -168,12 +167,15 @@ CREATE TABLE order_form_submissions (
     inquiry_id UUID NOT NULL,
     template_id UUID NOT NULL,
     submitted_by UUID NOT NULL,
+    selected_gallery_item_id UUID,
+    selected_gallery_snapshot JSONB,
     answers JSONB NOT NULL,
     reference_assets JSONB,
     submitted_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_form_submissions_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_order_form_submissions_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id),
-    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id)
+    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
+    CONSTRAINT fk_order_form_submissions_selected_gallery_item_id FOREIGN KEY (selected_gallery_item_id) REFERENCES store_gallery_items (id) ON DELETE SET NULL
 );
 
 CREATE TABLE chat_messages (
@@ -224,6 +226,7 @@ CREATE TABLE order_confirmations (
     status VARCHAR(30) NOT NULL,
     sent_at TIMESTAMPTZ,
     revision_requested_at TIMESTAMPTZ,
+    buyer_viewed_at TIMESTAMPTZ,
     replaced_by_confirmation_id UUID,
     created_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_confirmations_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
@@ -233,22 +236,9 @@ CREATE TABLE order_confirmations (
     CONSTRAINT ck_order_confirmations_amount CHECK (amount >= 0)
 );
 
-CREATE TABLE payment_requests (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    inquiry_id UUID NOT NULL,
-    confirmation_id UUID NOT NULL,
-    requested_by UUID NOT NULL,
-    status VARCHAR(30) NOT NULL,
-    requested_at TIMESTAMPTZ NOT NULL,
-    expires_at TIMESTAMPTZ,
-    CONSTRAINT fk_payment_requests_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
-    CONSTRAINT fk_payment_requests_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
-    CONSTRAINT fk_payment_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users (id)
-);
-
 CREATE TABLE payment_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    payment_request_id UUID NOT NULL,
+    confirmation_id UUID NOT NULL,
     payer_user_id UUID NOT NULL,
     point3_session_id VARCHAR(128) NOT NULL,
     payer_id VARCHAR(128),
@@ -258,7 +248,7 @@ CREATE TABLE payment_attempts (
     created_at TIMESTAMPTZ NOT NULL,
     completed_at TIMESTAMPTZ,
     CONSTRAINT uk_payment_attempts_point3_session_id UNIQUE (point3_session_id),
-    CONSTRAINT fk_payment_attempts_payment_request_id FOREIGN KEY (payment_request_id) REFERENCES payment_requests (id),
+    CONSTRAINT fk_payment_attempts_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
     CONSTRAINT fk_payment_attempts_payer_user_id FOREIGN KEY (payer_user_id) REFERENCES users (id),
     CONSTRAINT ck_payment_attempts_amount CHECK (amount >= 0)
 );
@@ -321,24 +311,24 @@ CREATE TABLE notifications (
 
 CREATE INDEX ix_assets_uploaded_by ON assets (uploaded_by);
 CREATE INDEX ix_asset_variants_asset_id ON asset_variants (asset_id);
-CREATE INDEX ix_products_store_id_status ON products (store_id, status);
-CREATE INDEX ix_product_assets_product_id ON product_assets (product_id);
-CREATE INDEX ix_product_option_groups_product_id ON product_option_groups (product_id);
-CREATE INDEX ix_product_options_option_group_id ON product_options (option_group_id);
+CREATE INDEX ix_store_representative_images_store_id ON store_representative_images (store_id);
+CREATE INDEX ix_store_gallery_items_store_id_status ON store_gallery_items (store_id, status);
 CREATE UNIQUE INDEX uk_order_form_templates_store_active
     ON order_form_templates (store_id)
     WHERE active;
-CREATE INDEX ix_order_form_fields_template_id ON order_form_fields (template_id);
+CREATE INDEX ix_order_form_field_groups_template_id ON order_form_field_groups (template_id);
+CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
+CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
-CREATE INDEX ix_inquiries_context_product_id ON inquiries (context_product_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
+CREATE INDEX ix_order_form_submissions_selected_gallery_item_id
+    ON order_form_submissions (selected_gallery_item_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);
 CREATE INDEX ix_order_confirmations_inquiry_id_created_at ON order_confirmations (inquiry_id, created_at);
 CREATE INDEX ix_order_confirmations_order_form_submission_id ON order_confirmations (order_form_submission_id);
-CREATE INDEX ix_payment_requests_inquiry_id_status ON payment_requests (inquiry_id, status);
-CREATE INDEX ix_payment_attempts_payment_request_id ON payment_attempts (payment_request_id);
+CREATE INDEX ix_payment_attempts_confirmation_id ON payment_attempts (confirmation_id);
 CREATE INDEX ix_orders_store_id_pickup_at ON orders (store_id, pickup_at);
 CREATE INDEX ix_orders_store_id_status ON orders (store_id, status);
 CREATE INDEX ix_orders_buyer_user_id_created_at ON orders (buyer_user_id, created_at);

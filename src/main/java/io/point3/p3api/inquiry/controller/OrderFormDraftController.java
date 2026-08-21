@@ -58,6 +58,7 @@ public class OrderFormDraftController {
         request.pickupDate(),
         request.pickupTime(),
         request.noticeAgreed(),
+        request.selectedGalleryItemId(),
         request.formAnswers().stream()
             .map(answer ->
                 new CreateOrderFormDraftCommand.FormAnswer(answer.fieldId(), answer.value()))

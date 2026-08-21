@@ -10,7 +10,6 @@ public record InquiryChatDetailResponse(
     String storeName,
     String storeSlug,
     ParticipantResponse participant,
-    ProductContextResponse product,
     Instant myLastReadAt,
     Instant participantLastReadAt,
     Instant createdAt) {
@@ -22,7 +21,6 @@ public record InquiryChatDetailResponse(
         detail.storeName(),
         detail.storeSlug(),
         ParticipantResponse.from(detail.participant()),
-        ProductContextResponse.from(detail.product()),
         detail.myLastReadAt(),
         detail.participantLastReadAt(),
         detail.createdAt());
@@ -32,17 +30,6 @@ public record InquiryChatDetailResponse(
 
     private static ParticipantResponse from(InquiryChatDetail.Participant participant) {
       return new ParticipantResponse(participant.userId(), participant.name());
-    }
-  }
-
-  public record ProductContextResponse(UUID productId, String name) {
-
-    private static ProductContextResponse from(InquiryChatDetail.ProductContext product) {
-      if (product == null) {
-        return null;
-      }
-
-      return new ProductContextResponse(product.productId(), product.name());
     }
   }
 }

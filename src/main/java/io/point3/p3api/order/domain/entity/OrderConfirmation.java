@@ -70,6 +70,9 @@ public class OrderConfirmation {
   @Column(name = "revision_requested_at")
   private Instant revisionRequestedAt;
 
+  @Column(name = "buyer_viewed_at")
+  private Instant buyerViewedAt;
+
   @Column(name = "replaced_by_confirmation_id")
   private UUID replacedByConfirmationId;
 
@@ -158,8 +161,11 @@ public class OrderConfirmation {
     this.replacedByConfirmationId = replacedByConfirmationId;
   }
 
-  public void markPaymentRequested() {
-    this.status = OrderConfirmationStatus.PAYMENT_REQUESTED;
+  public void markBuyerViewed(Instant viewedAt) {
+    Objects.requireNonNull(viewedAt, "viewedAt");
+    if (this.buyerViewedAt == null) {
+      this.buyerViewedAt = viewedAt;
+    }
   }
 
   public void markPaid() {

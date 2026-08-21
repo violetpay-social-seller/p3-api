@@ -33,6 +33,12 @@ public class OrderFormSubmission {
   @Column(name = "submitted_by", nullable = false)
   private UUID submittedBy;
 
+  @Column(name = "selected_gallery_item_id")
+  private UUID selectedGalleryItemId;
+
+  @Column(name = "selected_gallery_snapshot", columnDefinition = "jsonb")
+  private String selectedGallerySnapshot;
+
   @Column(name = "answers", nullable = false, columnDefinition = "jsonb")
   private String answers;
 
@@ -44,21 +50,42 @@ public class OrderFormSubmission {
   private Instant submittedAt;
 
   private OrderFormSubmission(
-      UUID inquiryId, UUID templateId, UUID submittedBy, String answers, String referenceAssets) {
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      UUID selectedGalleryItemId,
+      String selectedGallerySnapshot,
+      String answers,
+      String referenceAssets) {
     this.inquiryId = inquiryId;
     this.templateId = templateId;
     this.submittedBy = submittedBy;
+    this.selectedGalleryItemId = selectedGalleryItemId;
+    this.selectedGallerySnapshot = selectedGallerySnapshot;
     this.answers = answers;
     this.referenceAssets = referenceAssets;
   }
 
   public static OrderFormSubmission create(
-      UUID inquiryId, UUID templateId, UUID submittedBy, String answers, String referenceAssets) {
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      UUID selectedGalleryItemId,
+      String selectedGallerySnapshot,
+      String answers,
+      String referenceAssets) {
     Objects.requireNonNull(inquiryId, "inquiryId");
     Objects.requireNonNull(templateId, "templateId");
     Objects.requireNonNull(submittedBy, "submittedBy");
     Objects.requireNonNull(answers, "answers");
 
-    return new OrderFormSubmission(inquiryId, templateId, submittedBy, answers, referenceAssets);
+    return new OrderFormSubmission(
+        inquiryId,
+        templateId,
+        submittedBy,
+        selectedGalleryItemId,
+        selectedGallerySnapshot,
+        answers,
+        referenceAssets);
   }
 }

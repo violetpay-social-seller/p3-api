@@ -19,9 +19,7 @@ public class InquiryOpenService implements OpenInquiryUseCase {
   public Inquiry open(OpenInquiryCommand command) {
     Inquiry inquiry = inquiryPersistencePort
         .findByStoreIdAndBuyerUserId(command.storeId(), command.buyerUserId())
-        .orElseGet(() -> Inquiry.create(command.storeId(), command.buyerUserId(), null));
-
-    inquiry.clearContextProduct();
+        .orElseGet(() -> Inquiry.create(command.storeId(), command.buyerUserId()));
 
     return inquiryPersistencePort.save(inquiry);
   }

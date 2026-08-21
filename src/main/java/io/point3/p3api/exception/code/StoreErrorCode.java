@@ -13,6 +13,21 @@ public enum StoreErrorCode implements ErrorCode {
       "/errors/store/already-exists"),
   STORE_NOT_FOUND(
       "STORE_NOT_FOUND_404", "Store not found", HttpStatus.NOT_FOUND, "/errors/store/not-found"),
+  REPRESENTATIVE_IMAGE_NOT_FOUND(
+      "REPRESENTATIVE_IMAGE_NOT_FOUND_404",
+      "Representative image not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/store/representative-image-not-found"),
+  REPRESENTATIVE_IMAGE_LIMIT_EXCEEDED(
+      "REPRESENTATIVE_IMAGE_LIMIT_EXCEEDED_400",
+      "Representative image limit exceeded",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/representative-image-limit-exceeded"),
+  REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND(
+      "REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND_404",
+      "Representative image asset not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/store/representative-image-asset-not-found"),
   STORE_STATUS_FORBIDDEN(
       "STORE_STATUS_FORBIDDEN_400",
       "Store status can not be changed",

@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/operator/seller/applications")
+@RequestMapping("/operator/seller-onboardings")
 @RequiredArgsConstructor
 public class OperatorSellerOnboardingController {
 

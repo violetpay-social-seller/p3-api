@@ -18,7 +18,7 @@ public class StoreContextFilter extends OncePerRequestFilter {
 
   private static final String SELLER_PREFIX = "/seller/";
   private static final String SELLER_STORE_PATH = "/seller/store";
-  private static final String SELLER_APPLICATIONS_PATH = "/seller/applications";
+  private static final String SELLER_ONBOARDINGS_PATH = "/seller/onboardings";
 
   private final CurrentUserRender currentUserRender;
   private final SellerStoreProvider sellerStoreProvider;
@@ -40,7 +40,7 @@ public class StoreContextFilter extends OncePerRequestFilter {
       return false;
     }
 
-    return SELLER_STORE_PATH.equals(path) || SELLER_APPLICATIONS_PATH.equals(path);
+    return SELLER_STORE_PATH.equals(path) || SELLER_ONBOARDINGS_PATH.equals(path);
   }
 
   @Override

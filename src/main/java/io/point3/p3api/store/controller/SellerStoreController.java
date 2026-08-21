@@ -76,12 +76,12 @@ public class SellerStoreController {
         currentUser.userId(),
         request.name(),
         request.profileAssetId(),
-        request.bannerAssetId(),
         request.description(),
         request.contact(),
         request.contactVisible(),
         request.snsLinks(),
         request.businessHours(),
+        request.pickupSettings(),
         request.address());
   }
 
@@ -90,12 +90,12 @@ public class SellerStoreController {
         storeId,
         request.name(),
         request.profileAssetId(),
-        request.bannerAssetId(),
         request.description(),
         request.contact(),
         request.contactVisible(),
         request.snsLinks(),
         request.businessHours(),
+        request.pickupSettings(),
         request.address());
   }
 }

@@ -36,9 +36,6 @@ public class Inquiry {
   @Column(name = "buyer_user_id", nullable = false)
   private UUID buyerUserId;
 
-  @Column(name = "context_product_id")
-  private UUID contextProductId;
-
   @Column(name = "buyer_last_read_at")
   private Instant buyerLastReadAt;
 
@@ -49,24 +46,15 @@ public class Inquiry {
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
-  public void changeContextProduct(UUID productId) {
-    this.contextProductId = Objects.requireNonNull(productId, "productId");
-  }
-
-  public void clearContextProduct() {
-    this.contextProductId = null;
-  }
-
-  private Inquiry(UUID storeId, UUID buyerUserId, UUID contextProductId) {
+  private Inquiry(UUID storeId, UUID buyerUserId) {
     this.storeId = storeId;
     this.buyerUserId = buyerUserId;
-    this.contextProductId = contextProductId;
   }
 
-  public static Inquiry create(UUID storeId, UUID buyerUserId, UUID contextProductId) {
+  public static Inquiry create(UUID storeId, UUID buyerUserId) {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(buyerUserId, "buyerUserId");
 
-    return new Inquiry(storeId, buyerUserId, contextProductId);
+    return new Inquiry(storeId, buyerUserId);
   }
 }

@@ -27,9 +27,6 @@ public class Store {
   @Column(name = "profile_asset_id")
   private UUID profileAssetId;
 
-  @Column(name = "banner_asset_id")
-  private UUID bannerAssetId;
-
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
@@ -51,8 +48,17 @@ public class Store {
   @Column(name = "business_hours", columnDefinition = "jsonb")
   private String businessHours;
 
+  @Column(name = "pickup_settings", columnDefinition = "jsonb")
+  private String pickupSettings;
+
   @Column(name = "address", length = 255)
   private String address;
+
+  @Column(name = "settlement_account_status", nullable = false, length = 30)
+  private String settlementAccountStatus;
+
+  @Column(name = "settlement_account_registered_at")
+  private Instant settlementAccountRegisteredAt;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 30)
@@ -71,7 +77,8 @@ public class Store {
     this.name = name;
     this.slug = slug;
     this.contactVisible = false;
-    this.status = StoreStatus.ACTIVE;
+    this.settlementAccountStatus = "NOT_REGISTERED";
+    this.status = StoreStatus.INACTIVE;
   }
 
   public static Store create(UUID ownerUserId, String name, String slug) {
@@ -84,10 +91,6 @@ public class Store {
 
   public void updateProfileAsset(UUID profileAssetId) {
     this.profileAssetId = profileAssetId;
-  }
-
-  public void updateBannerAsset(UUID bannerAssetId) {
-    this.bannerAssetId = bannerAssetId;
   }
 
   public void updateBasicInfo(
@@ -107,6 +110,16 @@ public class Store {
     this.snsLinks = snsLinks;
     this.businessHours = businessHours;
     this.address = address;
+  }
+
+  public void updatePickupSettings(String pickupSettings) {
+    this.pickupSettings = pickupSettings;
+  }
+
+  public void markSettlementAccountInputCompleted(Instant registeredAt) {
+    Objects.requireNonNull(registeredAt, "registeredAt");
+    this.settlementAccountStatus = "INPUT_COMPLETED";
+    this.settlementAccountRegisteredAt = registeredAt;
   }
 
   public boolean isActive() {

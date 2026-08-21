@@ -5,6 +5,7 @@ import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,18 @@ public class OrderConfirmationQueryService implements OrderConfirmationQueryUseC
       UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
     inquiryChatAccessService.getBuyerInquiry(inquiryId, buyerUserId);
     return getConfirmation(inquiryId, confirmationId);
+  }
+
+  @Override
+  public List<OrderConfirmation> getSellerHistory(UUID inquiryId, UUID storeId) {
+    inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
+    return orderConfirmationPersistencePort.findAllByInquiryId(inquiryId);
+  }
+
+  @Override
+  public List<OrderConfirmation> getBuyerHistory(UUID inquiryId, UUID buyerUserId) {
+    inquiryChatAccessService.getBuyerInquiry(inquiryId, buyerUserId);
+    return orderConfirmationPersistencePort.findAllByInquiryId(inquiryId);
   }
 
   private OrderConfirmation getConfirmation(UUID inquiryId, UUID confirmationId) {

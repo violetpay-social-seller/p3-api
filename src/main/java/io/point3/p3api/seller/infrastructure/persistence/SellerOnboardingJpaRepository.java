@@ -4,6 +4,7 @@ import io.point3.p3api.seller.domain.entity.SellerOnboarding;
 import io.point3.p3api.seller.domain.type.SellerOnboardingStatus;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,8 @@ public interface SellerOnboardingJpaRepository extends JpaRepository<SellerOnboa
 
   boolean existsByApplicantUserIdAndStatus(
       UUID applicantUserId, SellerOnboardingStatus sellerOnboardingStatus);
+
+  Optional<SellerOnboarding> findFirstByApplicantUserIdOrderByCreatedAtDesc(UUID applicantUserId);
 
   List<SellerOnboarding> findByStatusOrderByCreatedAtAsc(SellerOnboardingStatus status);
 

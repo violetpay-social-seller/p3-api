@@ -5,6 +5,7 @@ import io.point3.p3api.seller.domain.entity.SellerOnboarding;
 import io.point3.p3api.seller.domain.type.SellerOnboardingStatus;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,13 @@ public class SellerOnboardingPersistenceAdapter implements SellerOnboardingPersi
   public boolean existsPendingByApplicantUserId(UUID applicantUserId) {
     return sellerOnboardingJpaRepository.existsByApplicantUserIdAndStatus(
         applicantUserId, SellerOnboardingStatus.PENDING);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public Optional<SellerOnboarding> findLatestByApplicantUserId(UUID applicantUserId) {
+    return sellerOnboardingJpaRepository.findFirstByApplicantUserIdOrderByCreatedAtDesc(
+        applicantUserId);
   }
 
   @Override

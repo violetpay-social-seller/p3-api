@@ -39,7 +39,7 @@ CREATE TABLE stores (
     description TEXT,
     contact VARCHAR(100),
     contact_visible BOOLEAN NOT NULL DEFAULT FALSE,
-    sns_links JSONB,
+    sns_link VARCHAR(500),
     business_hours JSONB,
     pickup_settings JSONB,
     address VARCHAR(255),
@@ -307,6 +307,25 @@ CREATE TABLE notifications (
     CONSTRAINT fk_notifications_user_id FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
+CREATE TABLE seller_onboardings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    applicant_user_id UUID NOT NULL,
+    store_name VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(30) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    sns_links JSONB,
+    status VARCHAR(30) NOT NULL,
+    rejection_reason TEXT,
+    reviewed_by UUID,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT fk_seller_onboardings_applicant_user_id
+        FOREIGN KEY (applicant_user_id) REFERENCES users (id),
+    CONSTRAINT fk_seller_onboardings_reviewed_by
+        FOREIGN KEY (reviewed_by) REFERENCES users (id)
+);
+
 CREATE INDEX ix_assets_uploaded_by ON assets (uploaded_by);
 CREATE INDEX ix_asset_variants_asset_id ON asset_variants (asset_id);
 CREATE INDEX ix_store_representative_images_store_id ON store_representative_images (store_id);
@@ -332,3 +351,5 @@ CREATE INDEX ix_orders_store_id_status ON orders (store_id, status);
 CREATE INDEX ix_orders_buyer_user_id_created_at ON orders (buyer_user_id, created_at);
 CREATE INDEX ix_refunds_order_id ON refunds (order_id);
 CREATE INDEX ix_notifications_user_id_created_at ON notifications (user_id, created_at);
+CREATE INDEX idx_seller_onboardings_applicant_status_created_at
+    ON seller_onboardings (applicant_user_id, status, created_at DESC);

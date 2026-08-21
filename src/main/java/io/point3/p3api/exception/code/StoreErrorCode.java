@@ -23,6 +23,11 @@ public enum StoreErrorCode implements ErrorCode {
       "Representative image limit exceeded",
       HttpStatus.BAD_REQUEST,
       "/errors/store/representative-image-limit-exceeded"),
+  REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED(
+          "REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED_400",
+          "At least 3 active representative images are required",
+          HttpStatus.BAD_REQUEST,
+          "/errors/store/representative-image-minimum-required"),
   REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND(
       "REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND_404",
       "Representative image asset not found",

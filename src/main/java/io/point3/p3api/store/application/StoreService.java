@@ -7,6 +7,7 @@ import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
+import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.slug.StoreSlugGenerator;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
@@ -28,6 +29,7 @@ public class StoreService
   private static final int MAX_SLUG_SUFFIX_ATTEMPTS = 100;
 
   private final StorePersistencePort storePersistencePort;
+  private final RepresentativeImagePersistencePort representativeImagePersistencePort;
 
   @Override
   public StoreResult create(CreateStoreCommand command) {
@@ -79,6 +81,7 @@ public class StoreService
     Store store = findStore(command.storeId());
 
     if (command.status() == StoreStatus.ACTIVE) {
+      validateCanActive(store);
       store.active();
       return StoreResult.from(store);
     }
@@ -124,5 +127,15 @@ public class StoreService
     }
 
     throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
+  }
+
+  private void validateCanActive(Store store) {
+    validateRepresentativeImageReady(store.getId());
+  }
+
+  private void validateRepresentativeImageReady(UUID storeId) {
+    if (representativeImagePersistencePort.findActiveByStoreId(storeId).size() < 3) {
+      throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED);
+    }
   }
 }

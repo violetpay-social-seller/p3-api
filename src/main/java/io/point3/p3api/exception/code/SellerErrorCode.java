@@ -10,7 +10,17 @@ public enum SellerErrorCode implements ErrorCode {
       "SELLER_ONBOARDING_PENDING_ALREADY_EXISTS_409",
       "Seller onboarding is already pending",
       HttpStatus.CONFLICT,
-      "/errors/seller/onboarding-pending-already-exists");
+      "/errors/seller/onboarding-pending-already-exists"),
+  SELLER_ONBOARDING_NOT_FOUND(
+      "SELLER_ONBOARDING_NOT_FOUND_404",
+      "Seller onboarding not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/seller/onboarding-not-found"),
+  SELLER_ONBOARDING_REVIEW_NOT_ALLOWED(
+      "SELLER_ONBOARDING_REVIEW_NOT_ALLOWED_409",
+      "Seller onboarding review is not allowed",
+      HttpStatus.CONFLICT,
+      "/errors/seller/onboarding-review-not-allowed");
 
   private final String code;
   private final String title;

@@ -1,8 +1,10 @@
 package io.point3.p3api.store.application.representative;
 
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
+import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.representative.command.CreateRepresentativeImageCommand;
 import io.point3.p3api.store.application.representative.command.UpdateRepresentativeImageCommand;
 import io.point3.p3api.store.application.representative.create.RepresentativeImageCreateUseCase;
@@ -11,6 +13,7 @@ import io.point3.p3api.store.application.representative.port.RepresentativeImage
 import io.point3.p3api.store.application.representative.query.RepresentativeImageQueryUseCase;
 import io.point3.p3api.store.application.representative.result.RepresentativeImageResult;
 import io.point3.p3api.store.application.representative.update.RepresentativeImageUpdateUseCase;
+import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
 import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import java.util.List;
@@ -32,11 +35,12 @@ public class RepresentativeImageService
 
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
+  private final StorePersistencePort storePersistencePort;
 
   @Override
   public RepresentativeImageResult create(CreateRepresentativeImageCommand command) {
     validateImageLimit(command.storeId());
-    validateAsset(command.assetId());
+    validateAssetOwnership(command.storeId(), command.assetId());
     StoreRepresentativeImage image =
         StoreRepresentativeImage.create(command.storeId(), command.assetId(), command.sortOrder());
     return RepresentativeImageResult.from(representativeImagePersistencePort.save(image));
@@ -89,8 +93,14 @@ public class RepresentativeImageService
     }
   }
 
-  private void validateAsset(UUID assetId) {
-    if (assetPersistencePort.findById(assetId).isEmpty()) {
+  private void validateAssetOwnership(UUID storeId, UUID assetId) {
+    Asset asset = assetPersistencePort
+        .findById(assetId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND));
+    Store store = storePersistencePort
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND));
+    if (!store.getOwnerUserId().equals(asset.getUploadedBy())) {
       throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND);
     }
   }

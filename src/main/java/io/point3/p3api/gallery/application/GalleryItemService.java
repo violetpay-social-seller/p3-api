@@ -1,6 +1,7 @@
 package io.point3.p3api.gallery.application;
 
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
+import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.GalleryErrorCode;
 import io.point3.p3api.gallery.application.command.CreateGalleryItemCommand;
@@ -13,6 +14,8 @@ import io.point3.p3api.gallery.application.result.GalleryItemResult;
 import io.point3.p3api.gallery.application.update.GalleryItemUpdateUseCase;
 import io.point3.p3api.gallery.domain.entity.StoreGalleryItem;
 import io.point3.p3api.gallery.domain.type.StoreGalleryItemStatus;
+import io.point3.p3api.store.application.port.StorePersistencePort;
+import io.point3.p3api.store.domain.entity.Store;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +33,11 @@ public class GalleryItemService
 
   private final GalleryItemPersistencePort galleryItemPersistencePort;
   private final AssetPersistencePort assetPersistencePort;
+  private final StorePersistencePort storePersistencePort;
 
   @Override
   public GalleryItemResult create(CreateGalleryItemCommand command) {
-    validateAsset(command.assetId());
+    validateAssetOwnership(command.storeId(), command.assetId());
 
     StoreGalleryItem item = StoreGalleryItem.create(
         command.storeId(),
@@ -99,8 +103,14 @@ public class GalleryItemService
         .orElseThrow(() -> new BaseException(GalleryErrorCode.GALLERY_ITEM_NOT_FOUND));
   }
 
-  private void validateAsset(UUID assetId) {
-    if (assetPersistencePort.findById(assetId).isEmpty()) {
+  private void validateAssetOwnership(UUID storeId, UUID assetId) {
+    Asset asset = assetPersistencePort
+        .findById(assetId)
+        .orElseThrow(() -> new BaseException(GalleryErrorCode.GALLERY_ASSET_NOT_FOUND));
+    Store store = storePersistencePort
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(GalleryErrorCode.GALLERY_ASSET_NOT_FOUND));
+    if (!store.getOwnerUserId().equals(asset.getUploadedBy())) {
       throw new BaseException(GalleryErrorCode.GALLERY_ASSET_NOT_FOUND);
     }
   }

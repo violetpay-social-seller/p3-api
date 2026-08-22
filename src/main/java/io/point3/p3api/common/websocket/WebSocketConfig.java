@@ -1,11 +1,14 @@
 package io.point3.p3api.common.websocket;
 
 import io.point3.p3api.auth.infrastructure.stomp.StompJwtAuthenticationInterceptor;
+import io.point3.p3api.auth.infrastructure.stomp.StompCurrentUserArgumentResolver;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatMessageAuthorizationInterceptor;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatSubscriptionAuthorizationInterceptor;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -23,6 +26,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   private final StompChatSubscriptionAuthorizationInterceptor
       stompChatSubscriptionAuthorizationInterceptor;
   private final StompChatMessageAuthorizationInterceptor stompChatMessageAuthorizationInterceptor;
+  private final StompCurrentUserArgumentResolver stompCurrentUserArgumentResolver;
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -43,5 +47,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         stompJwtAuthenticationInterceptor,
         stompChatSubscriptionAuthorizationInterceptor,
         stompChatMessageAuthorizationInterceptor);
+  }
+
+  @Override
+  public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+    resolvers.add(stompCurrentUserArgumentResolver);
   }
 }

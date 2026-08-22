@@ -37,6 +37,7 @@ public class SellerOrderFormSubmissionQueryService
 
     validate(submission, inquiry);
 
+    inquiry.markInProgress();
     return submission;
   }
 

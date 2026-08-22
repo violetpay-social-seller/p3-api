@@ -1,12 +1,8 @@
 package io.point3.p3api.inquiry.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
+import jakarta.persistence.*;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,6 +29,10 @@ public class Inquiry {
   @Column(name = "store_id", nullable = false)
   private UUID storeId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "inquiry_status", nullable = false, length = 30)
+  private InquiryStatus status;
+
   @Column(name = "buyer_user_id", nullable = false)
   private UUID buyerUserId;
 
@@ -49,6 +49,7 @@ public class Inquiry {
   private Inquiry(UUID storeId, UUID buyerUserId) {
     this.storeId = storeId;
     this.buyerUserId = buyerUserId;
+    this.status = InquiryStatus.WAITING;
   }
 
   public static Inquiry create(UUID storeId, UUID buyerUserId) {

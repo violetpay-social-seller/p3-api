@@ -38,6 +38,9 @@ p3:
   websocket:
     allowed-origins: ${P3_WEBSOCKET_ALLOWED_ORIGINS:http://localhost:3000}
 
+  web:
+    base-url: ${P3_WEB_BASE_URL:http://localhost:3000}
+
   asset:
     storage:
       original-asset-bucket: p3-s3-original-dev

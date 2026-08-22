@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
+import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +39,6 @@ public class OrderFormReferenceSnapshotFactory {
     }
   }
 
-  private record ReferenceAssetSnapshot(UUID assetId, String source, int sortOrder) {}
+  private record ReferenceAssetSnapshot(
+      UUID assetId, OrderFormReferenceAssetSource source, int sortOrder) {}
 }

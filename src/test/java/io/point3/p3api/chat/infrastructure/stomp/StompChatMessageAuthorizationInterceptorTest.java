@@ -21,8 +21,8 @@ import org.springframework.security.core.Authentication;
 
 class StompChatMessageAuthorizationInterceptorTest {
 
-  private final ChatStompParticipantAuthorizationService participantAuthorizationService = mock(
-      ChatStompParticipantAuthorizationService.class);
+  private final ChatStompParticipantAuthorizationService participantAuthorizationService =
+      mock(ChatStompParticipantAuthorizationService.class);
   private final StompChatMessageAuthorizationInterceptor interceptor =
       new StompChatMessageAuthorizationInterceptor(participantAuthorizationService);
 
@@ -32,11 +32,11 @@ class StompChatMessageAuthorizationInterceptorTest {
     UUID inquiryId = UUID.randomUUID();
     Authentication authentication = mock(Authentication.class);
     CurrentUser currentUser = new CurrentUser(UUID.randomUUID(), "구매자", UserRole.BUYER);
-    when(participantAuthorizationService.requireParticipant(authentication, inquiryId)).thenReturn(
-        currentUser);
+    when(participantAuthorizationService.requireParticipant(authentication, inquiryId))
+        .thenReturn(currentUser);
 
-    Message<?> result = interceptor.preSend(sendMessage(inquiryId, authentication), mock(
-        MessageChannel.class));
+    Message<?> result =
+        interceptor.preSend(sendMessage(inquiryId, authentication), mock(MessageChannel.class));
 
     assertEquals(currentUser, result.getHeaders().get(StompCurrentUserContext.HEADER));
     verify(participantAuthorizationService).requireParticipant(authentication, inquiryId);

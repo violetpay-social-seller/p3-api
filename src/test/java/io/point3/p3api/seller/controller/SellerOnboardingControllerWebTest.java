@@ -3,8 +3,8 @@ package io.point3.p3api.seller.controller;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,8 +14,8 @@ import io.point3.p3api.common.web.response.GlobalExceptionHandler;
 import io.point3.p3api.seller.application.create.SellerOnboardingCreateUseCase;
 import io.point3.p3api.seller.application.query.SellerOnboardingCurrentQueryUseCase;
 import io.point3.p3api.seller.application.reapply.SellerOnboardingReapplicationUseCase;
-import io.point3.p3api.seller.application.result.SellerOnboardingResult;
 import io.point3.p3api.seller.application.result.SellerOnboardingDetailResult;
+import io.point3.p3api.seller.application.result.SellerOnboardingResult;
 import io.point3.p3api.seller.domain.type.SellerOnboardingStatus;
 import io.point3.p3api.user.domain.type.UserRole;
 import java.time.Instant;
@@ -33,12 +33,12 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 class SellerOnboardingControllerWebTest {
 
-  private final SellerOnboardingCreateUseCase sellerOnboardingCreateUseCase = mock(
-      SellerOnboardingCreateUseCase.class);
-  private final SellerOnboardingCurrentQueryUseCase sellerOnboardingCurrentQueryUseCase = mock(
-      SellerOnboardingCurrentQueryUseCase.class);
-  private final SellerOnboardingReapplicationUseCase sellerOnboardingReapplicationUseCase = mock(
-      SellerOnboardingReapplicationUseCase.class);
+  private final SellerOnboardingCreateUseCase sellerOnboardingCreateUseCase =
+      mock(SellerOnboardingCreateUseCase.class);
+  private final SellerOnboardingCurrentQueryUseCase sellerOnboardingCurrentQueryUseCase =
+      mock(SellerOnboardingCurrentQueryUseCase.class);
+  private final SellerOnboardingReapplicationUseCase sellerOnboardingReapplicationUseCase =
+      mock(SellerOnboardingReapplicationUseCase.class);
 
   private MockMvc mockMvc;
   private CurrentUser currentUser;
@@ -60,8 +60,8 @@ class SellerOnboardingControllerWebTest {
   @DisplayName("판매자는 자신의 최신 입점 신청 상태를 조회할 수 있다")
   void getsCurrentOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
-    when(sellerOnboardingCurrentQueryUseCase.getCurrentOnboarding(currentUser.userId())).thenReturn(
-        new SellerOnboardingDetailResult(
+    when(sellerOnboardingCurrentQueryUseCase.getCurrentOnboarding(currentUser.userId()))
+        .thenReturn(new SellerOnboardingDetailResult(
             onboardingId,
             currentUser.userId(),
             "P3 베이커리",
@@ -73,7 +73,8 @@ class SellerOnboardingControllerWebTest {
             Instant.parse("2026-08-22T00:00:00Z"),
             Instant.parse("2026-08-21T00:00:00Z")));
 
-    mockMvc.perform(get("/seller/onboardings/current"))
+    mockMvc
+        .perform(get("/seller/onboardings/current"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.id").value(onboardingId.toString()))
@@ -85,17 +86,19 @@ class SellerOnboardingControllerWebTest {
   @DisplayName("판매자는 반려된 입점 신청을 재신청할 수 있다")
   void reappliesOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
-    when(sellerOnboardingReapplicationUseCase.reapply(any())).thenReturn(new SellerOnboardingResult(
-        UUID.randomUUID(),
-        currentUser.userId(),
-        "P3 베이커리",
-        "010-1234-5678",
-        "서울특별시 중구",
-        null,
-        SellerOnboardingStatus.PENDING,
-        Instant.parse("2026-08-22T00:00:00Z")));
+    when(sellerOnboardingReapplicationUseCase.reapply(any()))
+        .thenReturn(new SellerOnboardingResult(
+            UUID.randomUUID(),
+            currentUser.userId(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            null,
+            SellerOnboardingStatus.PENDING,
+            Instant.parse("2026-08-22T00:00:00Z")));
 
-    mockMvc.perform(post("/seller/onboardings/{onboardingId}/resubmissions", onboardingId)
+    mockMvc
+        .perform(post("/seller/onboardings/{onboardingId}/resubmissions", onboardingId)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 {
@@ -113,19 +116,20 @@ class SellerOnboardingControllerWebTest {
   @DisplayName("유효한 입점 신청 요청은 PENDING 상태를 반환한다")
   void createsOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
-    when(sellerOnboardingCreateUseCase.create(any())).thenReturn(new SellerOnboardingResult(
-        onboardingId,
-        UUID.randomUUID(),
-        "P3 베이커리",
-        "010-1234-5678",
-        "서울특별시 중구",
-        "https://instagram.com/p3bakery",
-        SellerOnboardingStatus.PENDING,
-        Instant.parse("2026-08-21T00:00:00Z")));
+    when(sellerOnboardingCreateUseCase.create(any()))
+        .thenReturn(new SellerOnboardingResult(
+            onboardingId,
+            UUID.randomUUID(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            "https://instagram.com/p3bakery",
+            SellerOnboardingStatus.PENDING,
+            Instant.parse("2026-08-21T00:00:00Z")));
 
-    mockMvc.perform(post("/seller/onboardings")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+    mockMvc
+        .perform(
+            post("/seller/onboardings").contentType(MediaType.APPLICATION_JSON).content("""
                 {
                   "storeName": "P3 베이커리",
                   "phoneNumber": "010-1234-5678",
@@ -142,9 +146,9 @@ class SellerOnboardingControllerWebTest {
   @Test
   @DisplayName("필수값 또는 형식이 잘못된 입점 신청 요청은 400을 반환한다")
   void rejectsInvalidRequest() throws Exception {
-    mockMvc.perform(post("/seller/onboardings")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+    mockMvc
+        .perform(
+            post("/seller/onboardings").contentType(MediaType.APPLICATION_JSON).content("""
                 {
                   "storeName": "",
                   "phoneNumber": "02-123-4567",
@@ -161,9 +165,9 @@ class SellerOnboardingControllerWebTest {
   void rejectsOnboardingForNonSeller() throws Exception {
     currentUser = new CurrentUser(UUID.randomUUID(), "구매자", UserRole.BUYER);
 
-    mockMvc.perform(post("/seller/onboardings")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
+    mockMvc
+        .perform(
+            post("/seller/onboardings").contentType(MediaType.APPLICATION_JSON).content("""
                 {
                   "storeName": "P3 베이커리",
                   "phoneNumber": "010-1234-5678",

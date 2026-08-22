@@ -6,8 +6,8 @@ import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionComm
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.application.submission.snapshot.OrderFormAnswerSnapshotFactory;
 import io.point3.p3api.inquiry.application.submission.snapshot.OrderFormReferenceSnapshotFactory;
-import io.point3.p3api.inquiry.application.submission.snapshot.OrderFormSelectedGallerySnapshotFactory;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormAnswerValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
@@ -22,9 +22,9 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
+  private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
   private final OrderFormReferenceSnapshotFactory referenceSnapshotFactory;
-  private final OrderFormSelectedGallerySnapshotFactory selectedGallerySnapshotFactory;
 
   @Override
   public OrderFormSubmission create(CreateOrderFormSubmissionCommand command) {
@@ -33,19 +33,16 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
     validateOrderFormSubmissionRequirements(command, activeForm);
 
     orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
+    orderFormReferenceAssetValidator.validate(command.storeId(), command.referenceAssets());
 
     String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
 
     String referenceAssets = referenceSnapshotFactory.create(command.referenceAssets());
-    String selectedGallerySnapshot =
-        selectedGallerySnapshotFactory.create(command.selectedGalleryItemId());
 
     OrderFormSubmission submission = OrderFormSubmission.create(
         command.inquiryId(),
         activeForm.id(),
         command.buyerUserId(),
-        command.selectedGalleryItemId(),
-        selectedGallerySnapshot,
         answersSnapshot,
         referenceAssets);
 

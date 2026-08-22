@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 class SellerOnboardingReviewServiceTest {
 
-  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort = mock(
-      SellerOnboardingPersistencePort.class);
+  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort =
+      mock(SellerOnboardingPersistencePort.class);
   private final SellerOnboardingReviewService sellerOnboardingReviewService =
       new SellerOnboardingReviewService(sellerOnboardingPersistencePort);
 
@@ -33,7 +33,8 @@ class SellerOnboardingReviewServiceTest {
     UUID reviewerId = UUID.randomUUID();
     when(sellerOnboardingPersistencePort.existsById(onboardingId)).thenReturn(true);
     when(sellerOnboardingPersistencePort.approveIfPending(
-        eq(onboardingId), eq(reviewerId), any(Instant.class))).thenReturn(true);
+            eq(onboardingId), eq(reviewerId), any(Instant.class)))
+        .thenReturn(true);
 
     SellerOnboardingReviewResult result = sellerOnboardingReviewService.approve(
         ApproveSellerOnboardingCommand.from(onboardingId, reviewerId));
@@ -41,8 +42,8 @@ class SellerOnboardingReviewServiceTest {
     assertEquals(onboardingId, result.id());
     assertEquals(SellerOnboardingStatus.APPROVED, result.status());
     assertEquals(reviewerId, result.reviewedBy());
-    verify(sellerOnboardingPersistencePort).approveIfPending(
-        eq(onboardingId), eq(reviewerId), any(Instant.class));
+    verify(sellerOnboardingPersistencePort)
+        .approveIfPending(eq(onboardingId), eq(reviewerId), any(Instant.class));
   }
 
   @Test
@@ -53,7 +54,8 @@ class SellerOnboardingReviewServiceTest {
     String rejectionReason = "사업자 정보가 충분하지 않습니다.";
     when(sellerOnboardingPersistencePort.existsById(onboardingId)).thenReturn(true);
     when(sellerOnboardingPersistencePort.rejectIfPending(
-        eq(onboardingId), eq(reviewerId), eq(rejectionReason), any(Instant.class))).thenReturn(true);
+            eq(onboardingId), eq(reviewerId), eq(rejectionReason), any(Instant.class)))
+        .thenReturn(true);
 
     SellerOnboardingReviewResult result = sellerOnboardingReviewService.reject(
         RejectSellerOnboardingCommand.from(onboardingId, reviewerId, rejectionReason));
@@ -61,8 +63,8 @@ class SellerOnboardingReviewServiceTest {
     assertEquals(onboardingId, result.id());
     assertEquals(SellerOnboardingStatus.REJECTED, result.status());
     assertEquals(reviewerId, result.reviewedBy());
-    verify(sellerOnboardingPersistencePort).rejectIfPending(
-        eq(onboardingId), eq(reviewerId), eq(rejectionReason), any(Instant.class));
+    verify(sellerOnboardingPersistencePort)
+        .rejectIfPending(eq(onboardingId), eq(reviewerId), eq(rejectionReason), any(Instant.class));
   }
 
   @Test
@@ -89,7 +91,8 @@ class SellerOnboardingReviewServiceTest {
     UUID reviewerId = UUID.randomUUID();
     when(sellerOnboardingPersistencePort.existsById(onboardingId)).thenReturn(true);
     when(sellerOnboardingPersistencePort.approveIfPending(
-        eq(onboardingId), eq(reviewerId), any(Instant.class))).thenReturn(false);
+            eq(onboardingId), eq(reviewerId), any(Instant.class)))
+        .thenReturn(false);
 
     BaseException exception = assertThrows(
         BaseException.class,
@@ -97,7 +100,7 @@ class SellerOnboardingReviewServiceTest {
             ApproveSellerOnboardingCommand.from(onboardingId, reviewerId)));
 
     assertEquals(SellerErrorCode.SELLER_ONBOARDING_REVIEW_NOT_ALLOWED, exception.getErrorCode());
-    verify(sellerOnboardingPersistencePort).approveIfPending(
-        eq(onboardingId), eq(reviewerId), any(Instant.class));
+    verify(sellerOnboardingPersistencePort)
+        .approveIfPending(eq(onboardingId), eq(reviewerId), any(Instant.class));
   }
 }

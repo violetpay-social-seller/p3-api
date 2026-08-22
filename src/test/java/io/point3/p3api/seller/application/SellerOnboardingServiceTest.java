@@ -21,18 +21,18 @@ import org.mockito.ArgumentCaptor;
 
 class SellerOnboardingServiceTest {
 
-  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort = mock(
-      SellerOnboardingPersistencePort.class);
-  private final SellerOnboardingService sellerOnboardingService = new SellerOnboardingService(
-      sellerOnboardingPersistencePort);
+  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort =
+      mock(SellerOnboardingPersistencePort.class);
+  private final SellerOnboardingService sellerOnboardingService =
+      new SellerOnboardingService(sellerOnboardingPersistencePort);
 
   @Test
   @DisplayName("대기 중인 신청이 없으면 PENDING 입점 신청을 저장한다")
   void createsOnboardingWhenNoPendingOnboardingExists() {
     UUID applicantUserId = UUID.randomUUID();
     CreateSellerOnboardingCommand command = command(applicantUserId);
-    when(sellerOnboardingPersistencePort.save(any(SellerOnboarding.class))).thenAnswer(
-        invocation -> invocation.getArgument(0));
+    when(sellerOnboardingPersistencePort.save(any(SellerOnboarding.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     sellerOnboardingService.create(command);
 
@@ -52,17 +52,14 @@ class SellerOnboardingServiceTest {
     BaseException exception = assertThrows(
         BaseException.class, () -> sellerOnboardingService.create(command(applicantUserId)));
 
-    assertEquals(SellerErrorCode.SELLER_ONBOARDING_PENDING_ALREADY_EXISTS, exception.getErrorCode());
+    assertEquals(
+        SellerErrorCode.SELLER_ONBOARDING_PENDING_ALREADY_EXISTS, exception.getErrorCode());
     verify(sellerOnboardingPersistencePort).existsPendingByApplicantUserId(applicantUserId);
     verifyNoMoreInteractions(sellerOnboardingPersistencePort);
   }
 
   private CreateSellerOnboardingCommand command(UUID applicantUserId) {
     return CreateSellerOnboardingCommand.from(
-        applicantUserId,
-        "P3 베이커리",
-        "010-1234-5678",
-        "서울특별시 중구",
-        null);
+        applicantUserId, "P3 베이커리", "010-1234-5678", "서울특별시 중구", null);
   }
 }

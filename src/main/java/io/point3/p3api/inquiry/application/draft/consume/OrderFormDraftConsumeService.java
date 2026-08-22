@@ -71,7 +71,6 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
             .toList(),
         new CreateOrderFormSubmissionCommand.PickupRequest(draft.pickupDate(), draft.pickupTime()),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(draft.noticeAgreed()),
-        draft.selectedGalleryItemId(),
         draft.referenceAssets().stream()
             .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
                 asset.assetId(), asset.source(), asset.sortOrder()))

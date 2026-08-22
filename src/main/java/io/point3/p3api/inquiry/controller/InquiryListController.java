@@ -9,11 +9,10 @@ import io.point3.p3api.inquiry.application.list.InquiryListUseCase;
 import io.point3.p3api.inquiry.controller.response.InquiryListItemResponse;
 import java.util.List;
 import java.util.UUID;
+
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,9 +21,10 @@ public class InquiryListController {
 
   @GetMapping("/inquiries")
   public ApiResponse<List<InquiryListItemResponse>> getBuyerInquiries(
-      @Authenticated CurrentUser currentUser) {
+          @Authenticated CurrentUser currentUser,
+          @RequestParam(required = false) InquiryStatus status) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(inquiryListUseCase.getBuyerInquiries(currentUser.userId()).stream()
+    return ApiResponse.ok(inquiryListUseCase.getBuyerInquiries(currentUser.userId(),status).stream()
         .map(InquiryListItemResponse::from)
         .toList());
   }
@@ -39,9 +39,11 @@ public class InquiryListController {
 
   @GetMapping("/seller/inquiries")
   public ApiResponse<List<InquiryListItemResponse>> getSellerInquiries(
-      @CurrentStoreId UUID storeId, @Authenticated CurrentUser currentUser) {
+      @CurrentStoreId UUID storeId,
+      @Authenticated CurrentUser currentUser,
+      @RequestParam(required = false) InquiryStatus status) {
     return ApiResponse.ok(
-        inquiryListUseCase.getSellerInquiries(storeId, currentUser.userId()).stream()
+        inquiryListUseCase.getSellerInquiries(storeId, currentUser.userId(),status).stream()
             .map(InquiryListItemResponse::from)
             .toList());
   }

@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,20 +28,22 @@ public class InquiryListService implements InquiryListUseCase {
 
   @Override
   @Transactional(readOnly = true)
-  public List<InquiryListItem> getBuyerInquiries(UUID buyerUserId) {
+  public List<InquiryListItem> getBuyerInquiries(UUID buyerUserId, InquiryStatus status) {
     return inquiryPersistencePort.findAllByBuyerUserId(buyerUserId).stream()
-        .map(inquiry -> toBuyerItem(inquiry, buyerUserId))
-        .sorted(byLatestEvent())
-        .toList();
+            .filter(item -> status == null || item.getStatus() == status)
+            .map(inquiry -> toBuyerItem(inquiry, buyerUserId))
+            .sorted(byLatestEvent())
+            .toList();
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<InquiryListItem> getSellerInquiries(UUID storeId, UUID sellerUserId) {
+  public List<InquiryListItem> getSellerInquiries(UUID storeId, UUID sellerUserId, InquiryStatus status) {
     return inquiryPersistencePort.findAllByStoreId(storeId).stream()
-        .map(inquiry -> toSellerItem(inquiry, sellerUserId))
-        .sorted(byLatestEvent())
-        .toList();
+            .filter(item -> status == null || item.getStatus() == status)
+            .map(inquiry -> toSellerItem(inquiry, sellerUserId))
+            .sorted(byLatestEvent())
+            .toList();
   }
 
   @Override
@@ -66,8 +70,7 @@ public class InquiryListService implements InquiryListUseCase {
       Inquiry inquiry, UUID readerUserId, Instant readAt, InquiryChatDetail detail) {
     Instant latestEventAt = chatTimelineItemPort.findLatestCreatedAt(inquiry.getId());
     long unreadCount = chatTimelineItemPort.countUnread(inquiry.getId(), readerUserId, readAt);
-    return new InquiryListItem(
-        detail, unreadCount, latestEventAt == null ? inquiry.getCreatedAt() : latestEventAt);
+    return InquiryListItem.from(inquiry, detail, unreadCount, latestEventAt);
   }
 
   private Comparator<InquiryListItem> byLatestEvent() {

@@ -154,6 +154,7 @@ CREATE TABLE inquiries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID NOT NULL,
     buyer_user_id UUID NOT NULL,
+    status VARCHAR(30) NOT NULL,
     buyer_last_read_at TIMESTAMPTZ,
     seller_last_read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,

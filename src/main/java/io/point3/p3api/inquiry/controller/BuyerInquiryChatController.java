@@ -9,6 +9,7 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.chat.BuyerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
 import io.point3.p3api.inquiry.controller.response.InquiryChatDetailResponse;
+import io.point3.p3api.inquiry.controller.response.InquiryStorePolicyResponse;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -46,5 +47,12 @@ public class BuyerInquiryChatController {
     ChatTimelinePage page = buyerInquiryChatUseCase.getTimeline(
         inquiryId, currentUser.userId(), new ChatTimelineQuery(cursorCreatedAt, cursorId, size));
     return ApiResponse.ok(ChatTimelinePageResponse.from(page));
+  }
+
+  @GetMapping("/store-policies")
+  public ApiResponse<InquiryStorePolicyResponse> getStorePolicies(
+      @PathVariable UUID inquiryId, @Authenticated CurrentUser currentUser) {
+    RoleGuard.requireBuyer(currentUser);
+    return ApiResponse.ok(InquiryStorePolicyResponse.empty());
   }
 }

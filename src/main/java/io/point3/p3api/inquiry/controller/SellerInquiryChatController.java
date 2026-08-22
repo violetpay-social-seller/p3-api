@@ -53,6 +53,7 @@ public class SellerInquiryChatController {
       @PathVariable UUID inquiryId,
       @Authenticated CurrentUser currentUser,
       @CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(InquiryStorePolicyResponse.empty());
+    return ApiResponse.ok(InquiryStorePolicyResponse.from(
+        sellerInquiryChatUseCase.getStorePolicy(inquiryId, storeId)));
   }
 }

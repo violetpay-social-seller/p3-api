@@ -53,6 +53,7 @@ public class BuyerInquiryChatController {
   public ApiResponse<InquiryStorePolicyResponse> getStorePolicies(
       @PathVariable UUID inquiryId, @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(InquiryStorePolicyResponse.empty());
+    return ApiResponse.ok(InquiryStorePolicyResponse.from(
+        buyerInquiryChatUseCase.getStorePolicy(inquiryId, currentUser.userId())));
   }
 }

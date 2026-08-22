@@ -11,6 +11,9 @@ public interface GalleryItemJpaRepository extends JpaRepository<StoreGalleryItem
 
   Optional<StoreGalleryItem> findByIdAndStoreId(UUID galleryItemId, UUID storeId);
 
+  Optional<StoreGalleryItem> findByAssetIdAndStoreIdAndStatus(
+      UUID assetId, UUID storeId, StoreGalleryItemStatus status);
+
   List<StoreGalleryItem> findAllByStoreIdOrderBySortOrderAsc(UUID storeId);
 
   List<StoreGalleryItem> findAllByStoreIdAndStatusOrderBySortOrderAsc(

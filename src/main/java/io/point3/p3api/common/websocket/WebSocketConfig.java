@@ -1,7 +1,7 @@
 package io.point3.p3api.common.websocket;
 
-import io.point3.p3api.auth.infrastructure.stomp.StompJwtAuthenticationInterceptor;
 import io.point3.p3api.auth.infrastructure.stomp.StompCurrentUserArgumentResolver;
+import io.point3.p3api.auth.infrastructure.stomp.StompJwtAuthenticationInterceptor;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatMessageAuthorizationInterceptor;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatSubscriptionAuthorizationInterceptor;
 import java.util.List;

@@ -44,8 +44,8 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
         throw new BaseException(CommonErrorCode.UNAUTHORIZED);
       }
 
-      CurrentUser currentUser = participantAuthorizationService.requireParticipant(
-          authentication, inquiryId);
+      CurrentUser currentUser =
+          participantAuthorizationService.requireParticipant(authentication, inquiryId);
       accessor.setHeader(StompCurrentUserContext.HEADER, currentUser);
       return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
     } catch (RuntimeException e) {

@@ -11,6 +11,8 @@ public interface GalleryItemPersistencePort {
 
   Optional<StoreGalleryItem> findByIdAndStoreId(UUID galleryItemId, UUID storeId);
 
+  Optional<StoreGalleryItem> findVisibleByAssetIdAndStoreId(UUID assetId, UUID storeId);
+
   List<StoreGalleryItem> findAllByStoreId(UUID storeId);
 
   List<StoreGalleryItem> findVisibleByStoreId(UUID storeId);

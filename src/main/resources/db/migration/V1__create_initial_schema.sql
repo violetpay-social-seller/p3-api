@@ -165,15 +165,12 @@ CREATE TABLE order_form_submissions (
     inquiry_id UUID NOT NULL,
     template_id UUID NOT NULL,
     submitted_by UUID NOT NULL,
-    selected_gallery_item_id UUID,
-    selected_gallery_snapshot JSONB,
     answers JSONB NOT NULL,
     reference_assets JSONB,
     submitted_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_form_submissions_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_order_form_submissions_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id),
-    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
-    CONSTRAINT fk_order_form_submissions_selected_gallery_item_id FOREIGN KEY (selected_gallery_item_id) REFERENCES store_gallery_items (id) ON DELETE SET NULL
+    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id)
 );
 
 CREATE TABLE chat_messages (
@@ -338,8 +335,6 @@ CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
 CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
-CREATE INDEX ix_order_form_submissions_selected_gallery_item_id
-    ON order_form_submissions (selected_gallery_item_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);

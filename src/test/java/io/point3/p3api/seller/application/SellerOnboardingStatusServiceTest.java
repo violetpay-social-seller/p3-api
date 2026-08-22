@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 
 class SellerOnboardingStatusServiceTest {
 
-  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort = mock(
-      SellerOnboardingPersistencePort.class);
-  private final SellerOnboardingService sellerOnboardingService = new SellerOnboardingService(
-      sellerOnboardingPersistencePort);
+  private final SellerOnboardingPersistencePort sellerOnboardingPersistencePort =
+      mock(SellerOnboardingPersistencePort.class);
+  private final SellerOnboardingService sellerOnboardingService =
+      new SellerOnboardingService(sellerOnboardingPersistencePort);
 
   @Test
   @DisplayName("최신 신청 상태를 조회한다")
@@ -32,11 +32,11 @@ class SellerOnboardingStatusServiceTest {
     UUID applicantUserId = UUID.randomUUID();
     UUID onboardingId = UUID.randomUUID();
     SellerOnboarding onboarding = onboarding(onboardingId, SellerOnboardingStatus.REJECTED);
-    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId)).thenReturn(
-        Optional.of(onboarding));
+    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId))
+        .thenReturn(Optional.of(onboarding));
 
-    SellerOnboardingDetailResult result = sellerOnboardingService.getCurrentOnboarding(
-        applicantUserId);
+    SellerOnboardingDetailResult result =
+        sellerOnboardingService.getCurrentOnboarding(applicantUserId);
 
     assertEquals(onboardingId, result.id());
     assertEquals(SellerOnboardingStatus.REJECTED, result.status());
@@ -51,12 +51,13 @@ class SellerOnboardingStatusServiceTest {
     SellerOnboarding onboarding = onboarding(onboardingId, SellerOnboardingStatus.REJECTED);
     when(sellerOnboardingPersistencePort.findByIdAndApplicantUserId(onboardingId, applicantUserId))
         .thenReturn(Optional.of(onboarding));
-    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId)).thenReturn(
-        Optional.of(onboarding));
-    when(sellerOnboardingPersistencePort.save(any(SellerOnboarding.class))).thenAnswer(
-        invocation -> invocation.getArgument(0));
+    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId))
+        .thenReturn(Optional.of(onboarding));
+    when(sellerOnboardingPersistencePort.save(any(SellerOnboarding.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
-    SellerOnboardingResult result = sellerOnboardingService.reapply(command(onboardingId, applicantUserId));
+    SellerOnboardingResult result =
+        sellerOnboardingService.reapply(command(onboardingId, applicantUserId));
 
     assertEquals(applicantUserId, result.applicantUserId());
     assertEquals(SellerOnboardingStatus.PENDING, result.status());
@@ -70,13 +71,15 @@ class SellerOnboardingStatusServiceTest {
     SellerOnboarding onboarding = onboarding(onboardingId, SellerOnboardingStatus.PENDING);
     when(sellerOnboardingPersistencePort.findByIdAndApplicantUserId(onboardingId, applicantUserId))
         .thenReturn(Optional.of(onboarding));
-    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId)).thenReturn(
-        Optional.of(onboarding));
+    when(sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId))
+        .thenReturn(Optional.of(onboarding));
 
     BaseException exception = assertThrows(
-        BaseException.class, () -> sellerOnboardingService.reapply(command(onboardingId, applicantUserId)));
+        BaseException.class,
+        () -> sellerOnboardingService.reapply(command(onboardingId, applicantUserId)));
 
-    assertEquals(SellerErrorCode.SELLER_ONBOARDING_REAPPLICATION_NOT_ALLOWED, exception.getErrorCode());
+    assertEquals(
+        SellerErrorCode.SELLER_ONBOARDING_REAPPLICATION_NOT_ALLOWED, exception.getErrorCode());
   }
 
   private SellerOnboarding onboarding(UUID onboardingId, SellerOnboardingStatus status) {
@@ -89,11 +92,6 @@ class SellerOnboardingStatusServiceTest {
 
   private ReapplySellerOnboardingCommand command(UUID onboardingId, UUID applicantUserId) {
     return ReapplySellerOnboardingCommand.from(
-        onboardingId,
-        applicantUserId,
-        "P3 베이커리",
-        "010-1234-5678",
-        "서울특별시 중구",
-        null);
+        onboardingId, applicantUserId, "P3 베이커리", "010-1234-5678", "서울특별시 중구", null);
   }
 }

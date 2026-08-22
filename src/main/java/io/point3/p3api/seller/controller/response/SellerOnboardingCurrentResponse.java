@@ -17,9 +17,8 @@ public record SellerOnboardingCurrentResponse(
     Instant createdAt) {
 
   public static SellerOnboardingCurrentResponse from(SellerOnboardingDetailResult result) {
-    String rejectionReason = result.status() == SellerOnboardingStatus.REJECTED
-        ? result.rejectionReason()
-        : null;
+    String rejectionReason =
+        result.status() == SellerOnboardingStatus.REJECTED ? result.rejectionReason() : null;
 
     return new SellerOnboardingCurrentResponse(
         result.id(),

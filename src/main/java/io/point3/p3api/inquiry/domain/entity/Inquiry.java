@@ -30,7 +30,7 @@ public class Inquiry {
   private UUID storeId;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "inquiry_status", nullable = false, length = 30)
+  @Column(name = "status", nullable = false, length = 30)
   private InquiryStatus status;
 
   @Column(name = "buyer_user_id", nullable = false)

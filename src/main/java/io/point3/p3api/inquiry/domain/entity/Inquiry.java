@@ -59,6 +59,22 @@ public class Inquiry {
     return new Inquiry(storeId, buyerUserId);
   }
 
+  public void markWaiting() {
+    this.status = InquiryStatus.WAITING;
+  }
+
+  public void markInProgress() {
+    this.status = InquiryStatus.IN_PROGRESS;
+  }
+
+  public void markPaid() {
+    this.status = InquiryStatus.PAID;
+  }
+
+  public void markPickedUp() {
+    this.status = InquiryStatus.PICKED_UP;
+  }
+
   public void markBuyerRead(Instant readAt) {
     this.buyerLastReadAt = Objects.requireNonNull(readAt, "readAt");
   }

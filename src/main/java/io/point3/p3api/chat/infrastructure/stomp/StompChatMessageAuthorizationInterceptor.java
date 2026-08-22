@@ -13,7 +13,7 @@ import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -29,8 +29,7 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
 
   @Override
   public Message<?> preSend(Message<?> message, MessageChannel channel) {
-    StompHeaderAccessor accessor =
-        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
     if (accessor == null || !StompCommand.SEND.equals(accessor.getCommand())) {
       return message;
@@ -48,7 +47,7 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
       CurrentUser currentUser = participantAuthorizationService.requireParticipant(
           authentication, inquiryId);
       accessor.setHeader(StompCurrentUserContext.HEADER, currentUser);
-      return message;
+      return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
     } catch (RuntimeException e) {
       throw new MessageDeliveryException(
           message, "STOMP chat message requires an inquiry participant", e);

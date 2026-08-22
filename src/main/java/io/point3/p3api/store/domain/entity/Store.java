@@ -51,6 +51,12 @@ public class Store {
   @Column(name = "pickup_settings", columnDefinition = "jsonb")
   private String pickupSettings;
 
+  @Column(name = "order_notice", columnDefinition = "text")
+  private String orderNotice;
+
+  @Column(name = "cancellation_refund_policy", columnDefinition = "text")
+  private String cancellationRefundPolicy;
+
   @Column(name = "address", length = 255)
   private String address;
 

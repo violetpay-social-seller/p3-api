@@ -7,18 +7,13 @@ import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.chat.BuyerInquiryChatUseCase;
-import io.point3.p3api.inquiry.controller.request.SendChatMessageRequest;
-import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
 import io.point3.p3api.inquiry.controller.response.InquiryChatDetailResponse;
-import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,17 +32,6 @@ public class BuyerInquiryChatController {
 
     return ApiResponse.ok(InquiryChatDetailResponse.from(
         buyerInquiryChatUseCase.getDetail(inquiryId, currentUser.userId())));
-  }
-
-  @PostMapping("/messages")
-  public ApiResponse<ChatTimelineItemResponse> sendMessage(
-      @PathVariable UUID inquiryId,
-      @Authenticated CurrentUser currentUser,
-      @Valid @RequestBody SendChatMessageRequest request) {
-    RoleGuard.requireBuyer(currentUser);
-
-    return ApiResponse.ok(ChatTimelineItemResponse.from(
-        buyerInquiryChatUseCase.sendMessage(inquiryId, currentUser.userId(), request.content())));
   }
 
   @GetMapping("/events")

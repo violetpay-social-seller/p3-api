@@ -1,5 +1,7 @@
 package io.point3.p3api.chat.infrastructure.stomp;
 
+import io.point3.p3api.auth.infrastructure.stomp.StompCurrentUserContext;
+import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import java.security.Principal;
@@ -43,7 +45,9 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
         throw new BaseException(CommonErrorCode.UNAUTHORIZED);
       }
 
-      participantAuthorizationService.requireParticipant(authentication, inquiryId);
+      CurrentUser currentUser = participantAuthorizationService.requireParticipant(
+          authentication, inquiryId);
+      accessor.setHeader(StompCurrentUserContext.HEADER, currentUser);
       return message;
     } catch (RuntimeException e) {
       throw new MessageDeliveryException(

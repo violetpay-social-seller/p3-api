@@ -66,8 +66,7 @@ public class InquiryListService implements InquiryListUseCase {
       Inquiry inquiry, UUID readerUserId, Instant readAt, InquiryChatDetail detail) {
     Instant latestEventAt = chatTimelineItemPort.findLatestCreatedAt(inquiry.getId());
     long unreadCount = chatTimelineItemPort.countUnread(inquiry.getId(), readerUserId, readAt);
-    return new InquiryListItem(
-        detail, unreadCount, latestEventAt == null ? inquiry.getCreatedAt() : latestEventAt);
+    return InquiryListItem.from(inquiry, detail, unreadCount, latestEventAt);
   }
 
   private Comparator<InquiryListItem> byLatestEvent() {

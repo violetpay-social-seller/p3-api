@@ -1,5 +1,7 @@
 package io.point3.p3api.chat.infrastructure.stomp;
 
+import io.point3.p3api.auth.infrastructure.stomp.StompCurrentUserContext;
+import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import java.security.Principal;
@@ -11,7 +13,7 @@ import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -27,8 +29,7 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
 
   @Override
   public Message<?> preSend(Message<?> message, MessageChannel channel) {
-    StompHeaderAccessor accessor =
-        MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+    StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
     if (accessor == null || !StompCommand.SEND.equals(accessor.getCommand())) {
       return message;
@@ -43,8 +44,10 @@ public class StompChatMessageAuthorizationInterceptor implements ChannelIntercep
         throw new BaseException(CommonErrorCode.UNAUTHORIZED);
       }
 
-      participantAuthorizationService.requireParticipant(authentication, inquiryId);
-      return message;
+      CurrentUser currentUser = participantAuthorizationService.requireParticipant(
+          authentication, inquiryId);
+      accessor.setHeader(StompCurrentUserContext.HEADER, currentUser);
+      return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
     } catch (RuntimeException e) {
       throw new MessageDeliveryException(
           message, "STOMP chat message requires an inquiry participant", e);

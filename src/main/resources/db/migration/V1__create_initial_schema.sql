@@ -42,6 +42,8 @@ CREATE TABLE stores (
     sns_link VARCHAR(500),
     business_hours JSONB,
     pickup_settings JSONB,
+    order_notice TEXT,
+    cancellation_refund_policy TEXT,
     address VARCHAR(255),
     settlement_account_status VARCHAR(30) NOT NULL,
     settlement_account_registered_at TIMESTAMPTZ,

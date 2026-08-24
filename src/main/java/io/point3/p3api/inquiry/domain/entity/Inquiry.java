@@ -63,7 +63,11 @@ public class Inquiry {
     this.status = InquiryStatus.WAITING;
   }
 
-  public void markInProgress() {
+  public void markInProgressOnSellerReview() {
+    if (isPaidOrPickedUp()) {
+      return;
+    }
+
     this.status = InquiryStatus.IN_PROGRESS;
   }
 
@@ -73,6 +77,10 @@ public class Inquiry {
 
   public void markPickedUp() {
     this.status = InquiryStatus.PICKED_UP;
+  }
+
+  private boolean isPaidOrPickedUp() {
+    return status == InquiryStatus.PAID || status == InquiryStatus.PICKED_UP;
   }
 
   public void markBuyerRead(Instant readAt) {

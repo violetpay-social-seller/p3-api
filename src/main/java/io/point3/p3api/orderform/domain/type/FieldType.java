@@ -7,5 +7,7 @@ public enum FieldType {
   DATE,
   TIME,
   DATETIME,
-  IMAGE
+  IMAGE,
+  SINGLE_SELECT,
+  MULTI_SELECT
 }

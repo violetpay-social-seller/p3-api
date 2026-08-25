@@ -1,6 +1,7 @@
 package io.point3.p3api.orderform.application;
 
 import io.point3.p3api.orderform.domain.type.FieldType;
+import java.util.List;
 
 public interface OrderFormFieldCommand {
 
@@ -13,4 +14,6 @@ public interface OrderFormFieldCommand {
   String settings();
 
   int sortOrder();
+
+  List<OrderFormFieldOptionCommand> options();
 }

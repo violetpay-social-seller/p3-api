@@ -7,14 +7,15 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record OrderFormUpdateRequest(
-    @NotBlank @Size(max = 100) String name, @Valid @NotEmpty List<OrderFormFieldRequest> fields) {
+    @NotBlank @Size(max = 100) String name,
+    @Valid @NotEmpty List<OrderFormFieldGroupRequest> groups) {
 
   public OrderFormUpdateRequest {
-    fields = fields == null ? null : List.copyOf(fields);
+    groups = groups == null ? null : List.copyOf(groups);
   }
 
   @Override
-  public List<OrderFormFieldRequest> fields() {
-    return fields == null ? null : List.copyOf(fields);
+  public List<OrderFormFieldGroupRequest> groups() {
+    return groups == null ? null : List.copyOf(groups);
   }
 }

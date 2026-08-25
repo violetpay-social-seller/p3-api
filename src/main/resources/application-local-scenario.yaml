@@ -1,0 +1,27 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost/local-scenario
+
+p3:
+  asset:
+    storage:
+      original-asset-bucket: local-scenario-unused
+      processed-asset-bucket: local-scenario-unused
+    delivery:
+      base-url: http://localhost:8080/local-assets
+
+  local-scenario:
+    seller-token: ${P3_LOCAL_SCENARIO_SELLER_TOKEN:local-seller-token}
+    buyer-token: ${P3_LOCAL_SCENARIO_BUYER_TOKEN:local-buyer-token}
+    asset-storage-root: ${P3_LOCAL_SCENARIO_ASSET_STORAGE_ROOT:${java.io.tmpdir}/p3-api-local-scenario-assets}
+    seller:
+      cognito-sub: ${P3_LOCAL_SCENARIO_SELLER_COGNITO_SUB:8408dd1c-a001-70a0-7be3-3a52d3298847}
+      email: ${P3_LOCAL_SCENARIO_SELLER_EMAIL:p3.cloud.project@gmail.com}
+      name: ${P3_LOCAL_SCENARIO_SELLER_NAME:Minseo Kim}
+    buyer:
+      cognito-sub: ${P3_LOCAL_SCENARIO_BUYER_COGNITO_SUB:c428ddbc-f001-7049-8d1b-bada2b18ac8b}
+      email: ${P3_LOCAL_SCENARIO_BUYER_EMAIL:kms.dev.data@gmail.com}
+      name: ${P3_LOCAL_SCENARIO_BUYER_NAME:김민서}

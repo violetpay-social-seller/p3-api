@@ -16,6 +16,22 @@ public record CreateOrderFormSubmissionCommand(
     PickupRequest pickupRequest,
     NoticeAgreement noticeAgreement,
     List<ReferenceAsset> referenceAssets) {
+
+  public CreateOrderFormSubmissionCommand {
+    formAnswers = List.copyOf(formAnswers);
+    referenceAssets = referenceAssets == null ? List.of() : List.copyOf(referenceAssets);
+  }
+
+  @Override
+  public List<FormAnswer> formAnswers() {
+    return List.copyOf(formAnswers);
+  }
+
+  @Override
+  public List<ReferenceAsset> referenceAssets() {
+    return List.copyOf(referenceAssets);
+  }
+
   public record FormAnswer(UUID fieldId, JsonNode value) {}
 
   public record PickupRequest(LocalDate pickupDate, LocalTime pickupTime) {}

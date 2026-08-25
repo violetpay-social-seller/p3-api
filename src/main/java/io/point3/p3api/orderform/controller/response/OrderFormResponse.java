@@ -14,6 +14,15 @@ public record OrderFormResponse(
     Instant updatedAt,
     List<OrderFormFieldResponse> fields) {
 
+  public OrderFormResponse {
+    fields = List.copyOf(fields);
+  }
+
+  @Override
+  public List<OrderFormFieldResponse> fields() {
+    return List.copyOf(fields);
+  }
+
   public static OrderFormResponse from(OrderFormResult result) {
     return new OrderFormResponse(
         result.id(),

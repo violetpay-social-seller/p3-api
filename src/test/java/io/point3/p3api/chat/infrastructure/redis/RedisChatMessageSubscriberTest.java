@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import io.point3.p3api.chat.controller.ChatStompDestination;
 import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ class RedisChatMessageSubscriberTest {
     ChatMessageRedisEventSerializer eventSerializer = mock(ChatMessageRedisEventSerializer.class);
     SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
     Message message = mock(Message.class);
-    when(message.getBody()).thenReturn("invalid".getBytes());
+    when(message.getBody()).thenReturn("invalid".getBytes(StandardCharsets.UTF_8));
     when(eventSerializer.deserialize(message.getBody()))
         .thenThrow(new IllegalArgumentException("Invalid Redis payload"));
     RedisChatMessageSubscriber subscriber =
@@ -44,7 +45,7 @@ class RedisChatMessageSubscriberTest {
     ChatMessageRedisEventSerializer eventSerializer = mock(ChatMessageRedisEventSerializer.class);
     SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
     Message message = mock(Message.class);
-    when(message.getBody()).thenReturn("payload".getBytes());
+    when(message.getBody()).thenReturn("payload".getBytes(StandardCharsets.UTF_8));
     when(eventSerializer.deserialize(message.getBody())).thenReturn(event);
     String destination = ChatStompDestination.topicDestination(event.inquiryId());
     doThrow(new IllegalStateException("STOMP broker is unavailable"))

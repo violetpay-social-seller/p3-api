@@ -12,10 +12,12 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("!local-scenario")
 @RequiredArgsConstructor
 public class OrderFormDraftRedisAdapter implements OrderFormDraftStorePort {
 

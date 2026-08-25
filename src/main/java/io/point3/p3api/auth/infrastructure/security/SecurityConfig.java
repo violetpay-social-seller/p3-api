@@ -48,6 +48,8 @@ public class SecurityConfig {
             .permitAll()
             .requestMatchers(HttpMethod.GET, "/stores/**")
             .permitAll()
+            .requestMatchers(HttpMethod.POST, "/stores/*/order-form-drafts")
+            .permitAll()
             .anyRequest()
             .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

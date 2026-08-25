@@ -1,6 +1,7 @@
 package io.point3.p3api.order.application;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
@@ -106,7 +107,9 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     OrderSummarySnapshot snapshot = new OrderSummarySnapshot(
-        submission.getId(), submission.getAnswers(), submission.getReferenceAssets());
+        submission.getId(),
+        readJson(submission.getAnswers()),
+        readNullableJson(submission.getReferenceAssets()));
 
     return write(snapshot);
   }
@@ -127,6 +130,22 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
   }
 
+  private JsonNode readJson(String value) {
+    try {
+      return objectMapper.readTree(value);
+    } catch (JsonProcessingException e) {
+      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  private JsonNode readNullableJson(String value) {
+    if (value == null) {
+      return null;
+    }
+
+    return readJson(value);
+  }
+
   private record OrderSummarySnapshot(
-      UUID orderFormSubmissionId, String answers, String referenceAssets) {}
+      UUID orderFormSubmissionId, JsonNode answers, JsonNode referenceAssets) {}
 }

@@ -13,6 +13,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "order_form_submissions")
@@ -34,9 +36,11 @@ public class OrderFormSubmission {
   private UUID submittedBy;
 
   @Column(name = "answers", nullable = false, columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String answers;
 
   @Column(name = "reference_assets", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String referenceAssets;
 
   @CreationTimestamp

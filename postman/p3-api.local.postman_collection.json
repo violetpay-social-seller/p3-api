@@ -118,6 +118,102 @@
           }
         },
         {
+          "name": "Auth - seller get current profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('current profile fields', function () {",
+                  "  pm.expect(body.data.email).to.eql(pm.environment.get('sellerEmail'));",
+                  "  pm.expect(body.data.name).to.eql(pm.environment.get('sellerName'));",
+                  "  pm.expect(body.data.role).to.eql('SELLER');",
+                  "  pm.expect(body.data.status).to.eql('ACTIVE');",
+                  "  pm.expect(body.data.nextRoute).to.eql('SELLER_HOME');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Auth - seller update profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('updated profile fields', function () {",
+                  "  pm.expect(body.data.email).to.eql('seller+' + pm.environment.get('scenarioRunId') + '@example.test');",
+                  "  pm.expect(body.data.name).to.eql('Updated Seller ' + pm.environment.get('scenarioRunId'));",
+                  "  pm.expect(body.data.role).to.eql('SELLER');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller+{{scenarioRunId}}@example.test\",\n  \"name\": \"Updated Seller {{scenarioRunId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Auth - seller get updated profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('current profile reflects update', function () {",
+                  "  pm.expect(body.data.email).to.eql('seller+' + pm.environment.get('scenarioRunId') + '@example.test');",
+                  "  pm.expect(body.data.name).to.eql('Updated Seller ' + pm.environment.get('scenarioRunId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
           "name": "Seller - create onboarding",
           "event": [
             {

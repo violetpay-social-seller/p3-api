@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.user.application.profile.UpdateUserProfileCommand;
 import io.point3.p3api.user.application.registration.CompleteRegistrationCommand;
+import io.point3.p3api.user.application.result.UserProfileResult;
 import io.point3.p3api.user.application.result.UserSyncResult;
 import io.point3.p3api.user.application.sync.SyncCommand;
 import io.point3.p3api.user.domain.entity.User;
@@ -84,5 +86,52 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
             SyncCommand.of(user.getCognitoSub(), user.getEmail(), user.getName())));
 
     assertEquals(CommonErrorCode.UNAUTHORIZED, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("현재 회원은 로컬 회원 정보와 역할별 이동 정보를 조회한다")
+  void getsCurrentProfile() {
+    User user = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(), uniqueEmail("profile"), "조회 사용자", UserRole.SELLER));
+
+    UserProfileResult result = userService.getProfile(user.getId());
+
+    assertEquals(user.getId(), result.userId());
+    assertEquals(user.getEmail(), result.email());
+    assertEquals("조회 사용자", result.name());
+    assertEquals(UserRole.SELLER, result.role());
+    assertEquals("SELLER_HOME", result.nextRoute());
+  }
+
+  @Test
+  @DisplayName("회원 정보 수정은 이메일과 이름을 갱신한다")
+  void updatesProfile() {
+    User user = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(), uniqueEmail("profile-update"), "기존 이름", UserRole.BUYER));
+    String updatedEmail = uniqueEmail("profile-updated");
+
+    UserProfileResult result =
+        userService.updateProfile(UpdateUserProfileCommand.of(user.getId(), updatedEmail, "변경 이름"));
+
+    assertEquals(user.getId(), result.userId());
+    assertEquals(updatedEmail, result.email());
+    assertEquals("변경 이름", result.name());
+    assertEquals("BUYER_HOME", result.nextRoute());
+  }
+
+  @Test
+  @DisplayName("회원 정보 수정은 다른 회원의 이메일로 변경할 수 없다")
+  void rejectsDuplicateEmailOnUpdate() {
+    User user = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(), uniqueEmail("profile-me"), "수정 사용자", UserRole.BUYER));
+    User other = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(), uniqueEmail("profile-other"), "다른 사용자", UserRole.SELLER));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> userService.updateProfile(
+            UpdateUserProfileCommand.of(user.getId(), other.getEmail().toUpperCase(), "변경 이름")));
+
+    assertEquals(CommonErrorCode.INVALID_INPUT, exception.getErrorCode());
   }
 }

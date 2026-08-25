@@ -2,6 +2,8 @@ package io.point3.p3api.order.infrastructure.persistence;
 
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.domain.entity.Order;
+import io.point3.p3api.order.domain.type.OrderStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,5 +50,18 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
   @Override
   public List<Order> findAllByStoreId(UUID storeId) {
     return orderJpaRepository.findAllByStoreIdOrderByCreatedAtDesc(storeId);
+  }
+
+  @Override
+  public List<Order> findCalendarOrders(
+      UUID storeId, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.findCalendarOrders(storeId, startInclusive, endExclusive);
+  }
+
+  @Override
+  public List<Order> findCalendarOrdersByStatus(
+      UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.findCalendarOrdersByStatus(
+        storeId, status, startInclusive, endExclusive);
   }
 }

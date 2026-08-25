@@ -5,14 +5,17 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
+import io.point3.p3api.order.application.calendar.OrderCalendarQueryUseCase;
 import io.point3.p3api.order.application.query.order.OrderQueryUseCase;
 import io.point3.p3api.order.application.state.CompleteOrderPickupCommand;
 import io.point3.p3api.order.application.state.OrderStateUseCase;
 import io.point3.p3api.order.application.state.RefundOrderCommand;
 import io.point3.p3api.order.application.state.RequestOrderCancelCommand;
 import io.point3.p3api.order.controller.request.OrderCancelRequest;
+import io.point3.p3api.order.controller.response.OrderCalendarResponse;
 import io.point3.p3api.order.controller.response.OrderDetailResponse;
 import io.point3.p3api.order.controller.response.OrderResponse;
+import io.point3.p3api.order.domain.type.OrderStatus;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
   private final OrderQueryUseCase orderQueryUseCase;
   private final OrderStateUseCase orderStateUseCase;
+  private final OrderCalendarQueryUseCase orderCalendarQueryUseCase;
 
   @GetMapping("/orders")
   public ApiResponse<List<OrderResponse>> getBuyerOrders(@Authenticated CurrentUser currentUser) {
@@ -61,6 +66,30 @@ public class OrderController {
     return ApiResponse.ok(orderQueryUseCase.getSellerOrders(storeId).stream()
         .map(OrderResponse::from)
         .toList());
+  }
+
+  @GetMapping("/seller/orders/calendar/today")
+  public ApiResponse<OrderCalendarResponse> getTodayOrders(
+      @CurrentStoreId UUID storeId, @RequestParam(required = false) OrderStatus status) {
+    return ApiResponse.ok(
+        OrderCalendarResponse.from(orderCalendarQueryUseCase.getToday(storeId, status)));
+  }
+
+  @GetMapping("/seller/orders/calendar/week")
+  public ApiResponse<OrderCalendarResponse> getWeekOrders(
+      @CurrentStoreId UUID storeId, @RequestParam(required = false) OrderStatus status) {
+    return ApiResponse.ok(
+        OrderCalendarResponse.from(orderCalendarQueryUseCase.getThisWeek(storeId, status)));
+  }
+
+  @GetMapping("/seller/orders/calendar/month")
+  public ApiResponse<OrderCalendarResponse> getMonthOrders(
+      @CurrentStoreId UUID storeId,
+      @RequestParam int year,
+      @RequestParam int month,
+      @RequestParam(required = false) OrderStatus status) {
+    return ApiResponse.ok(OrderCalendarResponse.from(
+        orderCalendarQueryUseCase.getMonth(storeId, year, month, status)));
   }
 
   @GetMapping("/seller/orders/{orderId}")

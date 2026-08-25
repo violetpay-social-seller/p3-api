@@ -56,15 +56,21 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   @Override
   public PaymentPreparationResult prepare(PreparePaymentCommand command) {
     inquiryChatAccessService.getBuyerInquiry(command.inquiryId(), command.buyerUserId());
+
     OrderConfirmation confirmation = getPayableConfirmation(command);
+
     User payer = userPersistencePort
         .findById(command.buyerUserId())
         .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
+
     Point3PaymentSession session = createPoint3Session(confirmation);
+
     if (session.amount() != confirmation.getAmount()) {
       throw new BaseException(PaymentErrorCode.PAYMENT_EXTERNAL_UNAVAILABLE);
     }
+
     Instant expiresAt = Instant.now(clock).plus(point3Properties.sessionTtl());
+
     PaymentAttempt paymentAttempt = paymentAttemptPersistencePort.save(PaymentAttempt.create(
         confirmation.getId(),
         command.buyerUserId(),
@@ -79,16 +85,20 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   @Override
   public PaymentCaptureResult capture(CapturePaymentCommand command) {
     validateCaptureMessage(command);
+
     PaymentAttempt paymentAttempt = getPaymentAttempt(command.paymentAttemptId());
+
     validateCaptureOwner(paymentAttempt, command.buyerUserId());
     validateSession(paymentAttempt, command.sessionId());
 
     Optional<Order> existingOrder =
         orderPersistencePort.findByPaymentAttemptId(paymentAttempt.getId());
+
     if (!paymentAttempt.isReady()) {
       return PaymentCaptureResult.of(
           paymentAttempt, existingOrder.map(Order::getId).orElse(null));
     }
+
     if (Instant.now(clock).isAfter(paymentAttempt.getExpiresAt())) {
       paymentAttempt.fail("PAYMENT_SESSION_EXPIRED", Instant.now(clock));
       return PaymentCaptureResult.of(paymentAttempt, null);
@@ -103,11 +113,13 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     }
 
     Instant completedAt = Instant.now(clock);
+
     if (captureResult.status() == Point3CaptureResult.Status.FAILED) {
       paymentAttempt.fail(captureResult.failureCode(), completedAt);
     } else {
       paymentAttempt.needConfirmation(captureResult.failureCode(), completedAt);
     }
+
     return PaymentCaptureResult.of(paymentAttempt, null);
   }
 
@@ -124,6 +136,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     Optional<OrderConfirmation> latestSentConfirmation =
         orderConfirmationPersistencePort.findLatestByInquiryIdAndStatus(
             command.inquiryId(), OrderConfirmationStatus.SENT);
+
     boolean payable = latestSentConfirmation
         .map(latest -> latest.getId().equals(confirmation.getId()))
         .orElse(false);
@@ -229,18 +242,23 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
 
   private PaymentCaptureResult completePayment(PaymentAttempt paymentAttempt, String payerId) {
     Instant completedAt = Instant.now(clock);
+
     OrderConfirmation confirmation = orderConfirmationPersistencePort
         .findById(paymentAttempt.getConfirmationId())
         .orElseThrow(
             () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
+
     Inquiry inquiry = inquiryChatAccessService.getBuyerInquiry(
         confirmation.getInquiryId(), paymentAttempt.getPayerUserId());
+
     User payer = userPersistencePort
         .findById(paymentAttempt.getPayerUserId())
         .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
+
     paymentAttempt.succeed(payerId, completedAt);
     payer.connectPayer(payerId);
     confirmation.markPaid();
+
     Order order = orderPersistencePort
         .findByPaymentAttemptId(paymentAttempt.getId())
         .orElseGet(() -> orderPersistencePort.save(Order.create(

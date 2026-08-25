@@ -16,5 +16,14 @@ public record SendOrderConfirmationCommand(
     List<AdditionalItem> additionalItems,
     String sellerNote) {
 
+  public SendOrderConfirmationCommand {
+    additionalItems = additionalItems == null ? List.of() : List.copyOf(additionalItems);
+  }
+
+  @Override
+  public List<AdditionalItem> additionalItems() {
+    return List.copyOf(additionalItems);
+  }
+
   public record AdditionalItem(String label, String value, Long amount) {}
 }

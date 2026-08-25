@@ -7,12 +7,11 @@ import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-
-import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,20 +29,21 @@ public class InquiryListService implements InquiryListUseCase {
   @Transactional(readOnly = true)
   public List<InquiryListItem> getBuyerInquiries(UUID buyerUserId, InquiryStatus status) {
     return inquiryPersistencePort.findAllByBuyerUserId(buyerUserId).stream()
-            .filter(item -> status == null || item.getStatus() == status)
-            .map(inquiry -> toBuyerItem(inquiry, buyerUserId))
-            .sorted(byLatestEvent())
-            .toList();
+        .filter(item -> status == null || item.getStatus() == status)
+        .map(inquiry -> toBuyerItem(inquiry, buyerUserId))
+        .sorted(byLatestEvent())
+        .toList();
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<InquiryListItem> getSellerInquiries(UUID storeId, UUID sellerUserId, InquiryStatus status) {
+  public List<InquiryListItem> getSellerInquiries(
+      UUID storeId, UUID sellerUserId, InquiryStatus status) {
     return inquiryPersistencePort.findAllByStoreId(storeId).stream()
-            .filter(item -> status == null || item.getStatus() == status)
-            .map(inquiry -> toSellerItem(inquiry, sellerUserId))
-            .sorted(byLatestEvent())
-            .toList();
+        .filter(item -> status == null || item.getStatus() == status)
+        .map(inquiry -> toSellerItem(inquiry, sellerUserId))
+        .sorted(byLatestEvent())
+        .toList();
   }
 
   @Override

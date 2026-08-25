@@ -18,6 +18,15 @@ public record OrderConfirmationSendRequest(
     @Valid @NotNull List<AdditionalItem> additionalItems,
     String sellerNote) {
 
+  public OrderConfirmationSendRequest {
+    additionalItems = additionalItems == null ? null : List.copyOf(additionalItems);
+  }
+
+  @Override
+  public List<AdditionalItem> additionalItems() {
+    return additionalItems == null ? null : List.copyOf(additionalItems);
+  }
+
   public record AdditionalItem(
       @NotBlank @Size(max = 100) String label, @NotBlank String value, Long amount) {}
 }

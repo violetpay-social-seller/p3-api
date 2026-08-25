@@ -2,7 +2,6 @@ package io.point3.p3api.inquiry.domain.entity;
 
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import jakarta.persistence.*;
-
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;

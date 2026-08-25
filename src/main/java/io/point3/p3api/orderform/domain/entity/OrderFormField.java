@@ -15,6 +15,8 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
@@ -45,6 +47,7 @@ public class OrderFormField {
   private boolean required;
 
   @Column(name = "settings", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String settings;
 
   @Column(name = "sort_order", nullable = false)

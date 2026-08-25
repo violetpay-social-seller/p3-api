@@ -5,12 +5,14 @@ import io.point3.p3api.chat.application.send.SendChatMessageResult;
 import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 /** 저장된 채팅 메시지를 Redis Pub/Sub 채널로 발행한다. */
 @Slf4j
 @Component
+@Profile("!local-scenario")
 @RequiredArgsConstructor
 public class RedisChatMessagePublisher implements ChatMessageRealtimePublisherPort {
 

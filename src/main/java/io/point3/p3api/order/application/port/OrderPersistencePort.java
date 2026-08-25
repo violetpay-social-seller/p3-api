@@ -1,6 +1,8 @@
 package io.point3.p3api.order.application.port;
 
 import io.point3.p3api.order.domain.entity.Order;
+import io.point3.p3api.order.domain.type.OrderStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,4 +21,9 @@ public interface OrderPersistencePort {
   List<Order> findAllByBuyerUserId(UUID buyerUserId);
 
   List<Order> findAllByStoreId(UUID storeId);
+
+  List<Order> findCalendarOrders(UUID storeId, Instant startInclusive, Instant endExclusive);
+
+  List<Order> findCalendarOrdersByStatus(
+      UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive);
 }

@@ -60,12 +60,12 @@ public class PaymentAttempt {
   private Instant expiresAt;
 
   private PaymentAttempt(
-          UUID confirmationId,
-          UUID payerUserId,
-          String point3SessionId,
-          String payerId,
-          long amount,
-          Instant expiresAt) {
+      UUID confirmationId,
+      UUID payerUserId,
+      String point3SessionId,
+      String payerId,
+      long amount,
+      Instant expiresAt) {
     this.confirmationId = confirmationId;
     this.payerUserId = payerUserId;
     this.point3SessionId = point3SessionId;
@@ -76,19 +76,39 @@ public class PaymentAttempt {
   }
 
   public static PaymentAttempt create(
-      UUID confirmationId, UUID payerUserId, String point3SessionId, String payerId, long amount) {
+      UUID confirmationId,
+      UUID payerUserId,
+      String point3SessionId,
+      String payerId,
+      long amount,
+      Instant expiresAt) {
     Objects.requireNonNull(confirmationId, "confirmationId");
     Objects.requireNonNull(payerUserId, "payerUserId");
     Objects.requireNonNull(point3SessionId, "point3SessionId");
+    Objects.requireNonNull(expiresAt, "expiresAt");
 
-    if (amount < 0) {
-      throw new IllegalArgumentException("amount must be greater than or equal to 0");
+    if (amount <= 0) {
+      throw new IllegalArgumentException("amount must be greater than 0");
     }
 
-    return new PaymentAttempt(confirmationId, payerUserId, point3SessionId, payerId, amount);
+    return new PaymentAttempt(
+        confirmationId, payerUserId, point3SessionId, payerId, amount, expiresAt);
+  }
+
+  public void startCapture() {
+    this.status = PaymentAttemptStatus.IN_PROGRESS;
+    this.failureCode = null;
+  }
+
+  public void needConfirmation(String failureCode, Instant completedAt) {
+    Objects.requireNonNull(completedAt, "completedAt");
+    this.failureCode = failureCode;
+    this.status = PaymentAttemptStatus.NEEDS_CONFIRMATION;
+    this.completedAt = completedAt;
   }
 
   public void succeed(String payerId, Instant completedAt) {
+    Objects.requireNonNull(payerId, "payerId");
     Objects.requireNonNull(completedAt, "completedAt");
     this.payerId = payerId;
     this.status = PaymentAttemptStatus.SUCCEEDED;
@@ -100,5 +120,9 @@ public class PaymentAttempt {
     this.failureCode = failureCode;
     this.status = PaymentAttemptStatus.FAILED;
     this.completedAt = completedAt;
+  }
+
+  public boolean isReady() {
+    return this.status == PaymentAttemptStatus.READY;
   }
 }

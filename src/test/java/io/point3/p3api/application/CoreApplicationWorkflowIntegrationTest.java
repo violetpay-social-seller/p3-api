@@ -287,7 +287,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         fixture.buyer().getId(),
         "point3-" + UUID.randomUUID(),
         null,
-        41000));
+        41000,
+        Instant.parse("2026-08-25T01:00:00Z")));
     Order order = orderJpaRepository.saveAndFlush(Order.create(
         fixture.store().id(),
         fixture.buyer().getId(),

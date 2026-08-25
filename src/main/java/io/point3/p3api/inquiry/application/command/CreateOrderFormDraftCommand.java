@@ -17,6 +17,22 @@ public record CreateOrderFormDraftCommand(
     boolean noticeAgreed,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
+
+  public CreateOrderFormDraftCommand {
+    formAnswers = List.copyOf(formAnswers);
+    referenceAssets = List.copyOf(referenceAssets);
+  }
+
+  @Override
+  public List<FormAnswer> formAnswers() {
+    return List.copyOf(formAnswers);
+  }
+
+  @Override
+  public List<ReferenceAsset> referenceAssets() {
+    return List.copyOf(referenceAssets);
+  }
+
   public record FormAnswer(UUID fieldId, JsonNode value) {}
 
   public record ReferenceAsset(

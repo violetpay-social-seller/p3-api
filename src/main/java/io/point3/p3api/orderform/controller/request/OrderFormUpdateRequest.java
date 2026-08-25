@@ -7,4 +7,14 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 public record OrderFormUpdateRequest(
-    @NotBlank @Size(max = 100) String name, @Valid @NotEmpty List<OrderFormFieldRequest> fields) {}
+    @NotBlank @Size(max = 100) String name, @Valid @NotEmpty List<OrderFormFieldRequest> fields) {
+
+  public OrderFormUpdateRequest {
+    fields = fields == null ? null : List.copyOf(fields);
+  }
+
+  @Override
+  public List<OrderFormFieldRequest> fields() {
+    return fields == null ? null : List.copyOf(fields);
+  }
+}

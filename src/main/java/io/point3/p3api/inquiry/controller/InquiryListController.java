@@ -7,10 +7,9 @@ import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.list.InquiryListUseCase;
 import io.point3.p3api.inquiry.controller.response.InquiryListItemResponse;
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import java.util.List;
 import java.util.UUID;
-
-import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,12 +20,13 @@ public class InquiryListController {
 
   @GetMapping("/inquiries")
   public ApiResponse<List<InquiryListItemResponse>> getBuyerInquiries(
-          @Authenticated CurrentUser currentUser,
-          @RequestParam(required = false) InquiryStatus status) {
+      @Authenticated CurrentUser currentUser,
+      @RequestParam(required = false) InquiryStatus status) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(inquiryListUseCase.getBuyerInquiries(currentUser.userId(),status).stream()
-        .map(InquiryListItemResponse::from)
-        .toList());
+    return ApiResponse.ok(
+        inquiryListUseCase.getBuyerInquiries(currentUser.userId(), status).stream()
+            .map(InquiryListItemResponse::from)
+            .toList());
   }
 
   @PatchMapping("/inquiries/{inquiryId}/read")
@@ -43,7 +43,7 @@ public class InquiryListController {
       @Authenticated CurrentUser currentUser,
       @RequestParam(required = false) InquiryStatus status) {
     return ApiResponse.ok(
-        inquiryListUseCase.getSellerInquiries(storeId, currentUser.userId(),status).stream()
+        inquiryListUseCase.getSellerInquiries(storeId, currentUser.userId(), status).stream()
             .map(InquiryListItemResponse::from)
             .toList());
   }

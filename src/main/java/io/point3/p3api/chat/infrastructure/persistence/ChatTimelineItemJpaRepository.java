@@ -17,9 +17,16 @@ public interface ChatTimelineItemJpaRepository extends JpaRepository<ChatTimelin
       select chatTimelineItem
       from ChatTimelineItem chatTimelineItem
       where chatTimelineItem.inquiryId = :inquiryId
+      order by chatTimelineItem.createdAt desc, chatTimelineItem.id desc
+      """)
+  List<ChatTimelineItem> findTimeline(@Param("inquiryId") UUID inquiryId, Pageable pageable);
+
+  @Query("""
+      select chatTimelineItem
+      from ChatTimelineItem chatTimelineItem
+      where chatTimelineItem.inquiryId = :inquiryId
         and (
-          :cursorCreatedAt is null
-          or chatTimelineItem.createdAt < :cursorCreatedAt
+          chatTimelineItem.createdAt < :cursorCreatedAt
           or (chatTimelineItem.createdAt = :cursorCreatedAt and chatTimelineItem.id < :cursorId)
         )
       order by chatTimelineItem.createdAt desc, chatTimelineItem.id desc
@@ -35,7 +42,15 @@ public interface ChatTimelineItemJpaRepository extends JpaRepository<ChatTimelin
       from ChatTimelineItem item
       where item.inquiryId = :inquiryId
         and item.senderUserId <> :readerUserId
-        and (:readAt is null or item.createdAt > :readAt)
+      """)
+  long countUnread(@Param("inquiryId") UUID inquiryId, @Param("readerUserId") UUID readerUserId);
+
+  @Query("""
+      select count(item)
+      from ChatTimelineItem item
+      where item.inquiryId = :inquiryId
+        and item.senderUserId <> :readerUserId
+        and item.createdAt > :readAt
       """)
   long countUnread(
       @Param("inquiryId") UUID inquiryId,

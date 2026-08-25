@@ -8,4 +8,14 @@ public record ChatTimelinePage(
     List<ChatTimelineItemResult> items,
     boolean hasNext,
     Instant nextCursorCreatedAt,
-    UUID nextCursorId) {}
+    UUID nextCursorId) {
+
+  public ChatTimelinePage {
+    items = List.copyOf(items);
+  }
+
+  @Override
+  public List<ChatTimelineItemResult> items() {
+    return List.copyOf(items);
+  }
+}

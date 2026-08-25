@@ -16,6 +16,15 @@ public record OrderFormResult(
     Instant updatedAt,
     List<OrderFormFieldResult> fields) {
 
+  public OrderFormResult {
+    fields = List.copyOf(fields);
+  }
+
+  @Override
+  public List<OrderFormFieldResult> fields() {
+    return List.copyOf(fields);
+  }
+
   public static OrderFormResult from(OrderFormTemplate template, List<OrderFormField> fields) {
     return new OrderFormResult(
         template.getId(),

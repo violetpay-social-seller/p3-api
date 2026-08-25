@@ -18,6 +18,10 @@ public record StoreSettingResult(
     List<WeeklyPickupSetting> weeklyPickupSettings,
     List<LocalDate> holidays) {
 
+  public static StoreSettingResult empty(UUID storeId) {
+    return new StoreSettingResult(storeId, 0, null, 0, List.of(), List.of());
+  }
+
   public static StoreSettingResult from(
       StoreOperationSetting setting,
       List<StoreWeeklyPickupSetting> weeklyPickupSettings,

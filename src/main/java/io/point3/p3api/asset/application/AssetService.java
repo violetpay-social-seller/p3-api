@@ -16,7 +16,6 @@ import io.point3.p3api.exception.code.AssetErrorCode;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +29,15 @@ public class AssetService implements AssetRegisterUseCase, AssetQueryUseCase, As
 
   private final AssetStoragePort assetStoragePort;
   private final AssetPersistencePort assetPersistencePort;
-  private final String deliveryBaseUrl;
+  private final AssetDeliveryUrlResolver assetDeliveryUrlResolver;
 
   public AssetService(
       AssetStoragePort assetStoragePort,
       AssetPersistencePort assetPersistencePort,
-      @Value("${p3.asset.delivery.base-url:}") String deliveryBaseUrl) {
+      AssetDeliveryUrlResolver assetDeliveryUrlResolver) {
     this.assetStoragePort = assetStoragePort;
     this.assetPersistencePort = assetPersistencePort;
-    this.deliveryBaseUrl = deliveryBaseUrl;
+    this.assetDeliveryUrlResolver = assetDeliveryUrlResolver;
   }
 
   @Override
@@ -59,7 +58,7 @@ public class AssetService implements AssetRegisterUseCase, AssetQueryUseCase, As
     // DB저장 실패시 S3 object만 남을수 있음 MVP단계에서는 orphan cleanup 정책으로 나중에 정리
     Asset registeredAsset = assetPersistencePort.save(asset);
 
-    return RegistryAsset.from(registeredAsset, resolveDeliveryUrl(objectKey));
+    return RegistryAsset.from(registeredAsset, assetDeliveryUrlResolver.resolve(objectKey));
   }
 
   @Override
@@ -88,7 +87,7 @@ public class AssetService implements AssetRegisterUseCase, AssetQueryUseCase, As
   }
 
   private AssetDetailResult toDetail(Asset asset) {
-    return AssetDetailResult.from(asset, resolveDeliveryUrl(asset.getObjectKey()));
+    return AssetDetailResult.from(asset, assetDeliveryUrlResolver.resolve(asset.getObjectKey()));
   }
 
   private void validateUpload(RegisterAssetCommand command) {
@@ -98,12 +97,5 @@ public class AssetService implements AssetRegisterUseCase, AssetQueryUseCase, As
     if (command.sizeBytes() > MAX_SIZE_BYTES) {
       throw new BaseException(AssetErrorCode.ASSET_SIZE_EXCEEDED);
     }
-  }
-
-  private String resolveDeliveryUrl(String storageKey) {
-    if (deliveryBaseUrl == null || deliveryBaseUrl.isBlank()) {
-      return null;
-    }
-    return deliveryBaseUrl + "/" + storageKey;
   }
 }

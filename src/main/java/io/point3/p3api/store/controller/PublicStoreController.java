@@ -2,13 +2,14 @@ package io.point3.p3api.store.controller;
 
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.store.application.query.StoreQueryUseCase;
-import io.point3.p3api.store.application.representative.query.RepresentativeImageQueryUseCase;
-import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.publicquery.PublicStoreListQuery;
+import io.point3.p3api.store.application.publicquery.PublicStoreQueryUseCase;
 import io.point3.p3api.store.application.setting.availability.StoreOrderSettingAvailabilityQueryUseCase;
-import io.point3.p3api.store.controller.response.RepresentativeImageResponse;
+import io.point3.p3api.store.controller.response.PublicRepresentativeImageResponse;
+import io.point3.p3api.store.controller.response.PublicStorePageResponse;
+import io.point3.p3api.store.controller.response.PublicStoreResponse;
 import io.point3.p3api.store.controller.response.StoreOrderSettingAvailabilityResponse;
-import io.point3.p3api.store.controller.response.StoreResponse;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -25,22 +26,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class PublicStoreController {
 
-  private final StoreQueryUseCase storeQueryUseCase;
-  private final RepresentativeImageQueryUseCase representativeImageQueryUseCase;
+  private final PublicStoreQueryUseCase publicStoreQueryUseCase;
   private final StoreOrderSettingAvailabilityQueryUseCase availabilityQueryUseCase;
 
+  @GetMapping
+  public ApiResponse<PublicStorePageResponse> getStores(
+      @RequestParam(required = false) Instant cursorUpdatedAt,
+      @RequestParam(required = false) UUID cursorId,
+      @RequestParam(required = false) Integer size) {
+    return ApiResponse.ok(PublicStorePageResponse.from(publicStoreQueryUseCase.getStores(
+        new PublicStoreListQuery(cursorUpdatedAt, cursorId, size))));
+  }
+
   @GetMapping("/{slug}")
-  public ApiResponse<StoreResponse> getStore(
+  public ApiResponse<PublicStoreResponse> getStore(
       @PathVariable String slug, @CurrentStoreId UUID storeId) {
-    StoreResult result = storeQueryUseCase.getStore(storeId);
-    return ApiResponse.ok(StoreResponse.from(result));
+    return ApiResponse.ok(PublicStoreResponse.from(publicStoreQueryUseCase.getStore(storeId)));
   }
 
   @GetMapping("/{slug}/representative-images")
-  public ApiResponse<List<RepresentativeImageResponse>> getRepresentativeImages(
+  public ApiResponse<List<PublicRepresentativeImageResponse>> getRepresentativeImages(
       @PathVariable String slug, @CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(representativeImageQueryUseCase.getActiveImages(storeId).stream()
-        .map(RepresentativeImageResponse::from)
+    return ApiResponse.ok(publicStoreQueryUseCase.getStore(storeId).representativeImages().stream()
+        .map(PublicRepresentativeImageResponse::from)
         .toList());
   }
 

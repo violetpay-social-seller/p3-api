@@ -30,6 +30,7 @@ public class StoreService
 
   private final StorePersistencePort storePersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
+  private final StoreActivationValidator storeActivationValidator;
 
   @Override
   public StoreResult create(CreateStoreCommand command) {
@@ -131,6 +132,7 @@ public class StoreService
 
   private void validateCanActive(Store store) {
     validateRepresentativeImageReady(store.getId());
+    storeActivationValidator.validate(store);
   }
 
   private void validateRepresentativeImageReady(UUID storeId) {

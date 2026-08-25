@@ -2,9 +2,12 @@ package io.point3.p3api.store.infrastructure.persistence;
 
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +36,12 @@ public class StorePersistenceAdapter implements StorePersistencePort {
   @Override
   public Optional<Store> findByOwnerUserId(UUID ownerUserId) {
     return storeJpaRepository.findByOwnerUserId(ownerUserId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<Store> findActiveStores(Instant cursorUpdatedAt, UUID cursorId, int limit) {
+    return storeJpaRepository.findActiveStores(cursorUpdatedAt, cursorId, PageRequest.of(0, limit));
   }
 
   @Override

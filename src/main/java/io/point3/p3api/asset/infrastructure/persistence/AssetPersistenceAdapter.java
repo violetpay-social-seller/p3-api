@@ -32,6 +32,12 @@ public class AssetPersistenceAdapter implements AssetPersistencePort {
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public List<Asset> findAllById(List<UUID> assetIds) {
+    return assetJpaRepository.findAllById(assetIds);
+  }
+
+  @Override
   public List<Asset> findAllByUploadedBy(UUID uploadedBy) {
     return assetJpaRepository.findAllByUploadedByOrderByCreatedAtDesc(uploadedBy);
   }

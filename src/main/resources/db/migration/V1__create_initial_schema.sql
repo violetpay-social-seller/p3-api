@@ -56,6 +56,49 @@ CREATE TABLE stores (
     CONSTRAINT fk_stores_profile_asset_id FOREIGN KEY (profile_asset_id) REFERENCES assets (id) ON DELETE SET NULL
 );
 
+CREATE TABLE store_operation_settings (
+    store_id UUID PRIMARY KEY,
+    lead_time_minutes INTEGER NOT NULL,
+    pre_order_notice TEXT,
+    cancellation_cutoff_days INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT fk_store_operation_settings_store_id
+        FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
+    CONSTRAINT ck_store_operation_settings_lead_time_minutes
+        CHECK (lead_time_minutes >= 0),
+    CONSTRAINT ck_store_operation_settings_cancellation_cutoff_days
+        CHECK (cancellation_cutoff_days >= 0)
+);
+
+CREATE TABLE store_weekly_pickup_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_id UUID NOT NULL,
+    day_of_week VARCHAR(10) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    daily_order_capacity INTEGER NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uk_store_weekly_pickup_settings_store_day_of_week
+        UNIQUE (store_id, day_of_week),
+    CONSTRAINT fk_store_weekly_pickup_settings_store_id
+        FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE,
+    CONSTRAINT ck_store_weekly_pickup_settings_capacity CHECK (daily_order_capacity > 0)
+);
+
+CREATE TABLE store_holidays (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    store_id UUID NOT NULL,
+    holiday_date DATE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uk_store_holidays_store_holiday_date UNIQUE (store_id, holiday_date),
+    CONSTRAINT fk_store_holidays_store_id
+        FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
+);
+
 CREATE TABLE asset_variants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     asset_id UUID NOT NULL,

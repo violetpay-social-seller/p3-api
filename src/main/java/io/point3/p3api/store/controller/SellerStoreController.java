@@ -9,13 +9,19 @@ import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
+import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.controller.request.StoreCreateRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
+import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
+import io.point3.p3api.store.controller.response.StoreSettingResponse;
+import io.point3.p3api.store.controller.response.StoreShareLinkResponse;
 import io.point3.p3api.store.controller.response.StoreResponse;
+import io.point3.p3api.store.infrastructure.web.StoreWebProperties;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +29,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +43,9 @@ public class SellerStoreController {
   private final StoreQueryUseCase storeQueryUseCase;
   private final StoreUpdateUseCase storeUpdateUseCase;
   private final StoreDeleteUseCase storeDeleteUseCase;
+  private final StoreSettingQueryUseCase storeSettingQueryUseCase;
+  private final StoreSettingUpdateUseCase storeSettingUpdateUseCase;
+  private final StoreWebProperties storeWebProperties;
 
   @PostMapping
   public ApiResponse<StoreResponse> create(
@@ -48,6 +58,24 @@ public class SellerStoreController {
   public ApiResponse<StoreResponse> getMyStore(@CurrentStoreId UUID storeId) {
     StoreResult result = storeQueryUseCase.getStore(storeId);
     return ApiResponse.ok(StoreResponse.from(result));
+  }
+
+  @GetMapping("/settings")
+  public ApiResponse<StoreSettingResponse> getSettings(@CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(StoreSettingResponse.from(storeSettingQueryUseCase.getSetting(storeId)));
+  }
+
+  @PutMapping("/settings")
+  public ApiResponse<StoreSettingResponse> updateSettings(
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreSettingRequest request) {
+    return ApiResponse.ok(
+        StoreSettingResponse.from(storeSettingUpdateUseCase.update(request.toCommand(storeId))));
+  }
+
+  @GetMapping("/share-link")
+  public ApiResponse<StoreShareLinkResponse> getShareLink(@CurrentStoreId UUID storeId) {
+    StoreResult store = storeQueryUseCase.getStore(storeId);
+    return ApiResponse.ok(StoreShareLinkResponse.from(store, publicStoreUrl(store.slug())));
   }
 
   @PatchMapping
@@ -97,5 +125,13 @@ public class SellerStoreController {
         request.businessHours(),
         request.pickupSettings(),
         request.address());
+  }
+
+  private String publicStoreUrl(String slug) {
+    String baseUrl = storeWebProperties.baseUrl();
+    if (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+    }
+    return baseUrl + "/stores/" + slug;
   }
 }

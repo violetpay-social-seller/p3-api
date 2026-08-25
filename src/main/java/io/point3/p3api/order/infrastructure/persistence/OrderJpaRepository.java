@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -22,6 +23,28 @@ public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
   List<Order> findAllByBuyerUserIdOrderByCreatedAtDesc(UUID buyerUserId);
 
   List<Order> findAllByStoreIdOrderByCreatedAtDesc(UUID storeId);
+
+  @Query("""
+      select o.pickupAt as pickupAt, count(o) as orderCount
+      from Order o
+      where o.storeId = :storeId
+        and o.pickupAt >= :fromInclusive
+        and o.pickupAt < :toExclusive
+        and o.status in :statuses
+      group by o.pickupAt
+      """)
+  List<PickupAtOrderCount> countByStoreIdAndPickupAtBetween(
+      @Param("storeId") UUID storeId,
+      @Param("fromInclusive") Instant fromInclusive,
+      @Param("toExclusive") Instant toExclusive,
+      @Param("statuses") Set<OrderStatus> statuses);
+
+  interface PickupAtOrderCount {
+
+    Instant getPickupAt();
+
+    long getOrderCount();
+  }
 
   long countByStoreIdAndStatus(UUID storeId, OrderStatus status);
 

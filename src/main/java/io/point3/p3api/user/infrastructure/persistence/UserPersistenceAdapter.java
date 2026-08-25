@@ -33,4 +33,9 @@ public class UserPersistenceAdapter implements UserRender, UserPersistencePort {
   public Optional<User> findById(UUID userId) {
     return userJpaRepository.findById(userId);
   }
+
+  @Override
+  public Optional<User> findByEmail(String email) {
+    return userJpaRepository.findByEmail(email);
+  }
 }

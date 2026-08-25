@@ -2,6 +2,8 @@ package io.point3.p3api.payment.infrastructure.persistence;
 
 import io.point3.p3api.payment.application.port.RefundPersistencePort;
 import io.point3.p3api.payment.domain.entity.Refund;
+import io.point3.p3api.payment.domain.type.RefundStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,5 +30,11 @@ public class RefundPersistenceAdapter implements RefundPersistencePort {
   @Override
   public List<Refund> findAllByOrderId(UUID orderId) {
     return refundJpaRepository.findAllByOrderIdOrderByCreatedAtDesc(orderId);
+  }
+
+  @Override
+  public long sumCompletedAmount(UUID storeId, Instant startInclusive, Instant endExclusive) {
+    return refundJpaRepository.sumCompletedAmount(
+        storeId, RefundStatus.COMPLETED, startInclusive, endExclusive);
   }
 }

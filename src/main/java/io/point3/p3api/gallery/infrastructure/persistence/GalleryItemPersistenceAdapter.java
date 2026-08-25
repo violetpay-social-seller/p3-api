@@ -28,6 +28,13 @@ public class GalleryItemPersistenceAdapter implements GalleryItemPersistencePort
   }
 
   @Override
+  @Transactional(readOnly = true)
+  public Optional<StoreGalleryItem> findVisibleByAssetIdAndStoreId(UUID assetId, UUID storeId) {
+    return galleryItemJpaRepository.findByAssetIdAndStoreIdAndStatus(
+        assetId, storeId, StoreGalleryItemStatus.VISIBLE);
+  }
+
+  @Override
   public List<StoreGalleryItem> findAllByStoreId(UUID storeId) {
     return galleryItemJpaRepository.findAllByStoreIdOrderBySortOrderAsc(storeId);
   }

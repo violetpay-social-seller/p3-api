@@ -1,6 +1,9 @@
 package io.point3.p3api.inquiry.application.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -12,10 +15,28 @@ public record CreateOrderFormDraftCommand(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
-    UUID selectedGalleryItemId,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
+
+  public CreateOrderFormDraftCommand {
+    formAnswers = List.copyOf(formAnswers);
+    referenceAssets = List.copyOf(referenceAssets);
+  }
+
+  @Override
+  public List<FormAnswer> formAnswers() {
+    return List.copyOf(formAnswers);
+  }
+
+  @Override
+  public List<ReferenceAsset> referenceAssets() {
+    return List.copyOf(referenceAssets);
+  }
+
   public record FormAnswer(UUID fieldId, JsonNode value) {}
 
-  public record ReferenceAsset(UUID assetId, String source, int sortOrder) {}
+  public record ReferenceAsset(
+      @NotNull UUID assetId,
+      @NotNull OrderFormReferenceAssetSource source,
+      @Min(0) int sortOrder) {}
 }

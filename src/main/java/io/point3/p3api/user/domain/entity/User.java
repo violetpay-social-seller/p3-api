@@ -68,12 +68,24 @@ public class User {
   }
 
   public void updateProfile(String email, String name) {
+    Objects.requireNonNull(email, "email");
+    Objects.requireNonNull(name, "name");
+    if (email.isBlank()) {
+      throw new IllegalArgumentException("email must not be blank");
+    }
+    if (name.isBlank()) {
+      throw new IllegalArgumentException("name must not be blank");
+    }
+
     this.email = email;
     this.name = name;
   }
 
   public void connectPayer(String payerId) {
     Objects.requireNonNull(payerId, "payerId");
+    if (payerId.isBlank()) {
+      throw new IllegalArgumentException("payerId must not be blank");
+    }
     this.payerId = payerId;
   }
 

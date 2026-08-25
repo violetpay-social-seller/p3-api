@@ -11,6 +11,15 @@ public record ChatTimelinePageResponse(
     Instant nextCursorCreatedAt,
     UUID nextCursorId) {
 
+  public ChatTimelinePageResponse {
+    items = List.copyOf(items);
+  }
+
+  @Override
+  public List<ChatTimelineItemResponse> items() {
+    return List.copyOf(items);
+  }
+
   public static ChatTimelinePageResponse from(ChatTimelinePage page) {
     return new ChatTimelinePageResponse(
         page.items().stream().map(ChatTimelineItemResponse::from).toList(),

@@ -28,6 +28,7 @@ public class SellerOrderFormSubmissionQueryService
   }
 
   @Override
+  @Transactional
   public OrderFormSubmission getSubmission(UUID inquiryId, UUID submissionId, UUID storeId) {
     Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
 
@@ -37,6 +38,7 @@ public class SellerOrderFormSubmissionQueryService
 
     validate(submission, inquiry);
 
+    inquiry.markInProgressOnSellerReview();
     return submission;
   }
 

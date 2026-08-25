@@ -60,22 +60,24 @@ public class SellerOnboardingPersistenceAdapter implements SellerOnboardingPersi
   @Override
   public boolean approveIfPending(UUID onboardingId, UUID reviewerId, Instant reviewedAt) {
     return sellerOnboardingJpaRepository.approveIfPending(
-        onboardingId,
-        reviewerId,
-        reviewedAt,
-        SellerOnboardingStatus.PENDING,
-        SellerOnboardingStatus.APPROVED) == 1;
+            onboardingId,
+            reviewerId,
+            reviewedAt,
+            SellerOnboardingStatus.PENDING,
+            SellerOnboardingStatus.APPROVED)
+        == 1;
   }
 
   @Override
   public boolean rejectIfPending(
       UUID onboardingId, UUID reviewerId, String rejectionReason, Instant reviewedAt) {
     return sellerOnboardingJpaRepository.rejectIfPending(
-        onboardingId,
-        reviewerId,
-        rejectionReason,
-        reviewedAt,
-        SellerOnboardingStatus.PENDING,
-        SellerOnboardingStatus.REJECTED) == 1;
+            onboardingId,
+            reviewerId,
+            rejectionReason,
+            reviewedAt,
+            SellerOnboardingStatus.PENDING,
+            SellerOnboardingStatus.REJECTED)
+        == 1;
   }
 }

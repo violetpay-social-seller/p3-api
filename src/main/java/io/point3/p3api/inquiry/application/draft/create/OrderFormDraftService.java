@@ -8,6 +8,7 @@ import io.point3.p3api.inquiry.application.draft.model.OrderFormDraftData;
 import io.point3.p3api.inquiry.application.port.OrderFormDraftStorePort;
 import io.point3.p3api.inquiry.application.result.OrderFormDraftResult;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormAnswerValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import java.util.List;
@@ -24,6 +25,7 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final OrderFormDraftStorePort orderFormDraftStorePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
+  private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
 
   @Override
   public OrderFormDraftResult create(CreateOrderFormDraftCommand command) {
@@ -38,6 +40,8 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
     }
 
     orderFormAnswerValidator.validate(activeForm.fields(), toSubmissionAnswers(command));
+    orderFormReferenceAssetValidator.validate(
+        command.storeId(), toSubmissionReferenceAssets(command));
 
     return orderFormDraftStorePort.save(OrderFormDraftData.from(command));
   }
@@ -47,6 +51,14 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
     return command.formAnswers().stream()
         .map(answer ->
             new CreateOrderFormSubmissionCommand.FormAnswer(answer.fieldId(), answer.value()))
+        .toList();
+  }
+
+  private static List<CreateOrderFormSubmissionCommand.ReferenceAsset> toSubmissionReferenceAssets(
+      CreateOrderFormDraftCommand command) {
+    return command.referenceAssets().stream()
+        .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
+            asset.assetId(), asset.source(), asset.sortOrder()))
         .toList();
   }
 }

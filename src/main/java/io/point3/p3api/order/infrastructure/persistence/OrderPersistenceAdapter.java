@@ -4,11 +4,13 @@ import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.application.result.OrderPickupDateCount;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
+import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Map;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -63,16 +65,51 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
   @Override
   public List<OrderPickupDateCount> countByStoreIdAndPickupAtBetween(
       UUID storeId, Instant fromInclusive, Instant toExclusive, Set<OrderStatus> statuses) {
-    Map<LocalDate, Long> counts = orderJpaRepository
-        .countByStoreIdAndPickupAtBetween(storeId, fromInclusive, toExclusive, statuses)
-        .stream()
-        .collect(java.util.stream.Collectors.groupingBy(
-            count -> count.getPickupAt().atZone(KOREA_ZONE_ID).toLocalDate(),
-            java.util.stream.Collectors.summingLong(OrderJpaRepository.PickupAtOrderCount::getOrderCount)));
+
+    Map<LocalDate, Long> counts =
+        orderJpaRepository
+            .countByStoreIdAndPickupAtBetween(
+                storeId, fromInclusive, toExclusive, statuses)
+            .stream()
+            .collect(
+                java.util.stream.Collectors.groupingBy(
+                    count -> count.getPickupAt().atZone(KOREA_ZONE_ID).toLocalDate(),
+                    java.util.stream.Collectors.summingLong(
+                        OrderJpaRepository.PickupAtOrderCount::getOrderCount)));
 
     return counts.entrySet().stream()
         .map(entry -> new OrderPickupDateCount(entry.getKey(), entry.getValue()))
         .sorted(java.util.Comparator.comparing(OrderPickupDateCount::pickupDate))
         .toList();
+  }
+
+  @Override
+  public List<Order> findCalendarOrders(
+      UUID storeId, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.findCalendarOrders(storeId, startInclusive, endExclusive);
+  }
+
+  @Override
+  public List<Order> findCalendarOrdersByStatus(
+      UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.findCalendarOrdersByStatus(
+        storeId, status, startInclusive, endExclusive);
+  }
+
+  @Override
+  public long sumSucceededPaymentAmount(
+      UUID storeId, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.sumSucceededPaymentAmount(
+        storeId, PaymentAttemptStatus.SUCCEEDED, startInclusive, endExclusive);
+  }
+
+  @Override
+  public long countByStoreIdAndStatus(UUID storeId, OrderStatus status) {
+    return orderJpaRepository.countByStoreIdAndStatus(storeId, status);
+  }
+
+  @Override
+  public long countByStoreIdAndStatuses(UUID storeId, Collection<OrderStatus> statuses) {
+    return orderJpaRepository.countByStoreIdAndStatusIn(storeId, statuses);
   }
 }

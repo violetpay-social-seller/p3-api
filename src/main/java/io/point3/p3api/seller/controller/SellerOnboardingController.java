@@ -18,8 +18,8 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,8 +38,8 @@ public class SellerOnboardingController {
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireSeller(currentUser);
 
-    SellerOnboardingDetailResult result = sellerOnboardingCurrentQueryUseCase.getCurrentOnboarding(
-        currentUser.userId());
+    SellerOnboardingDetailResult result =
+        sellerOnboardingCurrentQueryUseCase.getCurrentOnboarding(currentUser.userId());
     return ApiResponse.ok(SellerOnboardingCurrentResponse.from(result));
   }
 
@@ -49,8 +49,8 @@ public class SellerOnboardingController {
       @Valid @RequestBody SellerOnboardingCreateRequest request) {
     RoleGuard.requireSeller(currentUser);
 
-    SellerOnboardingResult result = sellerOnboardingCreateUseCase.create(
-        CreateSellerOnboardingCommand.from(
+    SellerOnboardingResult result =
+        sellerOnboardingCreateUseCase.create(CreateSellerOnboardingCommand.from(
             currentUser.userId(),
             request.storeName(),
             request.phoneNumber(),
@@ -67,8 +67,8 @@ public class SellerOnboardingController {
       @Valid @RequestBody SellerOnboardingCreateRequest request) {
     RoleGuard.requireSeller(currentUser);
 
-    SellerOnboardingResult result = sellerOnboardingReapplicationUseCase.reapply(
-        ReapplySellerOnboardingCommand.from(
+    SellerOnboardingResult result =
+        sellerOnboardingReapplicationUseCase.reapply(ReapplySellerOnboardingCommand.from(
             onboardingId,
             currentUser.userId(),
             request.storeName(),

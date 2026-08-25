@@ -23,8 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class SellerOnboardingService
-    implements
-        SellerOnboardingCreateUseCase,
+    implements SellerOnboardingCreateUseCase,
         SellerOnboardingPendingQueryUseCase,
         SellerOnboardingCurrentQueryUseCase,
         SellerOnboardingReapplicationUseCase {
@@ -37,7 +36,8 @@ public class SellerOnboardingService
       throw new BaseException(SellerErrorCode.SELLER_ONBOARDING_PENDING_ALREADY_EXISTS);
     }
 
-    if (sellerOnboardingPersistencePort.findLatestByApplicantUserId(command.applicantUserId())
+    if (sellerOnboardingPersistencePort
+        .findLatestByApplicantUserId(command.applicantUserId())
         .isPresent()) {
       throw new BaseException(SellerErrorCode.SELLER_ONBOARDING_REAPPLICATION_NOT_ALLOWED);
     }
@@ -63,7 +63,8 @@ public class SellerOnboardingService
   @Override
   @Transactional(readOnly = true)
   public SellerOnboardingDetailResult getCurrentOnboarding(UUID applicantUserId) {
-    return sellerOnboardingPersistencePort.findLatestByApplicantUserId(applicantUserId)
+    return sellerOnboardingPersistencePort
+        .findLatestByApplicantUserId(applicantUserId)
         .map(SellerOnboardingDetailResult::from)
         .orElseThrow(() -> new BaseException(SellerErrorCode.SELLER_ONBOARDING_NOT_FOUND));
   }

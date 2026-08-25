@@ -16,6 +16,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "order_confirmations")
@@ -52,9 +54,11 @@ public class OrderConfirmation {
   private String storeNameSnapshot;
 
   @Column(name = "order_summary", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String orderSummary;
 
   @Column(name = "additional_items", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String additionalItems;
 
   @Column(name = "seller_note", columnDefinition = "text")

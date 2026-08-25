@@ -1,0 +1,1770 @@
+{
+  "info": {
+    "_postman_id": "d77eb8c0-4986-4c73-b028-872dce8fa4fb",
+    "name": "p3-api local scenario",
+    "description": "Repeatable local API scenarios for auth, seller onboarding, store, assets, gallery, order forms, inquiries, and confirmations. Point3 payment request and approval APIs are intentionally excluded.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('scenarioRunId')) {",
+          "  pm.environment.set('scenarioRunId', String(Date.now()));",
+          "}",
+          "const future = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);",
+          "const date = future.toISOString().slice(0, 10);",
+          "pm.environment.set('pickupDate', date);",
+          "pm.environment.set('eventDate', date);",
+          "pm.environment.set('pickupTime', '14:30:00');",
+          "pm.environment.set('pickupAt', date + 'T05:30:00Z');"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const contentType = pm.response.headers.get('Content-Type') || '';",
+          "pm.test('response is JSON', function () {",
+          "  pm.expect(contentType).to.include('application/json');",
+          "});",
+          "const isNegative = pm.info.requestName.startsWith('[negative]');",
+          "if (!isNegative) {",
+          "  pm.test('status is successful', function () { pm.expect(pm.response.code).to.be.below(400); });",
+          "  const body = pm.response.json();",
+          "  pm.test('success envelope', function () { pm.expect(body.success).to.eql(true); });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Local Scenario Setup",
+      "item": [
+        {
+          "name": "Local - reset before run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/local-scenario/reset"
+          }
+        },
+        {
+          "name": "Auth - seller sync before registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me/sync"
+          }
+        },
+        {
+          "name": "Auth - seller complete registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('seller is registered as SELLER', function () {",
+                  "  pm.expect(data.registered).to.eql(true);",
+                  "  pm.expect(data.role).to.eql('SELLER');",
+                  "  pm.expect(data.status).to.eql('ACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"seller\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/me/registration"
+          }
+        },
+        {
+          "name": "Auth - seller get current profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('current profile fields', function () {",
+                  "  pm.expect(body.data.email).to.eql(pm.environment.get('sellerEmail'));",
+                  "  pm.expect(body.data.name).to.eql(pm.environment.get('sellerName'));",
+                  "  pm.expect(body.data.role).to.eql('SELLER');",
+                  "  pm.expect(body.data.status).to.eql('ACTIVE');",
+                  "  pm.expect(body.data.nextRoute).to.eql('SELLER_HOME');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Auth - seller update profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('updated profile fields', function () {",
+                  "  pm.expect(body.data.email).to.eql('seller+' + pm.environment.get('scenarioRunId') + '@example.test');",
+                  "  pm.expect(body.data.name).to.eql('Updated Seller ' + pm.environment.get('scenarioRunId'));",
+                  "  pm.expect(body.data.role).to.eql('SELLER');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller+{{scenarioRunId}}@example.test\",\n  \"name\": \"Updated Seller {{scenarioRunId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Auth - seller get updated profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('current profile reflects update', function () {",
+                  "  pm.expect(body.data.email).to.eql('seller+' + pm.environment.get('scenarioRunId') + '@example.test');",
+                  "  pm.expect(body.data.name).to.eql('Updated Seller ' + pm.environment.get('scenarioRunId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
+          }
+        },
+        {
+          "name": "Seller - create onboarding",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('onboardingId', data.id);",
+                  "pm.test('onboarding is pending', function () { pm.expect(data.status).to.eql('PENDING'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeName\": \"P3 Local Bakery {{scenarioRunId}}\",\n  \"phoneNumber\": \"010-1234-5678\",\n  \"address\": \"Seoul local scenario\",\n  \"snsLink\": \"https://instagram.com/p3-local\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/onboardings"
+          }
+        },
+        {
+          "name": "Local - approve seller onboarding",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('one onboarding is approved', function () { pm.expect(data.affectedRows).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSub\": \"{{sellerCognitoSub}}\"\n}"
+            },
+            "url": "{{baseUrl}}/local-scenario/seller-onboarding/approve"
+          }
+        },
+        {
+          "name": "Seller - get current onboarding",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/onboardings/current"
+          }
+        },
+        {
+          "name": "Auth - buyer sync before registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me/sync"
+          }
+        },
+        {
+          "name": "Auth - buyer complete registration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('buyer is registered as BUYER', function () {",
+                  "  pm.expect(data.registered).to.eql(true);",
+                  "  pm.expect(data.role).to.eql('BUYER');",
+                  "  pm.expect(data.status).to.eql('ACTIVE');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"buyer\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/me/registration"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 Seller Store, Assets, Gallery",
+      "item": [
+        {
+          "name": "Asset - upload profile image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('assetId', data.assetId);",
+                  "pm.test('profile asset id is returned', function () { pm.expect(data.assetId).to.match(/^[0-9a-f-]{36}$/); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/assets"
+          }
+        },
+        {
+          "name": "Seller - create store",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('storeId', data.id);",
+                  "pm.environment.set('storeSlug', data.slug);",
+                  "pm.test('store starts inactive', function () { pm.expect(data.status).to.eql('INACTIVE'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"P3 Local Bakery {{scenarioRunId}}\",\n  \"profileAssetId\": \"{{assetId}}\",\n  \"description\": \"Local scenario store\",\n  \"contact\": \"010-1234-5678\",\n  \"contactVisible\": true,\n  \"snsLinks\": \"{\\\"instagram\\\":\\\"https://instagram.com/p3-local\\\"}\",\n  \"businessHours\": \"{\\\"mon\\\":\\\"10:00-18:00\\\"}\",\n  \"pickupSettings\": \"{\\\"leadTimeDays\\\":3}\",\n  \"address\": \"Seoul\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store"
+          }
+        },
+        {
+          "name": "[negative] Seller - duplicate store is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('duplicate store returns conflict', function () { pm.expect(pm.response.code).to.eql(409); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"P3 Local Bakery {{scenarioRunId}}\",\n  \"profileAssetId\": \"{{assetId}}\",\n  \"description\": \"duplicate\",\n  \"contact\": \"010-1234-5678\",\n  \"contactVisible\": true,\n  \"snsLinks\": \"{\\\"instagram\\\":\\\"https://instagram.com/p3-local\\\"}\",\n  \"businessHours\": \"{\\\"mon\\\":\\\"10:00-18:00\\\"}\",\n  \"pickupSettings\": \"{\\\"leadTimeDays\\\":3}\",\n  \"address\": \"Seoul\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store"
+          }
+        },
+        {
+          "name": "Seller - get my store",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/store"
+          }
+        },
+        {
+          "name": "Seller - update store",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('store contact visibility is updated', function () { pm.expect(data.contactVisible).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"P3 Local Bakery Updated {{scenarioRunId}}\",\n  \"profileAssetId\": \"{{assetId}}\",\n  \"description\": \"Updated local scenario store\",\n  \"contact\": \"010-1234-5678\",\n  \"contactVisible\": false,\n  \"snsLinks\": \"{\\\"instagram\\\":\\\"https://instagram.com/p3-local-updated\\\"}\",\n  \"businessHours\": \"{\\\"tue\\\":\\\"11:00-19:00\\\"}\",\n  \"pickupSettings\": \"{\\\"leadTimeDays\\\":2}\",\n  \"address\": \"Seoul updated\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store"
+          }
+        },
+        {
+          "name": "Asset - upload representative image 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeAssetId1', pm.response.json().data.assetId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/assets"
+          }
+        },
+        {
+          "name": "Asset - upload representative image 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeAssetId2', pm.response.json().data.assetId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/assets"
+          }
+        },
+        {
+          "name": "Asset - upload representative image 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeAssetId3', pm.response.json().data.assetId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/assets"
+          }
+        },
+        {
+          "name": "Seller - create representative image 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeImageId1', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId1}}\",\n  \"sortOrder\": 0\n}"
+            },
+            "url": "{{baseUrl}}/seller/representative-images"
+          }
+        },
+        {
+          "name": "Seller - create representative image 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeImageId2', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId2}}\",\n  \"sortOrder\": 1\n}"
+            },
+            "url": "{{baseUrl}}/seller/representative-images"
+          }
+        },
+        {
+          "name": "Seller - create representative image 3",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('representativeImageId3', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId3}}\",\n  \"sortOrder\": 2\n}"
+            },
+            "url": "{{baseUrl}}/seller/representative-images"
+          }
+        },
+        {
+          "name": "Seller - list representative images",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/representative-images"
+          }
+        },
+        {
+          "name": "Seller - activate store",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('store is active', function () { pm.expect(pm.response.json().data.status).to.eql('ACTIVE'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store/status"
+          }
+        },
+        {
+          "name": "Public - get active store by slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}"
+          }
+        },
+        {
+          "name": "Public - list representative images",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/representative-images"
+          }
+        },
+        {
+          "name": "[negative] Seller - cannot hide below minimum active representative images",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('minimum representative image rule is enforced', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortOrder\": 0,\n  \"status\": \"HIDDEN\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
+          }
+        },
+        {
+          "name": "Asset - upload gallery image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('galleryAssetId', pm.response.json().data.assetId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/assets"
+          }
+        },
+        {
+          "name": "Internal - register asset variants",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variants\": [\n    { \"type\": \"THUMBNAIL\", \"objectKey\": \"local/{{scenarioRunId}}/thumb.webp\", \"contentType\": \"image/webp\", \"width\": 320, \"height\": 240, \"sizeBytes\": 512 },\n    { \"type\": \"MEDIUM\", \"objectKey\": \"local/{{scenarioRunId}}/medium.webp\", \"contentType\": \"image/webp\", \"width\": 960, \"height\": 720, \"sizeBytes\": 1024 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/internal/assets/{{galleryAssetId}}/variants"
+          }
+        },
+        {
+          "name": "Asset - get variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/assets/{{galleryAssetId}}/variants"
+          }
+        },
+        {
+          "name": "Seller - create gallery item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('galleryItemId', pm.response.json().data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{galleryAssetId}}\",\n  \"sortOrder\": 0,\n  \"featured\": false\n}"
+            },
+            "url": "{{baseUrl}}/seller/gallery-items"
+          }
+        },
+        {
+          "name": "Seller - update gallery item visible",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortOrder\": 0,\n  \"featured\": true,\n  \"status\": \"VISIBLE\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
+          }
+        },
+        {
+          "name": "Seller - get gallery item",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
+          }
+        },
+        {
+          "name": "Public - list gallery items",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items"
+          }
+        },
+        {
+          "name": "Public - get gallery item",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items/{{galleryItemId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 Order Form, Inquiry, Confirmation",
+      "item": [
+        {
+          "name": "[negative] Seller - invalid order form sort order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('invalid sort order returns bad request', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid order form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"sortOrder\": 1 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "Seller - create order form",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('orderFormTemplateId', data.id);",
+                  "for (const field of data.fields) {",
+                  "  if (field.label === 'Menu') pm.environment.set('menuFieldId', field.id);",
+                  "  if (field.label === 'Quantity') pm.environment.set('quantityFieldId', field.id);",
+                  "  if (field.label === 'Event date') pm.environment.set('eventDateFieldId', field.id);",
+                  "  if (field.label === 'Message') pm.environment.set('messageFieldId', field.id);",
+                  "  if (field.label === 'Reference image') pm.environment.set('referenceImageFieldId', field.id);",
+                  "}",
+                  "pm.test('five fields are created', function () { pm.expect(data.fields).to.have.length(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Local cake order form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"settings\": \"{\\\"maxLength\\\":80}\", \"sortOrder\": 0 },\n    { \"label\": \"Quantity\", \"fieldType\": \"NUMBER\", \"required\": true, \"settings\": \"{\\\"min\\\":1,\\\"max\\\":10}\", \"sortOrder\": 1 },\n    { \"label\": \"Event date\", \"fieldType\": \"DATE\", \"required\": true, \"settings\": null, \"sortOrder\": 2 },\n    { \"label\": \"Message\", \"fieldType\": \"TEXTAREA\", \"required\": false, \"settings\": null, \"sortOrder\": 3 },\n    { \"label\": \"Reference image\", \"fieldType\": \"IMAGE\", \"required\": false, \"settings\": \"{\\\"maxCount\\\":5}\", \"sortOrder\": 4 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "[negative] Seller - duplicate active order form is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('duplicate active form returns conflict', function () { pm.expect(pm.response.code).to.eql(409); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"sortOrder\": 0 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "Seller - get order form",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/order-forms/{{orderFormTemplateId}}"
+          }
+        },
+        {
+          "name": "Seller - get active order form",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/order-forms/active"
+          }
+        },
+        {
+          "name": "Public - get active order form",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form"
+          }
+        },
+        {
+          "name": "[negative] Public - draft requires notice agreement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('notice agreement is required', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{quantityFieldId}}\", \"value\": 2 },\n    { \"fieldId\": \"{{eventDateFieldId}}\", \"value\": \"{{eventDate}}\" }\n  ],\n  \"referenceAssets\": []\n}"
+            },
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
+          }
+        },
+        {
+          "name": "Public - create order form draft",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('draftKey', data.draftKey);",
+                  "pm.test('draft key is returned', function () { pm.expect(data.draftKey).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{quantityFieldId}}\", \"value\": 2 },\n    { \"fieldId\": \"{{eventDateFieldId}}\", \"value\": \"{{eventDate}}\" },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"referenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
+          }
+        },
+        {
+          "name": "Buyer - consume order form draft",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('inquiryId', data.inquiryId);",
+                  "pm.environment.set('submissionId', data.submissionId);",
+                  "pm.test('consume creates inquiry and submission', function () {",
+                  "  pm.expect(data.inquiryId).to.match(/^[0-9a-f-]{36}$/);",
+                  "  pm.expect(data.submissionId).to.match(/^[0-9a-f-]{36}$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/order-form-drafts/{{draftKey}}/consume"
+          }
+        },
+        {
+          "name": "Buyer - open inquiry reuses existing room",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('same inquiry is reused', function () { pm.expect(pm.response.json().data.inquiryId).to.eql(pm.environment.get('inquiryId')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/inquiries/open"
+          }
+        },
+        {
+          "name": "Buyer - list inquiries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries?status=WAITING"
+          }
+        },
+        {
+          "name": "Seller - list inquiries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries?status=WAITING"
+          }
+        },
+        {
+          "name": "Buyer - get inquiry detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}"
+          }
+        },
+        {
+          "name": "Seller - get inquiry detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}"
+          }
+        },
+        {
+          "name": "Buyer - get timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/events?size=10"
+          }
+        },
+        {
+          "name": "Seller - get timeline",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/events?size=10"
+          }
+        },
+        {
+          "name": "Buyer - get store policies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/store-policies"
+          }
+        },
+        {
+          "name": "Seller - list order form submissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/order-form-submissions"
+          }
+        },
+        {
+          "name": "Seller - get order form submission",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/order-form-submissions/{{submissionId}}"
+          }
+        },
+        {
+          "name": "Seller - send order confirmation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('confirmationId', data.confirmationId);",
+                  "pm.test('confirmation is sent', function () {",
+                  "  pm.expect(data.status).to.eql('SENT');",
+                  "  pm.expect(data.amount).to.eql(39000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake\",\n  \"summaryText\": \"2 size strawberry cake with custom message\",\n  \"amount\": 39000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [\n    { \"label\": \"Candle\", \"value\": \"1 pack\", \"amount\": 1000 }\n  ],\n  \"sellerNote\": \"Local scenario confirmation\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
+          }
+        },
+        {
+          "name": "Seller - get confirmation history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
+          }
+        },
+        {
+          "name": "Buyer - get confirmation history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations"
+          }
+        },
+        {
+          "name": "Buyer - mark confirmation viewed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/viewed"
+          }
+        },
+        {
+          "name": "Buyer - request confirmation revision",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('confirmation becomes revision requested', function () { pm.expect(pm.response.json().data.status).to.eql('REVISION_REQUESTED'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/revision"
+          }
+        },
+        {
+          "name": "Seller - send replacement confirmation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('replacementConfirmationId', pm.response.json().data.confirmationId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake revised\",\n  \"summaryText\": \"Revised pickup note\",\n  \"amount\": 38000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [],\n  \"sellerNote\": \"Replacement confirmation\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
+          }
+        },
+        {
+          "name": "Seller - replace original confirmation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('original confirmation is replaced', function () {",
+                  "  pm.expect(data.status).to.eql('REPLACED');",
+                  "  pm.expect(data.replacedByConfirmationId).to.eql(pm.environment.get('replacementConfirmationId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"replacementConfirmationId\": \"{{replacementConfirmationId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/replacement"
+          }
+        },
+        {
+          "name": "Buyer - mark inquiry read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/read"
+          }
+        },
+        {
+          "name": "Seller - mark inquiry read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/read"
+          }
+        },
+        {
+          "name": "Buyer - list orders without payment side effects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Seller - list orders without payment side effects",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "30 Seller Dashboard, Revenue",
+      "item": [
+        {
+          "name": "Seller - get dashboard summary without payment side effects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('dashboard summary fields', function () {",
+                  "  const data = body.data;",
+                  "  pm.expect(data).to.have.property('currentMonthRevenue');",
+                  "  pm.expect(data).to.have.property('todayOrderCount');",
+                  "  pm.expect(data).to.have.property('thisWeekOrderCount');",
+                  "  pm.expect(data).to.have.property('paidOrderCount');",
+                  "  pm.expect(data).to.have.property('cancelRefundRequestCount');",
+                  "  pm.expect(data).to.have.property('unansweredInquiryCount');",
+                  "  pm.expect(data).to.have.property('todayOrders');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementFeeRateBasisPoints');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementFeeAmount');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementEstimateAmount');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/dashboard"
+          }
+        },
+        {
+          "name": "Seller - get revenue range without payment side effects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('revenue range fields', function () {",
+                  "  const data = body.data;",
+                  "  pm.expect(data.startDate).to.eql('2026-08-01');",
+                  "  pm.expect(data.endDate).to.eql('2026-08-31');",
+                  "  pm.expect(data).to.have.property('paymentRevenueAmount');",
+                  "  pm.expect(data).to.have.property('completedRefundAmount');",
+                  "  pm.expect(data).to.have.property('netSalesAmount');",
+                  "  pm.expect(data.settlementFeeRateBasisPoints).to.eql(30);",
+                  "  pm.expect(data).to.have.property('settlementFeeAmount');",
+                  "  pm.expect(data).to.have.property('settlementEstimateAmount');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/dashboard/revenue?startDate=2026-08-01&endDate=2026-08-31"
+          }
+        }
+      ]
+    },
+    {
+      "name": "90 Cleanup",
+      "item": [
+        {
+          "name": "Seller - inactivate order form",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/order-forms/{{orderFormTemplateId}}/inactive"
+          }
+        },
+        {
+          "name": "Seller - inactivate store",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store/status"
+          }
+        },
+        {
+          "name": "Seller - delete gallery item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
+          }
+        },
+        {
+          "name": "Seller - delete representative image 1",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
+          }
+        },
+        {
+          "name": "Seller - delete representative image 2",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId2}}"
+          }
+        },
+        {
+          "name": "Seller - delete representative image 3",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId3}}"
+          }
+        },
+        {
+          "name": "Asset - delete gallery image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/assets/{{galleryAssetId}}"
+          }
+        },
+        {
+          "name": "Asset - delete profile image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/assets/{{assetId}}"
+          }
+        },
+        {
+          "name": "Seller - delete store",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/store"
+          }
+        },
+        {
+          "name": "Local - reset after run",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\"]\n}"
+            },
+            "url": "{{baseUrl}}/local-scenario/reset"
+          }
+        }
+      ]
+    }
+  ]
+}

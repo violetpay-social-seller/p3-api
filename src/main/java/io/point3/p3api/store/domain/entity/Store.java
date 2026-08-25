@@ -9,7 +9,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "stores")
@@ -43,13 +45,22 @@ public class Store {
   private boolean contactVisible;
 
   @Column(name = "sns_links", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String snsLinks;
 
   @Column(name = "business_hours", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String businessHours;
 
   @Column(name = "pickup_settings", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String pickupSettings;
+
+  @Column(name = "order_notice", columnDefinition = "text")
+  private String orderNotice;
+
+  @Column(name = "cancellation_refund_policy", columnDefinition = "text")
+  private String cancellationRefundPolicy;
 
   @Column(name = "address", length = 255)
   private String address;

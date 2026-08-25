@@ -39,9 +39,11 @@ CREATE TABLE stores (
     description TEXT,
     contact VARCHAR(100),
     contact_visible BOOLEAN NOT NULL DEFAULT FALSE,
-    sns_link VARCHAR(500),
+    sns_links JSONB,
     business_hours JSONB,
     pickup_settings JSONB,
+    order_notice TEXT,
+    cancellation_refund_policy TEXT,
     address VARCHAR(255),
     settlement_account_status VARCHAR(30) NOT NULL,
     settlement_account_registered_at TIMESTAMPTZ,
@@ -195,6 +197,7 @@ CREATE TABLE inquiries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     store_id UUID NOT NULL,
     buyer_user_id UUID NOT NULL,
+    status VARCHAR(30) NOT NULL,
     buyer_last_read_at TIMESTAMPTZ,
     seller_last_read_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL,
@@ -208,15 +211,12 @@ CREATE TABLE order_form_submissions (
     inquiry_id UUID NOT NULL,
     template_id UUID NOT NULL,
     submitted_by UUID NOT NULL,
-    selected_gallery_item_id UUID,
-    selected_gallery_snapshot JSONB,
     answers JSONB NOT NULL,
     reference_assets JSONB,
     submitted_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT fk_order_form_submissions_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
     CONSTRAINT fk_order_form_submissions_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id),
-    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
-    CONSTRAINT fk_order_form_submissions_selected_gallery_item_id FOREIGN KEY (selected_gallery_item_id) REFERENCES store_gallery_items (id) ON DELETE SET NULL
+    CONSTRAINT fk_order_form_submissions_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id)
 );
 
 CREATE TABLE chat_messages (
@@ -288,10 +288,11 @@ CREATE TABLE payment_attempts (
     failure_code VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL,
     completed_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT uk_payment_attempts_point3_session_id UNIQUE (point3_session_id),
     CONSTRAINT fk_payment_attempts_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
     CONSTRAINT fk_payment_attempts_payer_user_id FOREIGN KEY (payer_user_id) REFERENCES users (id),
-    CONSTRAINT ck_payment_attempts_amount CHECK (amount >= 0)
+    CONSTRAINT ck_payment_attempts_amount CHECK (amount > 0)
 );
 
 CREATE TABLE orders (
@@ -356,7 +357,7 @@ CREATE TABLE seller_onboardings (
     store_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
     address VARCHAR(255) NOT NULL,
-    sns_links JSONB,
+    sns_link VARCHAR(500),
     status VARCHAR(30) NOT NULL,
     rejection_reason TEXT,
     reviewed_by UUID,
@@ -381,8 +382,6 @@ CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
 CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
-CREATE INDEX ix_order_form_submissions_selected_gallery_item_id
-    ON order_form_submissions (selected_gallery_item_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);
 CREATE INDEX ix_chat_message_assets_message_id ON chat_message_assets (message_id);

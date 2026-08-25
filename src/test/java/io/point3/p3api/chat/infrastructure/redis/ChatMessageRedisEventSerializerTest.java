@@ -10,6 +10,7 @@ import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,8 @@ class ChatMessageRedisEventSerializerTest {
             ChatTimelineItemType.MESSAGE,
             UUID.randomUUID(),
             Instant.parse("2026-08-17T10:00:00Z"),
-            "안녕하세요"));
+            "안녕하세요",
+            List.of()));
 
     String serialized = serializer.serialize(event);
     ChatMessageRedisEvent deserialized =

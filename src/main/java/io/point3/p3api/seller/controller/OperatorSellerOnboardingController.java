@@ -5,10 +5,10 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.seller.application.query.SellerOnboardingPendingQueryUseCase;
+import io.point3.p3api.seller.application.result.SellerOnboardingReviewResult;
 import io.point3.p3api.seller.application.review.ApproveSellerOnboardingCommand;
 import io.point3.p3api.seller.application.review.RejectSellerOnboardingCommand;
 import io.point3.p3api.seller.application.review.SellerOnboardingReviewUseCase;
-import io.point3.p3api.seller.application.result.SellerOnboardingReviewResult;
 import io.point3.p3api.seller.controller.request.SellerOnboardingRejectRequest;
 import io.point3.p3api.seller.controller.response.OperatorSellerOnboardingResponse;
 import io.point3.p3api.seller.controller.response.SellerOnboardingReviewResponse;
@@ -58,8 +58,8 @@ public class OperatorSellerOnboardingController {
       @Valid @RequestBody SellerOnboardingRejectRequest request) {
     RoleGuard.requireOperator(currentUser);
 
-    SellerOnboardingReviewResult result = sellerOnboardingReviewUseCase.reject(
-        RejectSellerOnboardingCommand.from(
+    SellerOnboardingReviewResult result =
+        sellerOnboardingReviewUseCase.reject(RejectSellerOnboardingCommand.from(
             onboardingId, currentUser.userId(), request.rejectionReason()));
     return ApiResponse.ok(SellerOnboardingReviewResponse.from(result));
   }

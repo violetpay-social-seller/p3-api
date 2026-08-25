@@ -1,10 +1,10 @@
 package io.point3.p3api.order.application.port;
 
+import io.point3.p3api.order.application.result.OrderPickupDateCount;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
-import io.point3.p3api.order.application.result.OrderPickupDateCount;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -27,4 +27,15 @@ public interface OrderPersistencePort {
 
   List<OrderPickupDateCount> countByStoreIdAndPickupAtBetween(
       UUID storeId, Instant fromInclusive, Instant toExclusive, Set<OrderStatus> statuses);
+
+  List<Order> findCalendarOrders(UUID storeId, Instant startInclusive, Instant endExclusive);
+
+  List<Order> findCalendarOrdersByStatus(
+      UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive);
+
+  long sumSucceededPaymentAmount(UUID storeId, Instant startInclusive, Instant endExclusive);
+
+  long countByStoreIdAndStatus(UUID storeId, OrderStatus status);
+
+  long countByStoreIdAndStatuses(UUID storeId, Collection<OrderStatus> statuses);
 }

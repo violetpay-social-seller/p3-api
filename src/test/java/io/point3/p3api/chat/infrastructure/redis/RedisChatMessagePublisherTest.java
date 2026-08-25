@@ -13,6 +13,7 @@ import io.point3.p3api.chat.domain.entity.ChatMessage;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,6 @@ class RedisChatMessagePublisherTest {
     when(chatTimelineItem.getSenderUserId()).thenReturn(UUID.randomUUID());
     when(chatTimelineItem.getCreatedAt()).thenReturn(Instant.parse("2026-08-17T10:00:00Z"));
 
-    return new SendChatMessageResult(chatMessage, chatTimelineItem);
+    return new SendChatMessageResult(chatMessage, chatTimelineItem, List.of());
   }
 }

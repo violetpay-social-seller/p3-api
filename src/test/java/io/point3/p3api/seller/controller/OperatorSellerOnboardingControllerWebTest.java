@@ -33,10 +33,10 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 class OperatorSellerOnboardingControllerWebTest {
 
-  private final SellerOnboardingPendingQueryUseCase sellerOnboardingPendingQueryUseCase = mock(
-      SellerOnboardingPendingQueryUseCase.class);
-  private final SellerOnboardingReviewUseCase sellerOnboardingReviewUseCase = mock(
-      SellerOnboardingReviewUseCase.class);
+  private final SellerOnboardingPendingQueryUseCase sellerOnboardingPendingQueryUseCase =
+      mock(SellerOnboardingPendingQueryUseCase.class);
+  private final SellerOnboardingReviewUseCase sellerOnboardingReviewUseCase =
+      mock(SellerOnboardingReviewUseCase.class);
 
   private MockMvc mockMvc;
   private CurrentUser currentUser;
@@ -57,8 +57,8 @@ class OperatorSellerOnboardingControllerWebTest {
   void getsPendingOnboardings() throws Exception {
     UUID onboardingId = UUID.randomUUID();
     UUID applicantUserId = UUID.randomUUID();
-    when(sellerOnboardingPendingQueryUseCase.getPendingOnboardings()).thenReturn(List.of(
-        new SellerOnboardingResult(
+    when(sellerOnboardingPendingQueryUseCase.getPendingOnboardings())
+        .thenReturn(List.of(new SellerOnboardingResult(
             onboardingId,
             applicantUserId,
             "P3 베이커리",
@@ -68,7 +68,8 @@ class OperatorSellerOnboardingControllerWebTest {
             SellerOnboardingStatus.PENDING,
             Instant.parse("2026-08-21T00:00:00Z"))));
 
-    mockMvc.perform(get("/operator/seller-onboardings"))
+    mockMvc
+        .perform(get("/operator/seller-onboardings"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data[0].id").value(onboardingId.toString()))
@@ -81,11 +82,12 @@ class OperatorSellerOnboardingControllerWebTest {
   void approvesOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
     Instant reviewedAt = Instant.parse("2026-08-21T00:00:00Z");
-    when(sellerOnboardingReviewUseCase.approve(any())).thenReturn(
-        new SellerOnboardingReviewResult(
+    when(sellerOnboardingReviewUseCase.approve(any()))
+        .thenReturn(new SellerOnboardingReviewResult(
             onboardingId, SellerOnboardingStatus.APPROVED, currentUser.userId(), reviewedAt));
 
-    mockMvc.perform(patch("/operator/seller-onboardings/{onboardingId}/approve", onboardingId))
+    mockMvc
+        .perform(patch("/operator/seller-onboardings/{onboardingId}/approve", onboardingId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.status").value("APPROVED"))
@@ -97,11 +99,12 @@ class OperatorSellerOnboardingControllerWebTest {
   void rejectsOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
     Instant reviewedAt = Instant.parse("2026-08-21T00:00:00Z");
-    when(sellerOnboardingReviewUseCase.reject(any())).thenReturn(
-        new SellerOnboardingReviewResult(
+    when(sellerOnboardingReviewUseCase.reject(any()))
+        .thenReturn(new SellerOnboardingReviewResult(
             onboardingId, SellerOnboardingStatus.REJECTED, currentUser.userId(), reviewedAt));
 
-    mockMvc.perform(patch("/operator/seller-onboardings/{onboardingId}/reject", onboardingId)
+    mockMvc
+        .perform(patch("/operator/seller-onboardings/{onboardingId}/reject", onboardingId)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 { "rejectionReason": "사업자 정보가 충분하지 않습니다." }
@@ -116,7 +119,8 @@ class OperatorSellerOnboardingControllerWebTest {
   void rejectsOnboardingWithoutRejectionReason() throws Exception {
     UUID onboardingId = UUID.randomUUID();
 
-    mockMvc.perform(patch("/operator/seller-onboardings/{onboardingId}/reject", onboardingId)
+    mockMvc
+        .perform(patch("/operator/seller-onboardings/{onboardingId}/reject", onboardingId)
             .contentType(MediaType.APPLICATION_JSON)
             .content("""
                 { "rejectionReason": "" }
@@ -130,7 +134,8 @@ class OperatorSellerOnboardingControllerWebTest {
   void rejectsReviewForNonOperator() throws Exception {
     currentUser = new CurrentUser(UUID.randomUUID(), "판매자", UserRole.SELLER);
 
-    mockMvc.perform(patch("/operator/seller-onboardings/{onboardingId}/approve", UUID.randomUUID()))
+    mockMvc
+        .perform(patch("/operator/seller-onboardings/{onboardingId}/approve", UUID.randomUUID()))
         .andExpect(status().isUnauthorized())
         .andExpect(jsonPath("$.success").value(false));
   }

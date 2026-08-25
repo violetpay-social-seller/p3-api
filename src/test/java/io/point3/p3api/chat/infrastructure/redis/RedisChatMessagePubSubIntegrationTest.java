@@ -16,6 +16,7 @@ import io.point3.p3api.chat.domain.entity.ChatMessage;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +70,12 @@ class RedisChatMessagePubSubIntegrationTest {
   void publishesRedisEventAndForwardsItToLocalStompTopic() throws InterruptedException {
     UUID inquiryId = UUID.randomUUID();
     ChatTimelineItemStompResponse response = new ChatTimelineItemStompResponse(
-        UUID.randomUUID(), ChatTimelineItemType.MESSAGE, UUID.randomUUID(), Instant.now(), "안녕하세요");
+        UUID.randomUUID(),
+        ChatTimelineItemType.MESSAGE,
+        UUID.randomUUID(),
+        Instant.now(),
+        "안녕하세요",
+        List.of());
     CountDownLatch forwarded = new CountDownLatch(1);
     AtomicReference<String> destination = new AtomicReference<>();
     AtomicReference<ChatTimelineItemStompResponse> forwardedResponse = new AtomicReference<>();
@@ -134,6 +140,6 @@ class RedisChatMessagePubSubIntegrationTest {
     when(chatTimelineItem.getSenderUserId()).thenReturn(response.senderUserId());
     when(chatTimelineItem.getCreatedAt()).thenReturn(response.createdAt());
 
-    return new SendChatMessageResult(chatMessage, chatTimelineItem);
+    return new SendChatMessageResult(chatMessage, chatTimelineItem, List.of());
   }
 }

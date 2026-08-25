@@ -1,5 +1,6 @@
 package io.point3.p3api.inquiry.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
@@ -31,6 +32,7 @@ public class OrderFormDraftController {
 
   private final OrderFormDraftCreateUseCase orderFormDraftCreateUseCase;
   private final OrderFormDraftConsumeUseCase orderFormDraftConsumeUseCase;
+  private final ObjectMapper objectMapper;
 
   @PostMapping("/stores/{slug}/order-form-drafts")
   public ApiResponse<OrderFormDraftResponse> create(
@@ -58,10 +60,9 @@ public class OrderFormDraftController {
         request.pickupDate(),
         request.pickupTime(),
         request.noticeAgreed(),
-        request.selectedGalleryItemId(),
         request.formAnswers().stream()
-            .map(answer ->
-                new CreateOrderFormDraftCommand.FormAnswer(answer.fieldId(), answer.value()))
+            .map(answer -> new CreateOrderFormDraftCommand.FormAnswer(
+                answer.fieldId(), objectMapper.valueToTree(answer.value())))
             .toList(),
         request.referenceAssets().stream()
             .map(asset -> new CreateOrderFormDraftCommand.ReferenceAsset(

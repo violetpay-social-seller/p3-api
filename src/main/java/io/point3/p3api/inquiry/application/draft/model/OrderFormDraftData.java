@@ -2,6 +2,7 @@ package io.point3.p3api.inquiry.application.draft.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormDraftCommand;
+import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -16,13 +17,27 @@ public record OrderFormDraftData(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
-    UUID selectedGalleryItemId,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
 
+  public OrderFormDraftData {
+    formAnswers = List.copyOf(formAnswers);
+    referenceAssets = List.copyOf(referenceAssets);
+  }
+
+  @Override
+  public List<FormAnswer> formAnswers() {
+    return List.copyOf(formAnswers);
+  }
+
+  @Override
+  public List<ReferenceAsset> referenceAssets() {
+    return List.copyOf(referenceAssets);
+  }
+
   public record FormAnswer(UUID fieldId, JsonNode value) {}
 
-  public record ReferenceAsset(UUID assetId, String source, int sortOrder) {}
+  public record ReferenceAsset(UUID assetId, OrderFormReferenceAssetSource source, int sortOrder) {}
 
   public static OrderFormDraftData from(CreateOrderFormDraftCommand command) {
     return new OrderFormDraftData(
@@ -31,7 +46,6 @@ public record OrderFormDraftData(
         command.pickupDate(),
         command.pickupTime(),
         command.noticeAgreed(),
-        command.selectedGalleryItemId(),
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
             .toList(),

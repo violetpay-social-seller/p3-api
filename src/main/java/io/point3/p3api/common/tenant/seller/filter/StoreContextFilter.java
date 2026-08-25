@@ -36,8 +36,7 @@ public class StoreContextFilter extends OncePerRequestFilter {
       return true;
     }
 
-    if (path.equals(SELLER_ONBOARDINGS_PATH)
-        || path.startsWith(SELLER_ONBOARDINGS_PATH + "/")) {
+    if (path.equals(SELLER_ONBOARDINGS_PATH) || path.startsWith(SELLER_ONBOARDINGS_PATH + "/")) {
       return true;
     }
 

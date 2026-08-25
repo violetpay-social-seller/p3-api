@@ -306,13 +306,19 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         orderQueryService.getBuyerOrders(fixture.buyer().getId()).get(0).id());
     assertEquals(
         order.getId(),
-        orderQueryService.getBuyerOrder(order.getId(), fixture.buyer().getId()).id());
+        orderQueryService
+            .getBuyerOrder(order.getId(), fixture.buyer().getId())
+            .order()
+            .id());
     assertEquals(
         order.getId(),
         orderQueryService.getSellerOrders(fixture.store().id()).get(0).id());
     assertEquals(
         order.getId(),
-        orderQueryService.getSellerOrder(order.getId(), fixture.store().id()).id());
+        orderQueryService
+            .getSellerOrder(order.getId(), fixture.store().id())
+            .order()
+            .id());
 
     User otherBuyer = saveUser(UserRole.BUYER, "workflow-order-other");
     BaseException buyerException = assertThrows(

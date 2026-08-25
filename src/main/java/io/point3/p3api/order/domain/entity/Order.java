@@ -137,4 +137,42 @@ public class Order {
         paidAmount,
         pickupAt);
   }
+
+  public void markPickedUp() {
+    ensureStatus(OrderStatus.PAID);
+    this.status = OrderStatus.PICKED_UP;
+  }
+
+  public void requestCancel(String cancelReason, Instant requestedAt) {
+    Objects.requireNonNull(cancelReason, "cancelReason");
+    Objects.requireNonNull(requestedAt, "requestedAt");
+    if (cancelReason.isBlank()) {
+      throw new IllegalArgumentException("cancelReason must not be blank");
+    }
+
+    ensureStatus(OrderStatus.PAID);
+    this.status = OrderStatus.CANCEL_REQUESTED;
+    this.cancelReason = cancelReason;
+    this.cancelRequestedAt = requestedAt;
+  }
+
+  public void refund(String cancelReason) {
+    Objects.requireNonNull(cancelReason, "cancelReason");
+    if (cancelReason.isBlank()) {
+      throw new IllegalArgumentException("cancelReason must not be blank");
+    }
+
+    if (this.status != OrderStatus.PAID && this.status != OrderStatus.CANCEL_REQUESTED) {
+      throw new IllegalStateException("Order status transition is not allowed");
+    }
+
+    this.status = OrderStatus.REFUNDED;
+    this.cancelReason = cancelReason;
+  }
+
+  private void ensureStatus(OrderStatus expectedStatus) {
+    if (this.status != expectedStatus) {
+      throw new IllegalStateException("Order status transition is not allowed");
+    }
+  }
 }

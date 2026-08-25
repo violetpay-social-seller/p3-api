@@ -56,13 +56,22 @@ public class PaymentAttempt {
   @Column(name = "completed_at")
   private Instant completedAt;
 
+  @Column(name = "expires_at", nullable = false)
+  private Instant expiresAt;
+
   private PaymentAttempt(
-      UUID confirmationId, UUID payerUserId, String point3SessionId, String payerId, long amount) {
+          UUID confirmationId,
+          UUID payerUserId,
+          String point3SessionId,
+          String payerId,
+          long amount,
+          Instant expiresAt) {
     this.confirmationId = confirmationId;
     this.payerUserId = payerUserId;
     this.point3SessionId = point3SessionId;
     this.payerId = payerId;
     this.amount = amount;
+    this.expiresAt = expiresAt;
     this.status = PaymentAttemptStatus.READY;
   }
 

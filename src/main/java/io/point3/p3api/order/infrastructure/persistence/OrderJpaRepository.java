@@ -2,7 +2,9 @@ package io.point3.p3api.order.infrastructure.persistence;
 
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
+import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +22,10 @@ public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
   List<Order> findAllByBuyerUserIdOrderByCreatedAtDesc(UUID buyerUserId);
 
   List<Order> findAllByStoreIdOrderByCreatedAtDesc(UUID storeId);
+
+  long countByStoreIdAndStatus(UUID storeId, OrderStatus status);
+
+  long countByStoreIdAndStatusIn(UUID storeId, Collection<OrderStatus> statuses);
 
   @Query("""
       select o
@@ -46,6 +52,21 @@ public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
   List<Order> findCalendarOrdersByStatus(
       @Param("storeId") UUID storeId,
       @Param("status") OrderStatus status,
+      @Param("startInclusive") Instant startInclusive,
+      @Param("endExclusive") Instant endExclusive);
+
+  @Query("""
+      select coalesce(sum(p.amount), 0)
+      from Order o, PaymentAttempt p
+      where o.paymentAttemptId = p.id
+        and o.storeId = :storeId
+        and p.status = :status
+        and p.completedAt >= :startInclusive
+        and p.completedAt < :endExclusive
+      """)
+  long sumSucceededPaymentAmount(
+      @Param("storeId") UUID storeId,
+      @Param("status") PaymentAttemptStatus status,
       @Param("startInclusive") Instant startInclusive,
       @Param("endExclusive") Instant endExclusive);
 }

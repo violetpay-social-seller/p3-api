@@ -3,6 +3,7 @@ package io.point3.p3api.order.application.port;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +27,10 @@ public interface OrderPersistencePort {
 
   List<Order> findCalendarOrdersByStatus(
       UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive);
+
+  long sumSucceededPaymentAmount(UUID storeId, Instant startInclusive, Instant endExclusive);
+
+  long countByStoreIdAndStatus(UUID storeId, OrderStatus status);
+
+  long countByStoreIdAndStatuses(UUID storeId, Collection<OrderStatus> statuses);
 }

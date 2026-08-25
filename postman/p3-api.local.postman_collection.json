@@ -51,8 +51,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -66,7 +72,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/auth/me/sync"
           }
@@ -92,10 +101,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"role\": \"seller\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"seller\"\n}"
+            },
             "url": "{{baseUrl}}/auth/me/registration"
           }
         },
@@ -117,8 +135,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -144,10 +168,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"cognitoSub\": \"{{sellerCognitoSub}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSub\": \"{{sellerCognitoSub}}\"\n}"
+            },
             "url": "{{baseUrl}}/local-scenario/seller-onboarding/approve"
           }
         },
@@ -156,7 +189,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/onboardings/current"
           }
@@ -166,7 +202,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/auth/me/sync"
           }
@@ -192,10 +231,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"role\": \"buyer\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"buyer\"\n}"
+            },
             "url": "{{baseUrl}}/auth/me/registration"
           }
         }
@@ -222,12 +270,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "postman/fixtures/cake.png", "contentType": "image/png" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
               ]
             },
             "url": "{{baseUrl}}/assets"
@@ -252,8 +308,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -279,8 +341,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -294,7 +362,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/store"
           }
@@ -316,8 +387,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -342,12 +419,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "postman/fixtures/cake.png", "contentType": "image/png" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
               ]
             },
             "url": "{{baseUrl}}/assets"
@@ -369,12 +454,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "postman/fixtures/cake.png", "contentType": "image/png" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
               ]
             },
             "url": "{{baseUrl}}/assets"
@@ -396,12 +489,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "postman/fixtures/cake.png", "contentType": "image/png" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
               ]
             },
             "url": "{{baseUrl}}/assets"
@@ -423,10 +524,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{representativeAssetId1}}\",\n  \"sortOrder\": 0\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId1}}\",\n  \"sortOrder\": 0\n}"
+            },
             "url": "{{baseUrl}}/seller/representative-images"
           }
         },
@@ -446,10 +556,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{representativeAssetId2}}\",\n  \"sortOrder\": 1\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId2}}\",\n  \"sortOrder\": 1\n}"
+            },
             "url": "{{baseUrl}}/seller/representative-images"
           }
         },
@@ -469,10 +588,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{representativeAssetId3}}\",\n  \"sortOrder\": 2\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{representativeAssetId3}}\",\n  \"sortOrder\": 2\n}"
+            },
             "url": "{{baseUrl}}/seller/representative-images"
           }
         },
@@ -481,7 +609,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/representative-images"
           }
@@ -502,20 +633,35 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACTIVE\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
             "url": "{{baseUrl}}/seller/store/status"
           }
         },
         {
           "name": "Public - get active store by slug",
-          "request": { "method": "GET", "url": "{{baseUrl}}/stores/{{storeSlug}}" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}"
+          }
         },
         {
           "name": "Public - list representative images",
-          "request": { "method": "GET", "url": "{{baseUrl}}/stores/{{storeSlug}}/representative-images" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/representative-images"
+          }
         },
         {
           "name": "[negative] Seller - cannot hide below minimum active representative images",
@@ -534,10 +680,19 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"sortOrder\": 0,\n  \"status\": \"HIDDEN\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortOrder\": 0,\n  \"status\": \"HIDDEN\"\n}"
+            },
             "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
           }
         },
@@ -557,12 +712,20 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "postman/fixtures/cake.png", "contentType": "image/png" }
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "postman/fixtures/cake.png",
+                  "contentType": "image/png"
+                }
               ]
             },
             "url": "{{baseUrl}}/assets"
@@ -573,8 +736,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -588,7 +757,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/assets/{{galleryAssetId}}/variants"
           }
@@ -609,10 +781,19 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"assetId\": \"{{galleryAssetId}}\",\n  \"sortOrder\": 0,\n  \"featured\": false\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": \"{{galleryAssetId}}\",\n  \"sortOrder\": 0,\n  \"featured\": false\n}"
+            },
             "url": "{{baseUrl}}/seller/gallery-items"
           }
         },
@@ -621,10 +802,19 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"sortOrder\": 0,\n  \"featured\": true,\n  \"status\": \"VISIBLE\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortOrder\": 0,\n  \"featured\": true,\n  \"status\": \"VISIBLE\"\n}"
+            },
             "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
           }
         },
@@ -633,18 +823,27 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
           }
         },
         {
           "name": "Public - list gallery items",
-          "request": { "method": "GET", "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items"
+          }
         },
         {
           "name": "Public - get gallery item",
-          "request": { "method": "GET", "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items/{{galleryItemId}}" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items/{{galleryItemId}}"
+          }
         }
       ]
     },
@@ -668,8 +867,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -703,8 +908,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -730,8 +941,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -745,7 +962,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/order-forms/{{orderFormTemplateId}}"
           }
@@ -755,14 +975,20 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/order-forms/active"
           }
         },
         {
           "name": "Public - get active order form",
-          "request": { "method": "GET", "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form"
+          }
         },
         {
           "name": "[negative] Public - draft requires notice agreement",
@@ -781,7 +1007,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -808,7 +1037,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -839,7 +1071,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/order-form-drafts/{{draftKey}}/consume"
           }
@@ -860,7 +1095,10 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/stores/{{storeSlug}}/inquiries/open"
           }
@@ -870,7 +1108,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries?status=WAITING"
           }
@@ -880,7 +1121,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries?status=WAITING"
           }
@@ -890,7 +1134,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}"
           }
@@ -900,7 +1147,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}"
           }
@@ -910,7 +1160,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/events?size=10"
           }
@@ -920,7 +1173,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/events?size=10"
           }
@@ -930,7 +1186,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/store-policies"
           }
@@ -940,7 +1199,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/order-form-submissions"
           }
@@ -950,7 +1212,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/order-form-submissions/{{submissionId}}"
           }
@@ -976,8 +1241,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -991,7 +1262,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
           }
@@ -1001,7 +1275,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations"
           }
@@ -1011,7 +1288,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/viewed"
           }
@@ -1032,7 +1312,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/revision"
           }
@@ -1053,8 +1336,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1083,8 +1372,14 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -1098,7 +1393,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/read"
           }
@@ -1108,7 +1406,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/read"
           }
@@ -1118,7 +1419,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{buyerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/orders"
           }
@@ -1128,9 +1432,89 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "30 Seller Dashboard, Revenue",
+      "item": [
+        {
+          "name": "Seller - get dashboard summary without payment side effects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('dashboard summary fields', function () {",
+                  "  const data = body.data;",
+                  "  pm.expect(data).to.have.property('currentMonthRevenue');",
+                  "  pm.expect(data).to.have.property('todayOrderCount');",
+                  "  pm.expect(data).to.have.property('thisWeekOrderCount');",
+                  "  pm.expect(data).to.have.property('paidOrderCount');",
+                  "  pm.expect(data).to.have.property('cancelRefundRequestCount');",
+                  "  pm.expect(data).to.have.property('unansweredInquiryCount');",
+                  "  pm.expect(data).to.have.property('todayOrders');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementFeeRateBasisPoints');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementFeeAmount');",
+                  "  pm.expect(data.currentMonthRevenue).to.have.property('settlementEstimateAmount');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/dashboard"
+          }
+        },
+        {
+          "name": "Seller - get revenue range without payment side effects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('revenue range fields', function () {",
+                  "  const data = body.data;",
+                  "  pm.expect(data.startDate).to.eql('2026-08-01');",
+                  "  pm.expect(data.endDate).to.eql('2026-08-31');",
+                  "  pm.expect(data).to.have.property('paymentRevenueAmount');",
+                  "  pm.expect(data).to.have.property('completedRefundAmount');",
+                  "  pm.expect(data).to.have.property('netSalesAmount');",
+                  "  pm.expect(data.settlementFeeRateBasisPoints).to.eql(30);",
+                  "  pm.expect(data).to.have.property('settlementFeeAmount');",
+                  "  pm.expect(data).to.have.property('settlementEstimateAmount');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/dashboard/revenue?startDate=2026-08-01&endDate=2026-08-31"
           }
         }
       ]
@@ -1143,7 +1527,10 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/order-forms/{{orderFormTemplateId}}/inactive"
           }
@@ -1153,10 +1540,19 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"INACTIVE\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INACTIVE\"\n}"
+            },
             "url": "{{baseUrl}}/seller/store/status"
           }
         },
@@ -1165,7 +1561,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
           }
@@ -1175,7 +1574,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
           }
@@ -1185,7 +1587,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId2}}"
           }
@@ -1195,7 +1600,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId3}}"
           }
@@ -1205,7 +1613,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/assets/{{galleryAssetId}}"
           }
@@ -1215,7 +1626,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/assets/{{assetId}}"
           }
@@ -1225,7 +1639,10 @@
           "request": {
             "method": "DELETE",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
             ],
             "url": "{{baseUrl}}/seller/store"
           }
@@ -1235,8 +1652,14 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{sellerAccessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",

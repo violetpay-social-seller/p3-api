@@ -33,6 +33,31 @@ public enum StoreErrorCode implements ErrorCode {
       "Representative image asset not found",
       HttpStatus.NOT_FOUND,
       "/errors/store/representative-image-asset-not-found"),
+  ACTIVE_ORDER_FORM_REQUIRED(
+      "ACTIVE_ORDER_FORM_REQUIRED_400",
+      "At least one active order form is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/active-order-form-required"),
+  OPERATION_SETTING_REQUIRED(
+      "OPERATION_SETTING_REQUIRED_400",
+      "Store operation setting is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/operation-setting-required"),
+  ORDER_NOTICE_REQUIRED(
+      "ORDER_NOTICE_REQUIRED_400",
+      "Pre-order notice is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/order-notice-required"),
+  ENABLED_PICKUP_SETTING_REQUIRED(
+      "ENABLED_PICKUP_SETTING_REQUIRED_400",
+      "At least one enabled pickup setting is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/enabled-pickup-setting-required"),
+  SETTLEMENT_ACCOUNT_REQUIRED(
+      "SETTLEMENT_ACCOUNT_REQUIRED_400",
+      "Settlement account input is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/settlement-account-required"),
   STORE_STATUS_FORBIDDEN(
       "STORE_STATUS_FORBIDDEN_400",
       "Store status can not be changed",

@@ -8,6 +8,8 @@ import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
+import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.representative.RepresentativeImageService;
 import io.point3.p3api.store.application.representative.command.CreateRepresentativeImageCommand;
@@ -16,12 +18,19 @@ import io.point3.p3api.store.application.representative.result.RepresentativeIma
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.domain.entity.Store;
+import io.point3.p3api.store.domain.entity.StoreOperationSetting;
+import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -43,6 +52,15 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
+
+  @Autowired
+  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
+
+  @Autowired
+  private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
 
   @Test
   @DisplayName("스토어 생성은 실제 저장소에서 판매자 1명당 1개 제약을 검증한다")
@@ -74,6 +92,24 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("활성 주문서가 없으면 스토어 활성화를 거절한다")
+  void rejectsActivationWhenActiveOrderFormIsMissing() {
+    User seller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+    createRepresentativeImage(store.id(), seller.getId(), 0);
+    createRepresentativeImage(store.id(), seller.getId(), 1);
+    createRepresentativeImage(store.id(), seller.getId(), 2);
+    prepareOperationSettingAndSettlementAccount(store.id());
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> storeService.changeStatus(
+            new ChangeStoreStatusCommand(store.id(), StoreStatus.ACTIVE)));
+
+    assertEquals(StoreErrorCode.ACTIVE_ORDER_FORM_REQUIRED, exception.getErrorCode());
+  }
+
+  @Test
   @DisplayName("대표이미지가 3개 이상이면 스토어를 활성화한다")
   void activatesStoreWhenRepresentativeImagesAreReady() {
     User seller = saveSeller();
@@ -81,6 +117,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
     createRepresentativeImage(store.id(), seller.getId(), 0);
     createRepresentativeImage(store.id(), seller.getId(), 1);
     createRepresentativeImage(store.id(), seller.getId(), 2);
+    prepareForActivation(store.id());
 
     StoreResult activated =
         storeService.changeStatus(new ChangeStoreStatusCommand(store.id(), StoreStatus.ACTIVE));
@@ -98,6 +135,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
     RepresentativeImageResult first = createRepresentativeImage(store.id(), seller.getId(), 0);
     createRepresentativeImage(store.id(), seller.getId(), 1);
     createRepresentativeImage(store.id(), seller.getId(), 2);
+    prepareForActivation(store.id());
     storeService.changeStatus(new ChangeStoreStatusCommand(store.id(), StoreStatus.ACTIVE));
 
     BaseException exception = assertThrows(
@@ -139,5 +177,20 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
     return representativeImageService.create(
         new CreateRepresentativeImageCommand(storeId, asset.getId(), sortOrder));
+  }
+
+  private void prepareForActivation(UUID storeId) {
+    orderFormTemplateJpaRepository.saveAndFlush(OrderFormTemplate.create(storeId, "기본 주문서"));
+    prepareOperationSettingAndSettlementAccount(storeId);
+  }
+
+  private void prepareOperationSettingAndSettlementAccount(UUID storeId) {
+    storeOperationSettingJpaRepository.saveAndFlush(
+        StoreOperationSetting.create(storeId, 60, "주문 전 안내", 0));
+    storeWeeklyPickupSettingJpaRepository.saveAndFlush(StoreWeeklyPickupSetting.create(
+        storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true));
+    Store store = storeJpaRepository.findById(storeId).orElseThrow();
+    store.markSettlementAccountInputCompleted(Instant.now());
+    storeJpaRepository.saveAndFlush(store);
   }
 }

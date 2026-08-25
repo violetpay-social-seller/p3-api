@@ -13,5 +13,7 @@ public interface AssetPersistencePort {
 
   Optional<Asset> findByIdAndUploadedBy(UUID assetId, UUID uploadedBy);
 
+  List<Asset> findAllById(List<UUID> assetIds);
+
   List<Asset> findAllByUploadedBy(UUID uploadedBy);
 }

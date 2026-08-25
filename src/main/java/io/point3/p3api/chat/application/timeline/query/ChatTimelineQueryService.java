@@ -1,14 +1,18 @@
 package io.point3.p3api.chat.application.timeline.query;
 
+import io.point3.p3api.chat.application.port.ChatMessageAssetPort;
 import io.point3.p3api.chat.application.port.ChatMessagePort;
 import io.point3.p3api.chat.application.port.ChatTimelineItemPort;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelineItemResult;
 import io.point3.p3api.chat.application.timeline.result.ChatTimelinePage;
 import io.point3.p3api.chat.domain.entity.ChatMessage;
+import io.point3.p3api.chat.domain.entity.ChatMessageAsset;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +31,7 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
 
   private final ChatTimelineItemPort chatTimelineItemPort;
   private final ChatMessagePort chatMessagePort;
+  private final ChatMessageAssetPort chatMessageAssetPort;
 
   @Override
   public ChatTimelinePage execute(UUID inquiryId, ChatTimelineQuery query) {
@@ -40,9 +45,12 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
         hasNext ? chatTimelineItems.subList(0, size) : chatTimelineItems;
 
     Map<UUID, ChatMessage> chatMessages = findMessages(pageItems);
+    Map<UUID, List<ChatMessageAsset>> chatMessageAssets = findMessageAssets(chatMessages.keySet());
     List<ChatTimelineItemResult> items = pageItems.stream()
         .map(chatTimelineItem -> ChatTimelineItemResult.from(
-            chatTimelineItem, chatMessages.get(chatTimelineItem.getReferenceId())))
+            chatTimelineItem,
+            chatMessages.get(chatTimelineItem.getReferenceId()),
+            chatMessageAssets.getOrDefault(chatTimelineItem.getReferenceId(), List.of())))
         .toList();
 
     ChatTimelineItem lastItem = hasNext ? pageItems.getLast() : null;
@@ -64,6 +72,19 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
         .findAllById(messageIds)
         .forEach(message -> messages.put(message.getId(), message));
     return messages;
+  }
+
+  private Map<UUID, List<ChatMessageAsset>> findMessageAssets(Collection<UUID> messageIds) {
+    Map<UUID, List<ChatMessageAsset>> messageAssets = new HashMap<>();
+
+    if (messageIds.isEmpty()) {
+      return messageAssets;
+    }
+
+    chatMessageAssetPort.findAllByMessageIdIn(messageIds).forEach(asset -> messageAssets
+        .computeIfAbsent(asset.getMessageId(), ignored -> new ArrayList<>())
+        .add(asset));
+    return messageAssets;
   }
 
   private void validateCursor(ChatTimelineQuery query) {

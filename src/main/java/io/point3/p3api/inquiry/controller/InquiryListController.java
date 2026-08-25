@@ -21,10 +21,11 @@ public class InquiryListController {
   @GetMapping("/inquiries")
   public ApiResponse<List<InquiryListItemResponse>> getBuyerInquiries(
       @Authenticated CurrentUser currentUser,
-      @RequestParam(required = false) InquiryStatus status) {
+      @RequestParam(required = false) InquiryStatus status,
+      @RequestParam(defaultValue = "false") boolean unreadOnly) {
     RoleGuard.requireBuyer(currentUser);
     return ApiResponse.ok(
-        inquiryListUseCase.getBuyerInquiries(currentUser.userId(), status).stream()
+        inquiryListUseCase.getBuyerInquiries(currentUser.userId(), status, unreadOnly).stream()
             .map(InquiryListItemResponse::from)
             .toList());
   }
@@ -37,13 +38,32 @@ public class InquiryListController {
     return ApiResponse.ok();
   }
 
+  @PatchMapping("/inquiries/{inquiryId}/trash")
+  public ApiResponse<Void> moveBuyerToTrash(
+      @PathVariable UUID inquiryId, @Authenticated CurrentUser currentUser) {
+    RoleGuard.requireBuyer(currentUser);
+    inquiryListUseCase.moveBuyerToTrash(inquiryId, currentUser.userId());
+    return ApiResponse.ok();
+  }
+
+  @PatchMapping("/inquiries/{inquiryId}/restore")
+  public ApiResponse<Void> restoreBuyerFromTrash(
+      @PathVariable UUID inquiryId, @Authenticated CurrentUser currentUser) {
+    RoleGuard.requireBuyer(currentUser);
+    inquiryListUseCase.restoreBuyerFromTrash(inquiryId, currentUser.userId());
+    return ApiResponse.ok();
+  }
+
   @GetMapping("/seller/inquiries")
   public ApiResponse<List<InquiryListItemResponse>> getSellerInquiries(
       @CurrentStoreId UUID storeId,
       @Authenticated CurrentUser currentUser,
-      @RequestParam(required = false) InquiryStatus status) {
+      @RequestParam(required = false) InquiryStatus status,
+      @RequestParam(defaultValue = "false") boolean unreadOnly) {
     return ApiResponse.ok(
-        inquiryListUseCase.getSellerInquiries(storeId, currentUser.userId(), status).stream()
+        inquiryListUseCase
+            .getSellerInquiries(storeId, currentUser.userId(), status, unreadOnly)
+            .stream()
             .map(InquiryListItemResponse::from)
             .toList());
   }
@@ -52,6 +72,20 @@ public class InquiryListController {
   public ApiResponse<Void> markSellerRead(
       @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
     inquiryListUseCase.markSellerRead(inquiryId, storeId);
+    return ApiResponse.ok();
+  }
+
+  @PatchMapping("/seller/inquiries/{inquiryId}/trash")
+  public ApiResponse<Void> moveSellerToTrash(
+      @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
+    inquiryListUseCase.moveSellerToTrash(inquiryId, storeId);
+    return ApiResponse.ok();
+  }
+
+  @PatchMapping("/seller/inquiries/{inquiryId}/restore")
+  public ApiResponse<Void> restoreSellerFromTrash(
+      @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
+    inquiryListUseCase.restoreSellerFromTrash(inquiryId, storeId);
     return ApiResponse.ok();
   }
 }

@@ -41,6 +41,18 @@ public class Inquiry {
   @Column(name = "seller_last_read_at")
   private Instant sellerLastReadAt;
 
+  @Column(name = "buyer_deleted_at")
+  private Instant buyerDeletedAt;
+
+  @Column(name = "seller_deleted_at")
+  private Instant sellerDeletedAt;
+
+  @Column(name = "buyer_purged_at")
+  private Instant buyerPurgedAt;
+
+  @Column(name = "seller_purged_at")
+  private Instant sellerPurgedAt;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -88,5 +100,55 @@ public class Inquiry {
 
   public void markSellerRead(Instant readAt) {
     this.sellerLastReadAt = Objects.requireNonNull(readAt, "readAt");
+  }
+
+  public void moveBuyerToTrash(Instant deletedAt) {
+    this.buyerDeletedAt = Objects.requireNonNull(deletedAt, "deletedAt");
+    this.buyerPurgedAt = null;
+  }
+
+  public void moveSellerToTrash(Instant deletedAt) {
+    this.sellerDeletedAt = Objects.requireNonNull(deletedAt, "deletedAt");
+    this.sellerPurgedAt = null;
+  }
+
+  public void restoreBuyerFromTrash() {
+    if (buyerPurgedAt != null) {
+      throw new IllegalStateException("buyer trash is already emptied");
+    }
+
+    this.buyerDeletedAt = null;
+  }
+
+  public void restoreSellerFromTrash() {
+    if (sellerPurgedAt != null) {
+      throw new IllegalStateException("seller trash is already emptied");
+    }
+
+    this.sellerDeletedAt = null;
+  }
+
+  public InquiryStatus statusForBuyer() {
+    return isBuyerTrashed() ? InquiryStatus.TRASH : status;
+  }
+
+  public InquiryStatus statusForSeller() {
+    return isSellerTrashed() ? InquiryStatus.TRASH : status;
+  }
+
+  public boolean isBuyerVisible() {
+    return buyerPurgedAt == null;
+  }
+
+  public boolean isSellerVisible() {
+    return sellerPurgedAt == null;
+  }
+
+  public boolean isBuyerTrashed() {
+    return buyerDeletedAt != null && buyerPurgedAt == null;
+  }
+
+  public boolean isSellerTrashed() {
+    return sellerDeletedAt != null && sellerPurgedAt == null;
   }
 }

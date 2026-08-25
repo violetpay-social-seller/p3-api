@@ -2,6 +2,7 @@ package io.point3.p3api.inquiry.infrastructure.persistence;
 
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,5 +40,11 @@ public class InquiryPersistenceAdapter implements InquiryPersistencePort {
   @Override
   public List<Inquiry> findAllByStoreId(UUID storeId) {
     return inquiryJpaRepository.findAllByStoreIdOrderByCreatedAtDesc(storeId);
+  }
+
+  @Override
+  public void purgeExpiredTrash(Instant cutoff, Instant purgedAt) {
+    inquiryJpaRepository.purgeExpiredBuyerTrash(cutoff, purgedAt);
+    inquiryJpaRepository.purgeExpiredSellerTrash(cutoff, purgedAt);
   }
 }

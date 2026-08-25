@@ -22,6 +22,10 @@ public class InquiryChatAccessService {
   public Inquiry getBuyerInquiry(UUID inquiryId, UUID buyerUserId) {
     Inquiry inquiry = getInquiry(inquiryId);
 
+    if (!inquiry.isBuyerVisible()) {
+      throw new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND);
+    }
+
     if (!inquiry.getBuyerUserId().equals(buyerUserId)) {
       throw new BaseException(ChatErrorCode.CHAT_PARTICIPANT_FORBIDDEN);
     }
@@ -31,6 +35,10 @@ public class InquiryChatAccessService {
 
   public Inquiry getSellerInquiry(UUID inquiryId, UUID storeId) {
     Inquiry inquiry = getInquiry(inquiryId);
+
+    if (!inquiry.isSellerVisible()) {
+      throw new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND);
+    }
 
     if (!inquiry.getStoreId().equals(storeId)) {
       throw new BaseException(ChatErrorCode.CHAT_PARTICIPANT_FORBIDDEN);

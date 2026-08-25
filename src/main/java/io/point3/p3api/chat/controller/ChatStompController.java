@@ -28,8 +28,8 @@ public class ChatStompController {
       @DestinationVariable UUID inquiryId,
       @Valid @Payload SendChatMessageStompRequest request,
       @StompCurrentUser CurrentUser currentUser) {
-    SendChatMessageResult result = sendChatMessageUseCase.execute(
-        SendChatMessageCommand.of(inquiryId, currentUser.userId(), request.content()));
+    SendChatMessageResult result = sendChatMessageUseCase.execute(SendChatMessageCommand.of(
+        inquiryId, currentUser.userId(), request.content(), request.assetIds()));
 
     chatMessageRealtimePublisherPort.publish(result);
   }

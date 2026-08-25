@@ -264,6 +264,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     paymentAttempt.succeed(payerId, completedAt);
     payer.connectPayer(payerId);
     confirmation.markPaid();
+    inquiry.markPaid();
 
     Order order = orderPersistencePort
         .findByPaymentAttemptId(paymentAttempt.getId())

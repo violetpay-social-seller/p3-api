@@ -13,9 +13,18 @@ public record InquiryListItem(
 
   public static InquiryListItem from(
       Inquiry inquiry, InquiryChatDetail detail, long unreadCount, Instant latestEventAt) {
+    return from(inquiry, detail, inquiry.getStatus(), unreadCount, latestEventAt);
+  }
+
+  public static InquiryListItem from(
+      Inquiry inquiry,
+      InquiryChatDetail detail,
+      InquiryStatus status,
+      long unreadCount,
+      Instant latestEventAt) {
     return new InquiryListItem(
         detail,
-        inquiry.getStatus(),
+        status,
         unreadCount,
         latestEventAt == null ? inquiry.getCreatedAt() : latestEventAt);
   }

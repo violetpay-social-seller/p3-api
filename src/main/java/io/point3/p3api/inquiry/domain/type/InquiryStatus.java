@@ -4,5 +4,6 @@ public enum InquiryStatus {
   WAITING,
   IN_PROGRESS,
   PAID,
-  PICKED_UP
+  PICKED_UP,
+  TRASH
 }

@@ -14,6 +14,7 @@ The collection covers these API flows:
 - order form success and main failure cases
 - draft creation, draft consume, inquiry list/detail/timeline/read flows
 - order confirmation send, viewed, revision request, replacement flows
+- seller dashboard and revenue response contract flows
 
 Run the API with the local scenario profile:
 

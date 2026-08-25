@@ -3,7 +3,9 @@ package io.point3.p3api.order.infrastructure.persistence;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
+import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,5 +65,22 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
       UUID storeId, OrderStatus status, Instant startInclusive, Instant endExclusive) {
     return orderJpaRepository.findCalendarOrdersByStatus(
         storeId, status, startInclusive, endExclusive);
+  }
+
+  @Override
+  public long sumSucceededPaymentAmount(
+      UUID storeId, Instant startInclusive, Instant endExclusive) {
+    return orderJpaRepository.sumSucceededPaymentAmount(
+        storeId, PaymentAttemptStatus.SUCCEEDED, startInclusive, endExclusive);
+  }
+
+  @Override
+  public long countByStoreIdAndStatus(UUID storeId, OrderStatus status) {
+    return orderJpaRepository.countByStoreIdAndStatus(storeId, status);
+  }
+
+  @Override
+  public long countByStoreIdAndStatuses(UUID storeId, Collection<OrderStatus> statuses) {
+    return orderJpaRepository.countByStoreIdAndStatusIn(storeId, statuses);
   }
 }

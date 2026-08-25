@@ -8,9 +8,25 @@ import java.util.UUID;
 public interface InquiryListUseCase {
   List<InquiryListItem> getBuyerInquiries(UUID buyerUserId, InquiryStatus status);
 
+  List<InquiryListItem> getBuyerInquiries(
+      UUID buyerUserId, InquiryStatus status, boolean unreadOnly);
+
   List<InquiryListItem> getSellerInquiries(UUID storeId, UUID sellerUserId, InquiryStatus status);
+
+  List<InquiryListItem> getSellerInquiries(
+      UUID storeId, UUID sellerUserId, InquiryStatus status, boolean unreadOnly);
 
   void markBuyerRead(UUID inquiryId, UUID buyerUserId);
 
   void markSellerRead(UUID inquiryId, UUID storeId);
+
+  void moveBuyerToTrash(UUID inquiryId, UUID buyerUserId);
+
+  void moveSellerToTrash(UUID inquiryId, UUID storeId);
+
+  void restoreBuyerFromTrash(UUID inquiryId, UUID buyerUserId);
+
+  void restoreSellerFromTrash(UUID inquiryId, UUID storeId);
+
+  void purgeExpiredTrash();
 }

@@ -18,6 +18,7 @@ import io.point3.p3api.inquiry.application.open.InquiryOpenService;
 import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmissionService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import io.point3.p3api.order.application.OrderConfirmationService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
@@ -343,6 +344,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(OrderStatus.PAID, order.getStatus());
     assertEquals("payer-new", payer.getPayerId());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
+    assertEquals(InquiryStatus.PAID, fixture.inquiry().getStatus());
   }
 
   @Test

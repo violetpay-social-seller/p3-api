@@ -2,6 +2,7 @@ package io.point3.p3api.payment.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,7 +34,12 @@ import io.point3.p3api.payment.application.capture.PaymentCaptureUseCase;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
 import io.point3.p3api.payment.application.prepare.PaymentPrepareUseCase;
 import io.point3.p3api.payment.application.prepare.PreparePaymentCommand;
+import io.point3.p3api.payment.application.query.PaymentAttemptHistoryQueryUseCase;
+import io.point3.p3api.payment.application.query.PaymentCtaQueryUseCase;
+import io.point3.p3api.payment.application.result.PaymentAttemptResult;
 import io.point3.p3api.payment.application.result.PaymentCaptureResult;
+import io.point3.p3api.payment.application.result.PaymentCtaResult;
+import io.point3.p3api.payment.application.result.PaymentCtaStatus;
 import io.point3.p3api.payment.application.result.PaymentPreparationResult;
 import io.point3.p3api.payment.application.result.Point3CaptureResult;
 import io.point3.p3api.payment.application.result.Point3PaymentSession;
@@ -76,6 +82,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   private PaymentCaptureUseCase paymentCaptureUseCase;
 
   @Autowired
+  private PaymentCtaQueryUseCase paymentCtaQueryUseCase;
+
+  @Autowired
+  private PaymentAttemptHistoryQueryUseCase paymentAttemptHistoryQueryUseCase;
+
+  @Autowired
   private OrderConfirmationService orderConfirmationService;
 
   @Autowired
@@ -111,6 +123,78 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   @BeforeEach
   void setUp() {
     point3PaymentPort.clear();
+  }
+
+  @Test
+  @DisplayName("주문확인서 기준 CTA는 확인 전 비활성이고 확인 후 결제 가능 상태를 반환한다")
+  void createsPaymentCtaFromConfirmation() {
+    Fixture fixture = prepareFixture("payment-cta");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+
+    PaymentCtaResult beforeViewed = paymentCtaQueryUseCase.getBuyerConfirmationCta(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+    PaymentCtaResult afterViewed = paymentCtaQueryUseCase.getBuyerConfirmationCta(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+
+    assertFalse(beforeViewed.canPay());
+    assertEquals(PaymentCtaStatus.VIEW_REQUIRED, beforeViewed.status());
+    assertEquals("ORDER_CONFIRMATION_NOT_VIEWED", beforeViewed.reason());
+    assertEquals(41000, beforeViewed.amount());
+    assertTrue(afterViewed.canPay());
+    assertEquals(PaymentCtaStatus.PAYABLE, afterViewed.status());
+    assertNotNull(afterViewed.buyerViewedAt());
+  }
+
+  @Test
+  @DisplayName("결제 실패 후 재시도하면 같은 주문확인서 기준으로 새 결제 세션과 이력을 만든다")
+  void retriesWithNewSessionAfterFailure() {
+    Fixture fixture = prepareFixture("payment-retry");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+    PaymentPreparationResult first = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
+    point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.FAILED);
+    PaymentCaptureResult failed = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+        first.paymentAttemptId(), fixture.buyer().getId(), first.sessionId(), "payer-new"));
+
+    PaymentCtaResult retryCta = paymentCtaQueryUseCase.getBuyerConfirmationCta(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+    point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.CAPTURED);
+    PaymentPreparationResult retry = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
+    List<PaymentAttemptResult> attempts = paymentAttemptHistoryQueryUseCase.getBuyerPaymentAttempts(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+
+    assertEquals(PaymentAttemptStatus.FAILED, failed.status());
+    assertTrue(retryCta.canPay());
+    assertEquals(PaymentCtaStatus.RETRY_AVAILABLE, retryCta.status());
+    assertEquals(first.paymentAttemptId(), retryCta.latestPaymentAttempt().paymentAttemptId());
+    assertNotEquals(first.paymentAttemptId(), retry.paymentAttemptId());
+    assertNotEquals(first.sessionId(), retry.sessionId());
+    assertEquals(2, attempts.size());
+    assertEquals(retry.paymentAttemptId(), attempts.get(0).paymentAttemptId());
+    assertEquals(PaymentAttemptStatus.READY, attempts.get(0).status());
+    assertEquals(first.paymentAttemptId(), attempts.get(1).paymentAttemptId());
+    assertEquals(PaymentAttemptStatus.FAILED, attempts.get(1).status());
   }
 
   @Test
@@ -384,7 +468,11 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     public Point3CaptureResult capture(String sessionId) {
       captureCount++;
       String failureCode =
-          nextCaptureStatus == Point3CaptureResult.Status.PROCESSING ? "POINT3_PROCESSING" : null;
+          switch (nextCaptureStatus) {
+            case CAPTURED -> null;
+            case FAILED -> "POINT3_FAILED";
+            case PROCESSING -> "POINT3_PROCESSING";
+          };
       return new Point3CaptureResult(sessionId, nextCaptureStatus, failureCode);
     }
 

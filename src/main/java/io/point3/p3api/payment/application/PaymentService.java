@@ -124,14 +124,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   }
 
   private OrderConfirmation getPayableConfirmation(PreparePaymentCommand command) {
-    OrderConfirmation confirmation = orderConfirmationPersistencePort
-        .findById(command.confirmationId())
-        .orElseThrow(
-            () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
-
-    if (!confirmation.getInquiryId().equals(command.inquiryId())) {
-      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND);
-    }
+    OrderConfirmation confirmation = getConfirmation(command.inquiryId(), command.confirmationId());
 
     Optional<OrderConfirmation> latestSentConfirmation =
         orderConfirmationPersistencePort.findLatestByInquiryIdAndStatus(
@@ -143,6 +136,19 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
 
     if (!payable || confirmation.getBuyerViewedAt() == null || confirmation.getAmount() <= 0) {
       throw new BaseException(PaymentErrorCode.PAYMENT_CONFIRMATION_NOT_PAYABLE);
+    }
+
+    return confirmation;
+  }
+
+  private OrderConfirmation getConfirmation(UUID inquiryId, UUID confirmationId) {
+    OrderConfirmation confirmation = orderConfirmationPersistencePort
+        .findById(confirmationId)
+        .orElseThrow(
+            () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
+
+    if (!confirmation.getInquiryId().equals(inquiryId)) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND);
     }
 
     return confirmation;

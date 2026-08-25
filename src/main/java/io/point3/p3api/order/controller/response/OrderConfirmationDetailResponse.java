@@ -20,6 +20,7 @@ public record OrderConfirmationDetailResponse(
     OrderConfirmationStatus status,
     Instant sentAt,
     Instant revisionRequestedAt,
+    Instant buyerViewedAt,
     UUID replacedByConfirmationId,
     Instant createdAt) {
 
@@ -39,6 +40,7 @@ public record OrderConfirmationDetailResponse(
         confirmation.getStatus(),
         confirmation.getSentAt(),
         confirmation.getRevisionRequestedAt(),
+        confirmation.getBuyerViewedAt(),
         confirmation.getReplacedByConfirmationId(),
         confirmation.getCreatedAt());
   }

@@ -44,3 +44,11 @@ p3:
       processed-asset-bucket: p3-s3-processed-dev
     delivery:
       base-url: ${P3_DELIVERY_BASE_URL:}
+
+  point3:
+    api-base-url: ${P3_POINT3_API_BASE_URL:https://api.point3.io}
+    auth-base-url: ${P3_POINT3_AUTH_BASE_URL:https://pay.point3.io}
+    payment-origin: ${P3_POINT3_PAYMENT_ORIGIN:https://pay.point3.io}
+    client-id: ${P3_POINT3_CLIENT_ID:}
+    api-token: ${P3_POINT3_API_TOKEN:}
+    session-ttl: ${P3_POINT3_SESSION_TTL:PT24H}

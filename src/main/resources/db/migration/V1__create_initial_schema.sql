@@ -245,10 +245,11 @@ CREATE TABLE payment_attempts (
     failure_code VARCHAR(100),
     created_at TIMESTAMPTZ NOT NULL,
     completed_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT uk_payment_attempts_point3_session_id UNIQUE (point3_session_id),
     CONSTRAINT fk_payment_attempts_confirmation_id FOREIGN KEY (confirmation_id) REFERENCES order_confirmations (id),
     CONSTRAINT fk_payment_attempts_payer_user_id FOREIGN KEY (payer_user_id) REFERENCES users (id),
-    CONSTRAINT ck_payment_attempts_amount CHECK (amount >= 0)
+    CONSTRAINT ck_payment_attempts_amount CHECK (amount > 0)
 );
 
 CREATE TABLE orders (

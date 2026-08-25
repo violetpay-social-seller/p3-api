@@ -74,6 +74,9 @@ public class User {
 
   public void connectPayer(String payerId) {
     Objects.requireNonNull(payerId, "payerId");
+    if (payerId.isBlank()) {
+      throw new IllegalArgumentException("payerId must not be blank");
+    }
     this.payerId = payerId;
   }
 

@@ -42,11 +42,22 @@ class PaymentAttemptTest {
   void rejectsNegativeAmount() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> PaymentAttempt.create(UUID.randomUUID(), UUID.randomUUID(), "pymt_sess-1", null, -1));
+        () -> PaymentAttempt.create(
+            UUID.randomUUID(),
+            UUID.randomUUID(),
+            "pymt_sess-1",
+            null,
+            -1,
+            Instant.parse("2026-08-25T01:00:00Z")));
   }
 
   private PaymentAttempt paymentAttempt() {
     return PaymentAttempt.create(
-        UUID.randomUUID(), UUID.randomUUID(), "pymt_sess-" + UUID.randomUUID(), null, 38000);
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        "pymt_sess-" + UUID.randomUUID(),
+        null,
+        38000,
+        Instant.parse("2026-08-25T01:00:00Z"));
   }
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,6 +46,7 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -121,6 +123,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         confirmation.orderConfirmation().id(),
         fixture.buyer().getId());
 
+    Instant expiryFloor = Instant.now().plus(Duration.ofHours(23));
     PaymentPreparationResult result = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
         fixture.inquiry().getId(),
         confirmation.orderConfirmation().id(),
@@ -135,6 +138,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(PaymentAttemptStatus.READY, paymentAttempt.getStatus());
     assertEquals(result.sessionId(), paymentAttempt.getPoint3SessionId());
     assertEquals(result.expiresAt(), paymentAttempt.getExpiresAt());
+    assertTrue(result.expiresAt().isAfter(expiryFloor));
   }
 
   @Test

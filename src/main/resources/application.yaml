@@ -51,4 +51,4 @@ p3:
     payment-origin: ${P3_POINT3_PAYMENT_ORIGIN:https://pay.point3.io}
     client-id: ${P3_POINT3_CLIENT_ID:}
     api-token: ${P3_POINT3_API_TOKEN:}
-    session-ttl: ${P3_POINT3_SESSION_TTL:PT1H}
+    session-ttl: ${P3_POINT3_SESSION_TTL:PT24H}

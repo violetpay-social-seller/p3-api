@@ -18,7 +18,7 @@ public record Point3Properties(
     paymentOrigin = normalizeBaseUrl(paymentOrigin, "https://pay.point3.io");
     clientId = clientId == null ? "" : clientId;
     apiToken = apiToken == null ? "" : apiToken;
-    sessionTtl = sessionTtl == null ? Duration.ofHours(1) : sessionTtl;
+    sessionTtl = sessionTtl == null ? Duration.ofHours(24) : sessionTtl;
   }
 
   private static String normalizeBaseUrl(String value, String defaultValue) {

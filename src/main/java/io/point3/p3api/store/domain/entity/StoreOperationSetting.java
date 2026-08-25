@@ -64,4 +64,11 @@ public class StoreOperationSetting {
         preOrderNotice,
         cancellationCutoffDays);
   }
+
+  public void update(
+      int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
+    this.leadTimeMinutes = leadTimeMinutes;
+    this.preOrderNotice = preOrderNotice;
+    this.cancellationCutoffDays = cancellationCutoffDays;
+  }
 }

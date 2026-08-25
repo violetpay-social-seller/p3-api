@@ -22,9 +22,12 @@ import io.point3.p3api.order.application.OrderConfirmationService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.application.state.OrderConfirmationStateService;
+import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
+import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
+import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
@@ -115,6 +118,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   private OrderConfirmationJpaRepository orderConfirmationJpaRepository;
 
   @Autowired
+  private OrderJpaRepository orderJpaRepository;
+
+  @Autowired
   private ObjectMapper objectMapper;
 
   @Autowired
@@ -185,6 +191,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         fixture.buyer().getId());
 
     assertEquals(PaymentAttemptStatus.FAILED, failed.status());
+    assertTrue(orderJpaRepository.findByPaymentAttemptId(first.paymentAttemptId()).isEmpty());
     assertTrue(retryCta.canPay());
     assertEquals(PaymentCtaStatus.RETRY_AVAILABLE, retryCta.status());
     assertEquals(first.paymentAttemptId(), retryCta.latestPaymentAttempt().paymentAttemptId());
@@ -312,11 +319,27 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     OrderConfirmation paidConfirmation = orderConfirmationJpaRepository
         .findById(confirmation.orderConfirmation().id())
         .orElseThrow();
+    List<Order> orders =
+        orderJpaRepository.findAllByBuyerUserIdOrderByCreatedAtDesc(fixture.buyer().getId());
+    Order order = orders.get(0);
 
     assertEquals(PaymentAttemptStatus.SUCCEEDED, captured.status());
     assertNotNull(captured.orderId());
     assertEquals(captured.orderId(), duplicated.orderId());
     assertEquals(1, point3PaymentPort.captureCount());
+    assertEquals(1, orders.size());
+    assertEquals(captured.orderId(), order.getId());
+    assertEquals(fixture.store().id(), order.getStoreId());
+    assertEquals(fixture.buyer().getId(), order.getBuyerUserId());
+    assertEquals(fixture.inquiry().getId(), order.getInquiryId());
+    assertEquals(confirmation.orderConfirmation().id(), order.getConfirmationId());
+    assertEquals(prepared.paymentAttemptId(), order.getPaymentAttemptId());
+    assertTrue(order.getOrderNumber().matches("P3-\\d{8}-[0-9a-f]{27}"));
+    assertEquals("초코 케이크 1호", order.getMenuNameSnapshot());
+    assertEquals("초코 시트, 딸기 토핑", order.getOptionSummarySnapshot());
+    assertEquals(41000, order.getPaidAmount());
+    assertEquals(Instant.parse("2026-08-30T04:30:00Z"), order.getPickupAt());
+    assertEquals(OrderStatus.PAID, order.getStatus());
     assertEquals("payer-new", payer.getPayerId());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
   }

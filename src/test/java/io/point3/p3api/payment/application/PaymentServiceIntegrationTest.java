@@ -191,7 +191,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         fixture.buyer().getId());
 
     assertEquals(PaymentAttemptStatus.FAILED, failed.status());
-    assertTrue(orderJpaRepository.findByPaymentAttemptId(first.paymentAttemptId()).isEmpty());
+    assertTrue(
+        orderJpaRepository.findByPaymentAttemptId(first.paymentAttemptId()).isEmpty());
     assertTrue(retryCta.canPay());
     assertEquals(PaymentCtaStatus.RETRY_AVAILABLE, retryCta.status());
     assertEquals(first.paymentAttemptId(), retryCta.latestPaymentAttempt().paymentAttemptId());
@@ -319,8 +320,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     OrderConfirmation paidConfirmation = orderConfirmationJpaRepository
         .findById(confirmation.orderConfirmation().id())
         .orElseThrow();
-    List<Order> orders =
-        orderJpaRepository.findAllByBuyerUserIdOrderByCreatedAtDesc(fixture.buyer().getId());
+    List<Order> orders = orderJpaRepository.findAllByBuyerUserIdOrderByCreatedAtDesc(
+        fixture.buyer().getId());
     Order order = orders.get(0);
 
     assertEquals(PaymentAttemptStatus.SUCCEEDED, captured.status());

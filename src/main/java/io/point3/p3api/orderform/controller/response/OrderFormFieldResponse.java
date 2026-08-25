@@ -2,6 +2,7 @@ package io.point3.p3api.orderform.controller.response;
 
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderFormFieldResponse(
@@ -11,7 +12,17 @@ public record OrderFormFieldResponse(
     FieldType fieldType,
     boolean required,
     String settings,
-    int sortOrder) {
+    int sortOrder,
+    List<OrderFormFieldOptionResponse> options) {
+
+  public OrderFormFieldResponse {
+    options = List.copyOf(options);
+  }
+
+  @Override
+  public List<OrderFormFieldOptionResponse> options() {
+    return List.copyOf(options);
+  }
 
   public static OrderFormFieldResponse from(OrderFormFieldResult result) {
     return new OrderFormFieldResponse(
@@ -21,6 +32,7 @@ public record OrderFormFieldResponse(
         result.fieldType(),
         result.required(),
         result.settings(),
-        result.sortOrder());
+        result.sortOrder(),
+        result.options().stream().map(OrderFormFieldOptionResponse::from).toList());
   }
 }

@@ -74,6 +74,24 @@ public class OrderFormAnswerValidator {
       case TIME -> validateTime(value);
       case DATETIME -> validateDateTime(value);
       case IMAGE -> validateImage(value);
+      case SINGLE_SELECT -> validateSingleSelect(field, value);
+      case MULTI_SELECT -> validateMultiSelect(field, value);
+    }
+  }
+
+  private void validateSingleSelect(OrderFormFieldResult field, JsonNode value) {
+    if (!value.isTextual() || field.options().stream()
+        .noneMatch(option -> option.active() && option.value().equals(value.asText()))) {
+      throwInvalidFieldValue();
+    }
+  }
+
+  private void validateMultiSelect(OrderFormFieldResult field, JsonNode value) {
+    if (!value.isArray()) {
+      throwInvalidFieldValue();
+    }
+    for (JsonNode item : value) {
+      validateSingleSelect(field, item);
     }
   }
 

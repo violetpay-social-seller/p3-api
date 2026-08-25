@@ -3,6 +3,7 @@ package io.point3.p3api.orderform.infrastructure.persistence;
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
 import io.point3.p3api.orderform.domain.entity.OrderFormField;
 import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
+import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
   private final OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
   private final OrderFormFieldGroupJpaRepository orderFormFieldGroupJpaRepository;
   private final OrderFormFieldJpaRepository orderFormFieldJpaRepository;
+  private final OrderFormFieldOptionJpaRepository orderFormFieldOptionJpaRepository;
 
   @Override
   public OrderFormTemplate saveTemplate(OrderFormTemplate template) {
@@ -33,6 +35,11 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
   @Override
   public List<OrderFormField> saveFields(List<OrderFormField> fields) {
     return orderFormFieldJpaRepository.saveAll(fields);
+  }
+
+  @Override
+  public List<OrderFormFieldOption> saveOptions(List<OrderFormFieldOption> options) {
+    return orderFormFieldOptionJpaRepository.saveAll(options);
   }
 
   @Override
@@ -61,6 +68,21 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
             .map(OrderFormFieldGroup::getId)
             .toList();
     return orderFormFieldJpaRepository.findAllByGroupIdInOrderBySortOrderAsc(groupIds);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<OrderFormFieldGroup> findGroupsByTemplateId(UUID templateId) {
+    return orderFormFieldGroupJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<OrderFormFieldOption> findOptionsByFieldIds(List<UUID> fieldIds) {
+    if (fieldIds.isEmpty()) {
+      return List.of();
+    }
+    return orderFormFieldOptionJpaRepository.findAllByFieldIdInOrderBySortOrderAsc(fieldIds);
   }
 
   @Override

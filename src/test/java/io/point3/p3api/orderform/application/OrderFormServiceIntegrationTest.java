@@ -100,6 +100,82 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(OrderFormErrorCode.ORDER_FORM_NOT_FOUND, exception.getErrorCode());
   }
 
+  @Test
+  @DisplayName("그룹과 선택지를 포함한 주문서 정의를 순서대로 저장하고 수정할 수 있다")
+  void savesGroupsFieldsAndOptions() {
+    StoreResult store = createStore();
+    OrderFormResult created = orderFormService.create(new CreateOrderFormCommand(
+        store.id(),
+        "주문서",
+        List.of(
+            new CreateOrderFormCommand.Field(
+                "케이크 크기",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                0,
+                "케이크",
+                "케이크 구성",
+                0,
+                List.of(new OrderFormFieldOptionCommand("1호", "size-1", true, 0))),
+            new CreateOrderFormCommand.Field(
+                "요청사항",
+                FieldType.TEXTAREA,
+                false,
+                "{\"maxLength\":100}",
+                0,
+                "추가 요청",
+                null,
+                1,
+                List.of()))));
+
+    OrderFormResult updated = orderFormService.update(new UpdateOrderFormCommand(
+        store.id(),
+        created.id(),
+        "수정 주문서",
+        List.of(new UpdateOrderFormCommand.Field(
+            "요청사항",
+            FieldType.TEXTAREA,
+            false,
+            "{\"placeholder\":\"입력\"}",
+            0,
+            "추가 요청",
+            null,
+            0,
+            List.of()))));
+
+    assertEquals(2, created.groups().size());
+    assertEquals("케이크", created.groups().get(0).title());
+    assertEquals(
+        "size-1", created.groups().get(0).fields().get(0).options().get(0).value());
+    assertEquals(1, updated.groups().size());
+    assertEquals("추가 요청", updated.groups().get(0).title());
+  }
+
+  @Test
+  @DisplayName("필드 유형과 맞지 않는 settings 및 선택지 정의를 거부한다")
+  void rejectsInvalidTypeSpecificSettings() {
+    StoreResult store = createStore();
+
+    BaseException imageException = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(new CreateOrderFormCommand.Field(
+                "참고 이미지", FieldType.IMAGE, false, "{\"maxCount\":6}", 0)))));
+    BaseException optionException = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(
+                new CreateOrderFormCommand.Field("크기", FieldType.SINGLE_SELECT, true, null, 0)))));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, imageException.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, optionException.getErrorCode());
+  }
+
   private StoreResult createStore() {
     User seller = userJpaRepository.saveAndFlush(User.create(
         UUID.randomUUID().toString(), uniqueEmail("order-form-seller"), "판매자", UserRole.SELLER));

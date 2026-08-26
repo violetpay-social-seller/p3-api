@@ -6,12 +6,14 @@ import io.point3.p3api.notification.application.create.CreateNotificationCommand
 import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
 import io.point3.p3api.notification.application.port.NotificationPersistencePort;
 import io.point3.p3api.notification.application.query.NotificationQueryUseCase;
+import io.point3.p3api.notification.application.realtime.NotificationCreatedEvent;
 import io.point3.p3api.notification.application.result.NotificationResult;
 import io.point3.p3api.notification.domain.entity.Notification;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NotificationService implements NotificationQueryUseCase, NotificationCreateUseCase {
   private final NotificationPersistencePort notificationPersistencePort;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
   @Override
   @Transactional(readOnly = true)
@@ -61,7 +64,10 @@ public class NotificationService implements NotificationQueryUseCase, Notificati
         command.referenceId(),
         command.title(),
         command.body());
-    return NotificationResult.from(notificationPersistencePort.save(notification));
+    NotificationResult result =
+        NotificationResult.from(notificationPersistencePort.save(notification));
+    applicationEventPublisher.publishEvent(new NotificationCreatedEvent(command.userId(), result));
+    return result;
   }
 
   @Override

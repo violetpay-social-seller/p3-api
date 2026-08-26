@@ -5,21 +5,25 @@ import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.notification.application.query.NotificationQueryUseCase;
 import io.point3.p3api.notification.controller.response.NotificationResponse;
+import io.point3.p3api.notification.infrastructure.sse.NotificationSseConnectionRegistry;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
   private final NotificationQueryUseCase notificationQueryUseCase;
+  private final NotificationSseConnectionRegistry notificationSseConnectionRegistry;
 
   @GetMapping
   public ApiResponse<List<NotificationResponse>> getNotifications(
@@ -27,6 +31,11 @@ public class NotificationController {
     return ApiResponse.ok(notificationQueryUseCase.getNotifications(currentUser.userId()).stream()
         .map(NotificationResponse::from)
         .toList());
+  }
+
+  @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter stream(@Authenticated CurrentUser currentUser) {
+    return notificationSseConnectionRegistry.connect(currentUser.userId());
   }
 
   @GetMapping("/{notificationId}")

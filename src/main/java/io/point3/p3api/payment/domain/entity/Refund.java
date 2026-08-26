@@ -81,4 +81,8 @@ public class Refund {
     this.status = RefundStatus.COMPLETED;
     this.completedAt = completedAt;
   }
+
+  public void fail() {
+    this.status = RefundStatus.FAILED;
+  }
 }

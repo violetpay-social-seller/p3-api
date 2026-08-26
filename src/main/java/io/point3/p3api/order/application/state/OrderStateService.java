@@ -11,6 +11,9 @@ import io.point3.p3api.order.application.result.OrderResult;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.payment.application.port.PaymentAttemptPersistencePort;
 import io.point3.p3api.payment.application.port.RefundPersistencePort;
+import io.point3.p3api.payment.application.port.Point3PaymentPort;
+import io.point3.p3api.payment.application.port.Point3PaymentException;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
 import io.point3.p3api.payment.application.result.PaymentAttemptResult;
 import io.point3.p3api.payment.application.result.RefundResult;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
@@ -32,6 +35,7 @@ public class OrderStateService implements OrderStateUseCase {
   private final InquiryPersistencePort inquiryPersistencePort;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
+  private final Point3PaymentPort point3PaymentPort;
   private final Clock clock;
 
   @Override
@@ -61,15 +65,28 @@ public class OrderStateService implements OrderStateUseCase {
   @Override
   public OrderDetailResult refund(RefundOrderCommand command) {
     Order order = getSellerOrder(command.orderId(), command.storeId());
-    changeStatus(() -> order.refund(command.reason()));
-
     Refund refund = Refund.create(
         order.getId(),
         order.getPaymentAttemptId(),
         command.sellerUserId(),
         order.getPaidAmount(),
         command.reason());
-    refund.complete(Instant.now(clock));
+    refund = refundPersistencePort.save(refund);
+    PaymentAttempt paymentAttempt = paymentAttemptPersistencePort
+        .findById(order.getPaymentAttemptId())
+        .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
+    try {
+      Point3RefundResult result = point3PaymentPort.refund(
+          paymentAttempt.getPoint3SessionId(), order.getPaidAmount(), command.reason(), refund.getId().toString());
+      if (result.completed()) {
+        changeStatus(() -> order.refund(command.reason()));
+        refund.complete(Instant.now(clock));
+      } else {
+        refund.fail();
+      }
+    } catch (Point3PaymentException exception) {
+      refund.fail();
+    }
     refundPersistencePort.save(refund);
 
     return toDetail(order);

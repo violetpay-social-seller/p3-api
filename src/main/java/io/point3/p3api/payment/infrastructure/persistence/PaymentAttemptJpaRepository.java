@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface PaymentAttemptJpaRepository extends JpaRepository<PaymentAttempt, UUID> {
+public interface PaymentAttemptJpaRepository
+    extends JpaRepository<PaymentAttempt, UUID>, JpaSpecificationExecutor<PaymentAttempt> {
   Optional<PaymentAttempt> findByPoint3SessionId(String point3SessionId);
 
   List<PaymentAttempt> findAllByConfirmationIdOrderByCreatedAtDesc(UUID confirmationId);

@@ -76,4 +76,21 @@ public class SellerOnboarding {
 
     return new SellerOnboarding(applicantUserId, storeName, phoneNumber, address, snsLink);
   }
+
+  public void hold(UUID reviewerId, String reason, Instant reviewedAt) {
+    Objects.requireNonNull(reviewerId, "reviewerId");
+    Objects.requireNonNull(reason, "reason");
+    Objects.requireNonNull(reviewedAt, "reviewedAt");
+    if (reason.isBlank()) {
+      throw new IllegalArgumentException("reason must not be blank");
+    }
+    if (status != SellerOnboardingStatus.PENDING) {
+      throw new IllegalStateException("Only pending onboarding can be held");
+    }
+
+    this.status = SellerOnboardingStatus.HELD;
+    this.rejectionReason = reason;
+    this.reviewedBy = reviewerId;
+    this.reviewedAt = reviewedAt;
+  }
 }

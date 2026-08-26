@@ -53,13 +53,20 @@ import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepos
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.domain.entity.StoreOperationSetting;
+import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
+import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +85,8 @@ import org.springframework.test.context.TestPropertySource;
       "p3.point3.payment-origin=https://pay.point3.test"
     })
 class PaymentServiceIntegrationTest extends IntegrationTestSupport {
+
+  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
   @Autowired
   private PaymentPrepareUseCase paymentPrepareUseCase;
@@ -120,6 +129,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderJpaRepository orderJpaRepository;
+
+  @Autowired
+  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
+
+  @Autowired
+  private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -337,10 +352,10 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(confirmation.orderConfirmation().id(), order.getConfirmationId());
     assertEquals(prepared.paymentAttemptId(), order.getPaymentAttemptId());
     assertTrue(order.getOrderNumber().matches("P3-\\d{8}-[0-9a-f]{27}"));
-    assertEquals("초코 케이크 1호", order.getMenuNameSnapshot());
+    assertEquals("주문서 payment-capture", order.getMenuNameSnapshot());
     assertEquals("초코 시트, 딸기 토핑", order.getOptionSummarySnapshot());
     assertEquals(41000, order.getPaidAmount());
-    assertEquals(Instant.parse("2026-08-30T04:30:00Z"), order.getPickupAt());
+    assertEquals(pickupAt(), order.getPickupAt());
     assertEquals(OrderStatus.PAID, order.getStatus());
     assertEquals("payer-new", payer.getPayerId());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
@@ -409,6 +424,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         "{\"mon\":\"10:00-18:00\"}",
         "{\"leadTimeDays\":3}",
         "서울특별시 중구"));
+    preparePickupSetting(store.id(), availablePickupDate().getDayOfWeek());
     OrderFormResult form = orderFormService.create(new CreateOrderFormCommand(
         store.id(),
         "주문서 " + prefix,
@@ -429,7 +445,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
             form.fields().get(0).id(), textNode("초코 케이크"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
   }
@@ -443,9 +459,28 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         "초코 케이크 1호",
         "초코 시트, 딸기 토핑",
         41000,
-        Instant.parse("2026-08-30T04:30:00Z"),
-        List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
+        pickupAt(),
+        List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 41000L)),
         "픽업 10분 전에 연락 주세요."));
+  }
+
+  private void preparePickupSetting(UUID storeId, DayOfWeek dayOfWeek) {
+    storeOperationSettingJpaRepository.save(StoreOperationSetting.create(storeId, 0, "notice", 1));
+    storeWeeklyPickupSettingJpaRepository.save(StoreWeeklyPickupSetting.create(
+        storeId, dayOfWeek, LocalTime.parse("13:00"), LocalTime.parse("14:00"), 10, true));
+  }
+
+  private LocalDate availablePickupDate() {
+    return LocalDate.now(KOREA_ZONE)
+        .plusDays(7)
+        .with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+  }
+
+  private Instant pickupAt() {
+    return availablePickupDate()
+        .atTime(LocalTime.parse("13:30"))
+        .atZone(KOREA_ZONE)
+        .toInstant();
   }
 
   private User saveUser(UserRole role, String prefix) {

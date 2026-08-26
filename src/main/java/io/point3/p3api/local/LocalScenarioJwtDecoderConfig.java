@@ -26,10 +26,15 @@ public class LocalScenarioJwtDecoderConfig {
       @Value("${p3.local-scenario.buyer-token}") String buyerToken,
       @Value("${p3.local-scenario.buyer.cognito-sub}") String buyerCognitoSub,
       @Value("${p3.local-scenario.buyer.email}") String buyerEmail,
-      @Value("${p3.local-scenario.buyer.name}") String buyerName) {
+      @Value("${p3.local-scenario.buyer.name}") String buyerName,
+      @Value("${p3.local-scenario.operator-token}") String operatorToken,
+      @Value("${p3.local-scenario.operator.cognito-sub}") String operatorCognitoSub,
+      @Value("${p3.local-scenario.operator.email}") String operatorEmail,
+      @Value("${p3.local-scenario.operator.name}") String operatorName) {
     Map<String, LocalScenarioUser> usersByToken = Map.of(
         sellerToken, new LocalScenarioUser(sellerCognitoSub, sellerEmail, sellerName),
-        buyerToken, new LocalScenarioUser(buyerCognitoSub, buyerEmail, buyerName));
+        buyerToken, new LocalScenarioUser(buyerCognitoSub, buyerEmail, buyerName),
+        operatorToken, new LocalScenarioUser(operatorCognitoSub, operatorEmail, operatorName));
 
     return token -> {
       LocalScenarioUser user = usersByToken.get(token);

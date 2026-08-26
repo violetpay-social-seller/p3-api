@@ -67,6 +67,46 @@ public class LocalScenarioCleanupController {
     return ApiResponse.ok(new ApproveResponse(affectedRows));
   }
 
+  @PostMapping("/operator/seed")
+  public ApiResponse<SeedOperatorResponse> seedOperator(
+      @Valid @RequestBody SeedOperatorRequest request) {
+    UUID userId = jdbcTemplate.queryForObject(
+        """
+        insert into users (cognito_sub, email, name, role, status, created_at, updated_at)
+        values (:cognitoSub, :email, :name, 'OPERATOR', 'ACTIVE', now(), now())
+        on conflict (cognito_sub) do update
+        set email = excluded.email,
+            name = excluded.name,
+            role = 'OPERATOR',
+            status = 'ACTIVE',
+            updated_at = now()
+        returning id
+        """,
+        Map.of(
+            "cognitoSub", request.cognitoSub(),
+            "email", request.email(),
+            "name", request.name()),
+        UUID.class);
+
+    return ApiResponse.ok(new SeedOperatorResponse(userId));
+  }
+
+  @PostMapping("/store/settlement-account/complete")
+  public ApiResponse<SettlementAccountResponse> completeSettlementAccount(
+      @Valid @RequestBody SettlementAccountRequest request) {
+    int affectedRows = jdbcTemplate.update("""
+        update stores
+        set settlement_account_status = 'INPUT_COMPLETED',
+            settlement_account_registered_at = now(),
+            updated_at = now()
+        where owner_user_id = (
+          select id from users where cognito_sub = :cognitoSub
+        )
+        """, Map.of("cognitoSub", request.cognitoSub()));
+
+    return ApiResponse.ok(new SettlementAccountResponse(affectedRows));
+  }
+
   private List<UUID> findUserIds(List<String> cognitoSubs) {
     return jdbcTemplate.queryForList(
         "select id from users where cognito_sub in (:cognitoSubs)",
@@ -83,6 +123,37 @@ public class LocalScenarioCleanupController {
 
   private int deleteScenarioRows(Map<String, Object> params) {
     int affectedRows = 0;
+    affectedRows += jdbcTemplate.update("""
+        delete from operator_action_logs
+        where operator_user_id in (:userIds)
+        or target_id in (:userIds)
+        or target_id in (:storeIds)
+        or target_id in (
+          select id from store_gallery_items where store_id in (:storeIds)
+        )
+        """, params);
+    affectedRows += jdbcTemplate.update("""
+        delete from reports
+        where reporter_user_id in (:userIds)
+        or assigned_operator_id in (:userIds)
+        or target_id in (:userIds)
+        or target_id in (:storeIds)
+        or target_id in (
+          select id from store_gallery_items where store_id in (:storeIds)
+        )
+        """, params);
+    affectedRows += jdbcTemplate.update("""
+        delete from service_inquiries
+        where requester_user_id in (:userIds)
+        or assignee_operator_id in (:userIds)
+        """, params);
+    affectedRows += jdbcTemplate.update("""
+        delete from order_status_histories
+        where changed_by in (:userIds)
+        or order_id in (
+          select id from orders where store_id in (:storeIds) or buyer_user_id in (:userIds)
+        )
+        """, params);
     affectedRows += jdbcTemplate.update("""
         delete from refunds
         where order_id in (
@@ -189,4 +260,15 @@ public class LocalScenarioCleanupController {
   public record ApproveRequest(@NotBlank String cognitoSub) {}
 
   public record ApproveResponse(int affectedRows) {}
+
+  public record SeedOperatorRequest(
+      @NotBlank String cognitoSub,
+      @NotBlank String email,
+      @NotBlank String name) {}
+
+  public record SeedOperatorResponse(UUID userId) {}
+
+  public record SettlementAccountRequest(@NotBlank String cognitoSub) {}
+
+  public record SettlementAccountResponse(int affectedRows) {}
 }

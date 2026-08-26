@@ -156,6 +156,13 @@ public class Store {
     this.status = StoreStatus.SUSPENDED;
   }
 
+  public void unsuspend() {
+    if (this.status != StoreStatus.SUSPENDED) {
+      throw new IllegalArgumentException("Only suspended store can unsuspend");
+    }
+    this.status = StoreStatus.ACTIVE;
+  }
+
   public void delete() {
     this.status = StoreStatus.DELETED;
   }

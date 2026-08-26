@@ -8,8 +8,10 @@ import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
+import io.point3.p3api.order.application.port.OrderStatusHistoryPersistencePort;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
+import io.point3.p3api.order.domain.entity.OrderStatusHistory;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.payment.application.capture.CapturePaymentCommand;
 import io.point3.p3api.payment.application.capture.PaymentCaptureUseCase;
@@ -48,6 +50,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final OrderPersistencePort orderPersistencePort;
+  private final OrderStatusHistoryPersistencePort orderStatusHistoryPersistencePort;
   private final UserPersistencePort userPersistencePort;
   private final Point3PaymentPort point3PaymentPort;
   private final Point3Properties point3Properties;
@@ -279,6 +282,13 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
             confirmation.getOptionSummary(),
             paymentAttempt.getAmount(),
             confirmation.getPickupAt())));
+    orderStatusHistoryPersistencePort.save(OrderStatusHistory.create(
+        order.getId(),
+        null,
+        order.getStatus(),
+        paymentAttempt.getPayerUserId(),
+        "PAYMENT_SUCCEEDED",
+        completedAt));
 
     return PaymentCaptureResult.of(paymentAttempt, order.getId());
   }

@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "d77eb8c0-4986-4c73-b028-872dce8fa4fb",
     "name": "p3-api local scenario",
-    "description": "Repeatable local API scenarios for auth, seller onboarding, store, assets, gallery, order forms, inquiries, and confirmations. Point3 payment request and approval APIs are intentionally excluded.",
+    "description": "Repeatable local API scenarios for auth, seller onboarding, store, assets, gallery, order forms, inquiries, confirmations, operator management, and seller dashboard. Point3 payment request and approval APIs are intentionally excluded.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -19,6 +19,8 @@
           "pm.environment.set('pickupDate', date);",
           "pm.environment.set('eventDate', date);",
           "pm.environment.set('pickupTime', '14:30:00');",
+          "const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];",
+          "pm.environment.set('pickupDayOfWeek', dayNames[future.getUTCDay()]);",
           "pm.environment.set('pickupAt', date + 'T05:30:00Z');"
         ]
       }
@@ -29,14 +31,19 @@
         "type": "text/javascript",
         "exec": [
           "const contentType = pm.response.headers.get('Content-Type') || '';",
-          "pm.test('response is JSON', function () {",
-          "  pm.expect(contentType).to.include('application/json');",
-          "});",
-          "const isNegative = pm.info.requestName.startsWith('[negative]');",
-          "if (!isNegative) {",
-          "  pm.test('status is successful', function () { pm.expect(pm.response.code).to.be.below(400); });",
-          "  const body = pm.response.json();",
-          "  pm.test('success envelope', function () { pm.expect(body.success).to.eql(true); });",
+          "const isCsv = contentType.includes('text/csv');",
+          "if (isCsv) {",
+          "  pm.test('response is CSV', function () { pm.expect(contentType).to.include('text/csv'); });",
+          "} else {",
+          "  pm.test('response is JSON', function () {",
+          "    pm.expect(contentType).to.include('application/json');",
+          "  });",
+          "  const isNegative = pm.info.requestName.startsWith('[negative]');",
+          "  if (!isNegative) {",
+          "    pm.test('status is successful', function () { pm.expect(pm.response.code).to.be.below(400); });",
+          "    const body = pm.response.json();",
+          "    pm.test('success envelope', function () { pm.expect(body.success).to.eql(true); });",
+          "  }",
           "}"
         ]
       }
@@ -62,9 +69,43 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\"]\n}"
+              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\", \"{{operatorCognitoSub}}\"]\n}"
             },
             "url": "{{baseUrl}}/local-scenario/reset"
+          }
+        },
+        {
+          "name": "Local - seed operator user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('operatorUserId', data.userId);",
+                  "pm.test('operator user is seeded', function () { pm.expect(data.userId).to.be.ok; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSub\": \"{{operatorCognitoSub}}\",\n  \"email\": \"{{operatorEmail}}\",\n  \"name\": \"{{operatorName}}\"\n}"
+            },
+            "url": "{{baseUrl}}/local-scenario/operator/seed"
           }
         },
         {
@@ -714,85 +755,6 @@
           }
         },
         {
-          "name": "Seller - activate store",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('store is active', function () { pm.expect(pm.response.json().data.status).to.eql('ACTIVE'); });"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{sellerAccessToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
-            },
-            "url": "{{baseUrl}}/seller/store/status"
-          }
-        },
-        {
-          "name": "Public - get active store by slug",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/stores/{{storeSlug}}"
-          }
-        },
-        {
-          "name": "Public - list representative images",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/stores/{{storeSlug}}/representative-images"
-          }
-        },
-        {
-          "name": "[negative] Seller - cannot hide below minimum active representative images",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('minimum representative image rule is enforced', function () { pm.expect(pm.response.code).to.eql(400); });",
-                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{sellerAccessToken}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"sortOrder\": 0,\n  \"status\": \"HIDDEN\"\n}"
-            },
-            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
-          }
-        },
-        {
           "name": "Asset - upload gallery image",
           "event": [
             {
@@ -926,20 +888,6 @@
             ],
             "url": "{{baseUrl}}/seller/gallery-items/{{galleryItemId}}"
           }
-        },
-        {
-          "name": "Public - list gallery items",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items"
-          }
-        },
-        {
-          "name": "Public - get gallery item",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items/{{galleryItemId}}"
-          }
         }
       ]
     },
@@ -1051,6 +999,168 @@
               "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"sortOrder\": 0 }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "Seller - update store operation settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('store setting is saved', function () {",
+                  "  pm.expect(data.preOrderNotice).to.eql('Local scenario pre-order notice');",
+                  "  pm.expect(data.weeklyPickupSettings).to.have.length(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadTimeMinutes\": 0,\n  \"preOrderNotice\": \"Local scenario pre-order notice\",\n  \"cancellationCutoffDays\": 1,\n  \"weeklyPickupSettings\": [\n    {\n      \"dayOfWeek\": \"{{pickupDayOfWeek}}\",\n      \"startTime\": \"14:00:00\",\n      \"endTime\": \"15:00:00\",\n      \"dailyOrderCapacity\": 5,\n      \"enabled\": true\n    }\n  ],\n  \"holidays\": []\n}"
+            },
+            "url": "{{baseUrl}}/seller/store/settings"
+          }
+        },
+        {
+          "name": "Local - complete seller settlement account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('settlement account is completed', function () { pm.expect(data.affectedRows).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cognitoSub\": \"{{sellerCognitoSub}}\"\n}"
+            },
+            "url": "{{baseUrl}}/local-scenario/store/settlement-account/complete"
+          }
+        },
+        {
+          "name": "Seller - activate store",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('store is active', function () { pm.expect(pm.response.json().data.status).to.eql('ACTIVE'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/store/status"
+          }
+        },
+        {
+          "name": "Public - get active store by slug",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}"
+          }
+        },
+        {
+          "name": "Public - list representative images",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/representative-images"
+          }
+        },
+        {
+          "name": "[negative] Seller - cannot hide below minimum active representative images",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('minimum representative image rule is enforced', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortOrder\": 0,\n  \"status\": \"HIDDEN\"\n}"
+            },
+            "url": "{{baseUrl}}/seller/representative-images/{{representativeImageId1}}"
+          }
+        },
+        {
+          "name": "Public - list gallery items",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items"
+          }
+        },
+        {
+          "name": "Public - get gallery item",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/gallery-items/{{galleryItemId}}"
           }
         },
         {
@@ -1616,6 +1726,714 @@
       ]
     },
     {
+      "name": "40 Operator Management",
+      "item": [
+        {
+          "name": "[negative] Buyer - operator dashboard is forbidden",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/dashboard"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('buyer cannot access operator dashboard', function () { pm.expect(pm.response.code).to.eql(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buyer - create gallery report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/reports",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetType\": \"GALLERY_ITEM\",\n  \"targetId\": \"{{galleryItemId}}\",\n  \"reason\": \"inappropriate image {{scenarioRunId}}\",\n  \"evidence\": \"local scenario evidence\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('reportId', data.id);",
+                  "pm.test('report is submitted', function () { pm.expect(data.status).to.eql('SUBMITTED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buyer - create service inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/service-inquiries",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Local support {{scenarioRunId}}\",\n  \"body\": \"Please check my local scenario inquiry.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('serviceInquiryId', data.id);",
+                  "pm.test('service inquiry is open', function () { pm.expect(data.status).to.eql('OPEN'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - get dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/dashboard"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('dashboard includes open work', function () {",
+                  "  pm.expect(data.openReportCount).to.be.at.least(1);",
+                  "  pm.expect(data.openServiceInquiryCount).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/users?role=BUYER&status=ACTIVE&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('buyer appears in operator user list', function () {",
+                  "  pm.expect(data.items.some((user) => user.id === pm.environment.get('buyerUserId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[negative] Operator - cannot block self",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/users/{{operatorUserId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BANNED\",\n  \"reason\": \"self block guard\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('self block is rejected', function () { pm.expect(pm.response.code).to.eql(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list stores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/stores?keyword={{scenarioRunId}}&status=ACTIVE&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('store appears in operator store list', function () {",
+                  "  pm.expect(data.items.some((store) => store.id === pm.environment.get('storeId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - suspend store",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/stores/{{storeId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SUSPENDED\",\n  \"reason\": \"local scenario moderation\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('store is suspended', function () { pm.expect(data.status).to.eql('SUSPENDED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - restore store",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/stores/{{storeId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\",\n  \"reason\": \"local scenario restore\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('store is active again', function () { pm.expect(data.status).to.eql('ACTIVE'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list gallery items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/gallery-items?storeId={{storeId}}&assetId={{galleryAssetId}}&status=VISIBLE&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('gallery item appears in operator list', function () {",
+                  "  pm.expect(data.items.some((item) => item.id === pm.environment.get('galleryItemId'))).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - hide gallery item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/gallery-items/{{galleryItemId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"HIDDEN\",\n  \"reason\": \"local scenario hidden\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('gallery item is hidden', function () { pm.expect(data.status).to.eql('HIDDEN'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list onboardings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/onboardings?status=APPROVED&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('approved onboarding list is readable', function () { pm.expect(data.items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - review report",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/reports/{{reportId}}/review"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('report is reviewing', function () { pm.expect(data.status).to.eql('REVIEWING'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - resolve report and keep gallery hidden",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/reports/{{reportId}}/resolve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\",\n  \"resolution\": \"hidden by local scenario\",\n  \"targetAction\": \"HIDE\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('report is resolved', function () { pm.expect(data.status).to.eql('RESOLVED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - assign service inquiry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/service-inquiries/{{serviceInquiryId}}/assign"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('operator is assignee', function () { pm.expect(data.assigneeOperatorId).to.eql(pm.environment.get('operatorUserId')); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - answer service inquiry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/service-inquiries/{{serviceInquiryId}}/answer",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answer\": \"Answered by local operator.\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('service inquiry is answered', function () { pm.expect(data.status).to.eql('ANSWERED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - close service inquiry",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/service-inquiries/{{serviceInquiryId}}/close"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('service inquiry is closed', function () { pm.expect(data.status).to.eql('CLOSED'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list action logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/action-logs?operatorUserId={{operatorUserId}}&page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('operator actions are audited', function () { pm.expect(data.totalElements).to.be.at.least(1); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/orders?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('operator order list contract', function () { pm.expect(data.items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list needs-confirmation payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/payments/needs-confirmation?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('needs-confirmation payment list contract', function () { pm.expect(data.items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - list refunds",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/refunds?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('refund list contract', function () { pm.expect(data.items).to.be.an('array'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - export orders CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/orders/export"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('orders export has CSV header', function () { pm.expect(pm.response.text()).to.include('orderNumber'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - export payments CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/payments/export"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('payments export has CSV header', function () { pm.expect(pm.response.text()).to.include('point3SessionId'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - export refunds CSV",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/refunds/export"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('refunds export has CSV header', function () { pm.expect(pm.response.text()).to.include('paymentAttemptId'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Operator - block buyer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operatorAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/operator/users/{{buyerUserId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"BANNED\",\n  \"reason\": \"local scenario final block\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('buyer is banned', function () { pm.expect(data.status).to.eql('BANNED'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "90 Cleanup",
       "item": [
         {
@@ -1759,7 +2577,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\"]\n}"
+              "raw": "{\n  \"cognitoSubs\": [\"{{sellerCognitoSub}}\", \"{{buyerCognitoSub}}\", \"{{operatorCognitoSub}}\"]\n}"
             },
             "url": "{{baseUrl}}/local-scenario/reset"
           }

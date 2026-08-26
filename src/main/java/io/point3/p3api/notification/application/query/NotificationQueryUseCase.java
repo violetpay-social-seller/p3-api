@@ -11,5 +11,7 @@ public interface NotificationQueryUseCase {
 
   NotificationResult read(UUID notificationId, UUID userId);
 
+  void readAll(UUID userId);
+
   long getUnreadCount(UUID userId);
 }

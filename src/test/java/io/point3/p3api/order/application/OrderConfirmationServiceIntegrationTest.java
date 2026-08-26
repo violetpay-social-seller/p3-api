@@ -19,12 +19,14 @@ import io.point3.p3api.inquiry.application.open.InquiryOpenService;
 import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmissionService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.notification.domain.type.NotificationType;
+import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
-import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
+import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
@@ -37,8 +39,8 @@ import io.point3.p3api.store.application.setting.command.UpdateStoreSettingComma
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
-import java.time.Instant;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -75,6 +77,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private ChatTimelineItemJpaRepository chatTimelineItemJpaRepository;
+
+  @Autowired
+  private NotificationJpaRepository notificationJpaRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -115,8 +120,10 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals("메뉴명", answers.get(0).get("label").asText());
     assertEquals("TEXT", answers.get(0).get("fieldType").asText());
     assertEquals("초코 케이크", answers.get(0).get("value").asText());
-    assertEquals("10호", answers.get(1).get("selectedOptions").get(0).get("label").asText());
-    assertEquals("38000", answers.get(1).get("selectedOptions").get(0).get("value").asText());
+    assertEquals(
+        "10호", answers.get(1).get("selectedOptions").get(0).get("label").asText());
+    assertEquals(
+        "38000", answers.get(1).get("selectedOptions").get(0).get("value").asText());
     JsonNode additionalItems = objectMapper.readTree(persisted.getAdditionalItems());
     assertEquals(1, additionalItems.size());
     assertEquals("토핑", additionalItems.get(0).get("label").asText());
@@ -124,6 +131,59 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(3000, additionalItems.get(0).get("amount").asInt());
     assertEquals(ChatTimelineItemType.ORDER_CONFIRMATION, timelineItem.getType());
     assertEquals(persisted.getId(), timelineItem.getReferenceId());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.ORDER_FORM_SUBMITTED)
+            .count());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+            .stream()
+            .filter(
+                notification -> notification.getType() == NotificationType.ORDER_CONFIRMATION_SENT)
+            .count());
+  }
+
+  @Test
+  @DisplayName("주문서와 주문확인서 재발행은 수정 알림을 저장한다")
+  void notifiesUpdatesForResubmissionAndConfirmationReplacement() {
+    Fixture fixture = prepareFixture();
+    submitOrderForm(
+        fixture.store().id(), fixture.buyer().getId(), fixture.inquiry(), fixture.form());
+
+    SendOrderConfirmationCommand command = new SendOrderConfirmationCommand(
+        fixture.inquiry().getId(),
+        fixture.store().id(),
+        fixture.seller().getId(),
+        fixture.submission().getId(),
+        "초코 케이크 1호",
+        "초코 시트",
+        38000,
+        Instant.parse("2026-08-30T04:30:00Z"),
+        List.of(),
+        null);
+    orderConfirmationService.send(command);
+    orderConfirmationService.send(command);
+
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.ORDER_FORM_UPDATED)
+            .count());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+            .stream()
+            .filter(notification ->
+                notification.getType() == NotificationType.ORDER_CONFIRMATION_UPDATED)
+            .count());
   }
 
   @Test
@@ -174,7 +234,14 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         List.of(
             new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
             new CreateOrderFormCommand.Field(
-                "사이즈", FieldType.SINGLE_SELECT, true, null, 1, "기본 정보", null, 0,
+                "사이즈",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                1,
+                "기본 정보",
+                null,
+                0,
                 List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
@@ -190,8 +257,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         buyerUserId,
         inquiry.getId(),
         form.id(),
-        List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-            form.fields().get(0).id(), textNode("초코 케이크")),
+        List.of(
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(0).id(), textNode("초코 케이크")),
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.fields().get(1).id(), textNode("38000"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(

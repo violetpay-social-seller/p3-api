@@ -16,6 +16,7 @@ import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.inquiry.application.command.OpenInquiryCommand;
 import io.point3.p3api.inquiry.application.open.InquiryOpenService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -51,6 +52,9 @@ class SendChatMessageServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private ChatMessageAssetJpaRepository chatMessageAssetJpaRepository;
 
+  @Autowired
+  private NotificationJpaRepository notificationJpaRepository;
+
   @Test
   @DisplayName("이미지 메시지는 첨부 Asset 연결을 저장하고 타임라인에서 함께 조회된다")
   void sendsImageMessageWithAssets() {
@@ -71,6 +75,16 @@ class SendChatMessageServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(2, chatMessageAssetJpaRepository.findAll().size());
     assertEquals(
         List.of(firstAsset.getId(), secondAsset.getId()), page.items().get(0).assetIds());
+    assertEquals(
+        0,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .size());
+    assertEquals(
+        0,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+            .size());
   }
 
   @Test

@@ -19,6 +19,8 @@ import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmission
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
+import io.point3.p3api.notification.domain.type.NotificationType;
+import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.order.application.OrderConfirmationService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
@@ -29,6 +31,7 @@ import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
+import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
@@ -53,10 +56,8 @@ import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepos
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
-import io.point3.p3api.store.domain.entity.StoreOperationSetting;
-import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
-import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
-import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
@@ -119,6 +120,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   private StoreService storeService;
 
   @Autowired
+  private StoreSettingService storeSettingService;
+
+  @Autowired
   private UserJpaRepository userJpaRepository;
 
   @Autowired
@@ -131,10 +135,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   private OrderJpaRepository orderJpaRepository;
 
   @Autowired
-  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
-
-  @Autowired
-  private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
+  private NotificationJpaRepository notificationJpaRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -352,12 +353,26 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(confirmation.orderConfirmation().id(), order.getConfirmationId());
     assertEquals(prepared.paymentAttemptId(), order.getPaymentAttemptId());
     assertTrue(order.getOrderNumber().matches("P3-\\d{8}-[0-9a-f]{27}"));
-    assertEquals("주문서 payment-capture", order.getMenuNameSnapshot());
+    assertEquals(fixture.form().name(), order.getMenuNameSnapshot());
     assertEquals("초코 시트, 딸기 토핑", order.getOptionSummarySnapshot());
     assertEquals(41000, order.getPaidAmount());
     assertEquals(pickupAt(), order.getPickupAt());
     assertEquals(OrderStatus.PAID, order.getStatus());
     assertEquals("payer-new", payer.getPayerId());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.PAYMENT_COMPLETED)
+            .count());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.PAYMENT_COMPLETED)
+            .count());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
     assertEquals(InquiryStatus.PAID, fixture.inquiry().getStatus());
   }
@@ -424,11 +439,22 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         "{\"mon\":\"10:00-18:00\"}",
         "{\"leadTimeDays\":3}",
         "서울특별시 중구"));
-    preparePickupSetting(store.id(), availablePickupDate().getDayOfWeek());
     OrderFormResult form = orderFormService.create(new CreateOrderFormCommand(
         store.id(),
         "주문서 " + prefix,
-        List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0))));
+        List.of(
+            new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
+            new CreateOrderFormCommand.Field(
+                "사이즈",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                1,
+                "기본 정보",
+                null,
+                0,
+                List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
+    savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
 
@@ -442,8 +468,11 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         buyerUserId,
         inquiry.getId(),
         form.id(),
-        List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-            form.fields().get(0).id(), textNode("초코 케이크"))),
+        List.of(
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(0).id(), textNode("초코 케이크")),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(1).id(), textNode("38000"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -460,14 +489,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         "초코 시트, 딸기 토핑",
         41000,
         pickupAt(),
-        List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 41000L)),
+        List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
         "픽업 10분 전에 연락 주세요."));
-  }
-
-  private void preparePickupSetting(UUID storeId, DayOfWeek dayOfWeek) {
-    storeOperationSettingJpaRepository.save(StoreOperationSetting.create(storeId, 0, "notice", 1));
-    storeWeeklyPickupSettingJpaRepository.save(StoreWeeklyPickupSetting.create(
-        storeId, dayOfWeek, LocalTime.parse("13:00"), LocalTime.parse("14:00"), 10, true));
   }
 
   private LocalDate availablePickupDate() {
@@ -490,6 +513,19 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   private JsonNode textNode(String value) {
     return objectMapper.getNodeFactory().textNode(value);
+  }
+
+  private void savePickupSettings(UUID storeId) {
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        storeId,
+        0,
+        "주문 전 공지",
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+            .toList(),
+        List.of()));
   }
 
   private record Fixture(

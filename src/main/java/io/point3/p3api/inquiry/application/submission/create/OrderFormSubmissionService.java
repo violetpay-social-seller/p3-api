@@ -11,10 +11,16 @@ import io.point3.p3api.inquiry.application.submission.validation.OrderFormImageA
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormPickupValidator;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.notification.application.create.CreateNotificationCommand;
+import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
+import io.point3.p3api.notification.domain.type.NotificationReferenceType;
+import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
+import io.point3.p3api.store.application.port.StorePersistencePort;
+import io.point3.p3api.store.domain.entity.Store;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -32,10 +38,14 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
   private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
   private final OrderFormReferenceSnapshotFactory referenceSnapshotFactory;
+  private final StorePersistencePort storePersistencePort;
+  private final NotificationCreateUseCase notificationCreateUseCase;
 
   @Override
   public OrderFormSubmission create(CreateOrderFormSubmissionCommand command) {
     OrderFormResult activeForm = orderFormQueryUseCase.getActiveTemplate(command.storeId());
+    boolean isUpdate =
+        !submissionPersistencePort.findAllByInquiryId(command.inquiryId()).isEmpty();
 
     validateOrderFormSubmissionRequirements(command, activeForm);
 
@@ -63,7 +73,21 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
     orderConfirmationPersistencePort
         .findLatestByInquiryIdAndStatus(command.inquiryId(), OrderConfirmationStatus.SENT)
         .ifPresent(confirmation -> confirmation.replace());
+    notifySeller(command, isUpdate);
     return savedSubmission;
+  }
+
+  private void notifySeller(CreateOrderFormSubmissionCommand command, boolean isUpdate) {
+    Store store = storePersistencePort
+        .findById(command.storeId())
+        .orElseThrow(() -> new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND));
+    notificationCreateUseCase.create(new CreateNotificationCommand(
+        store.getOwnerUserId(),
+        isUpdate ? NotificationType.ORDER_FORM_UPDATED : NotificationType.ORDER_FORM_SUBMITTED,
+        NotificationReferenceType.INQUIRY,
+        command.inquiryId(),
+        isUpdate ? "주문서가 수정되었습니다." : "주문서가 접수되었습니다.",
+        "제출 주문서를 확인해 주세요."));
   }
 
   private static void validateOrderFormSubmissionRequirements(

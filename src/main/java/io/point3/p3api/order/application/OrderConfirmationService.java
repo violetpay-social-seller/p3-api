@@ -13,6 +13,10 @@ import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.notification.application.create.CreateNotificationCommand;
+import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
+import io.point3.p3api.notification.domain.type.NotificationReferenceType;
+import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
@@ -43,6 +47,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormQueryUseCase orderFormQueryUseCase;
+  private final NotificationCreateUseCase notificationCreateUseCase;
 
   private final Clock clock;
   private final ObjectMapper objectMapper;
@@ -56,8 +61,8 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
 
     // 최신 제출 주문서가 현재 채팅방 소속인지 검증
     OrderFormSubmission submission = findOrderFormSubmission(command, inquiry);
-    OrderFormResult template = orderFormQueryUseCase.getSellerTemplate(
-        command.storeId(), submission.getTemplateId());
+    OrderFormResult template =
+        orderFormQueryUseCase.getSellerTemplate(command.storeId(), submission.getTemplateId());
     ConfirmationAmount amount = calculateAmount(submission, command);
     OrderConfirmation previousConfirmation = orderConfirmationPersistencePort
         .findLatestByInquiryIdAndStatus(inquiry.getId(), OrderConfirmationStatus.SENT)
@@ -76,7 +81,11 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
         template.name(),
         command.summaryText(),
         amount.finalAmount(),
-        submission.getPickupDate().atTime(submission.getPickupTime()).atZone(KOREA_ZONE_ID).toInstant(),
+        submission
+            .getPickupDate()
+            .atTime(submission.getPickupTime())
+            .atZone(KOREA_ZONE_ID)
+            .toInstant(),
         store.getName(),
         createOrderSummary(submission),
         createAdditionalItems(command),
@@ -91,6 +100,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     if (previousConfirmation != null) {
       previousConfirmation.replaceWith(savedConfirmation.getId());
     }
+    notifyBuyer(inquiry, savedConfirmation, previousConfirmation != null);
 
     ChatTimelineItem savedTimeLineItem = chatTimelineItemPublisher.publishOrderConfirmation(
         savedConfirmation.getInquiryId(),
@@ -98,6 +108,18 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
         savedConfirmation.getId());
 
     return SendOrderConfirmationResult.of(savedConfirmation, savedTimeLineItem);
+  }
+
+  private void notifyBuyer(Inquiry inquiry, OrderConfirmation confirmation, boolean isUpdate) {
+    notificationCreateUseCase.create(new CreateNotificationCommand(
+        inquiry.getBuyerUserId(),
+        isUpdate
+            ? NotificationType.ORDER_CONFIRMATION_UPDATED
+            : NotificationType.ORDER_CONFIRMATION_SENT,
+        NotificationReferenceType.ORDER_CONFIRMATION,
+        confirmation.getId(),
+        isUpdate ? "주문확인서가 변경되었습니다." : "주문확인서가 도착했습니다.",
+        "주문확인서를 확인해 주세요."));
   }
 
   private OrderFormSubmission findOrderFormSubmission(
@@ -134,7 +156,8 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
       for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
         for (JsonNode option : answer.path("selectedOptions")) {
           try {
-            baseAmount = Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
+            baseAmount =
+                Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
           } catch (NumberFormatException e) {
             inquiryRequired = true;
           }

@@ -6,6 +6,10 @@ import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.notification.application.create.CreateNotificationCommand;
+import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
+import io.point3.p3api.notification.domain.type.NotificationReferenceType;
+import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.domain.entity.Order;
@@ -24,6 +28,8 @@ import io.point3.p3api.payment.application.result.Point3CaptureResult;
 import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.payment.config.Point3Properties;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
+import io.point3.p3api.store.application.port.StorePersistencePort;
+import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.user.application.port.UserPersistencePort;
 import io.point3.p3api.user.domain.entity.User;
 import java.net.URLEncoder;
@@ -49,6 +55,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final OrderPersistencePort orderPersistencePort;
   private final UserPersistencePort userPersistencePort;
+  private final StorePersistencePort storePersistencePort;
+  private final NotificationCreateUseCase notificationCreateUseCase;
   private final Point3PaymentPort point3PaymentPort;
   private final Point3Properties point3Properties;
   private final Clock clock;
@@ -280,7 +288,29 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
             paymentAttempt.getAmount(),
             confirmation.getPickupAt())));
 
+    notifyPaymentCompleted(inquiry, order);
+
     return PaymentCaptureResult.of(paymentAttempt, order.getId());
+  }
+
+  private void notifyPaymentCompleted(Inquiry inquiry, Order order) {
+    Store store = storePersistencePort
+        .findById(inquiry.getStoreId())
+        .orElseThrow(() -> new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR));
+    notificationCreateUseCase.create(new CreateNotificationCommand(
+        inquiry.getBuyerUserId(),
+        NotificationType.PAYMENT_COMPLETED,
+        NotificationReferenceType.ORDER,
+        order.getId(),
+        "결제가 완료되었습니다.",
+        "주문 내역을 확인해 주세요."));
+    notificationCreateUseCase.create(new CreateNotificationCommand(
+        store.getOwnerUserId(),
+        NotificationType.PAYMENT_COMPLETED,
+        NotificationReferenceType.ORDER,
+        order.getId(),
+        "결제가 완료되었습니다.",
+        "새 주문을 확인해 주세요."));
   }
 
   private String createOrderNumber(PaymentAttempt paymentAttempt) {

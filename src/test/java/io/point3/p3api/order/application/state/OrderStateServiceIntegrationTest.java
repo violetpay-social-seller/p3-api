@@ -10,6 +10,8 @@ import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import io.point3.p3api.inquiry.infrastructure.persistence.InquiryJpaRepository;
+import io.point3.p3api.notification.domain.type.NotificationType;
+import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.order.application.query.order.OrderQueryUseCase;
 import io.point3.p3api.order.application.result.OrderDetailResult;
 import io.point3.p3api.order.application.result.OrderResult;
@@ -18,16 +20,16 @@ import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
+import io.point3.p3api.payment.application.port.Point3PaymentPort;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
+import io.point3.p3api.payment.application.result.Point3CaptureResult;
+import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
 import io.point3.p3api.payment.domain.entity.Refund;
 import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
 import io.point3.p3api.payment.infrastructure.persistence.RefundJpaRepository;
-import io.point3.p3api.payment.application.port.Point3PaymentPort;
-import io.point3.p3api.payment.application.port.Point3RefundResult;
-import io.point3.p3api.payment.application.result.Point3CaptureResult;
-import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
@@ -73,6 +75,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private RefundJpaRepository refundJpaRepository;
 
+  @Autowired
+  private NotificationJpaRepository notificationJpaRepository;
+
   @TestConfiguration
   static class RefundTestConfiguration {
     @Bean
@@ -80,7 +85,8 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     Point3PaymentPort point3PaymentPort() {
       return new Point3PaymentPort() {
         @Override
-        public Point3PaymentSession createSession(long amount, String productName, String merchantName) {
+        public Point3PaymentSession createSession(
+            long amount, String productName, String merchantName) {
           throw new UnsupportedOperationException();
         }
 
@@ -144,6 +150,21 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(1, refunded.refunds().size());
     assertEquals(fixture.order().getPaidAmount(), refunded.refunds().get(0).amount());
     assertEquals(RefundStatus.COMPLETED, refunded.refunds().get(0).status());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .stream()
+            .filter(
+                notification -> notification.getType() == NotificationType.ORDER_CANCEL_REQUESTED)
+            .count());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.ORDER_REFUNDED)
+            .count());
   }
 
   @Test

@@ -24,6 +24,10 @@ import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
 import io.point3.p3api.payment.infrastructure.persistence.RefundJpaRepository;
+import io.point3.p3api.payment.application.port.Point3PaymentPort;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
+import io.point3.p3api.payment.application.result.Point3CaptureResult;
+import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
@@ -34,7 +38,12 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 
+@Import(OrderStateServiceIntegrationTest.RefundTestConfiguration.class)
 class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
@@ -63,6 +72,30 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private RefundJpaRepository refundJpaRepository;
+
+  @TestConfiguration
+  static class RefundTestConfiguration {
+    @Bean
+    @Primary
+    Point3PaymentPort point3PaymentPort() {
+      return new Point3PaymentPort() {
+        @Override
+        public Point3PaymentSession createSession(long amount, String productName, String merchantName) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point3CaptureResult capture(String sessionId) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point3RefundResult refund(String sessionId, long amount, String reason, String key) {
+          return new Point3RefundResult(true, null);
+        }
+      };
+    }
+  }
 
   @Test
   @DisplayName("주문 상세은 결제시도와 환불 내역을 함께 반환한다")

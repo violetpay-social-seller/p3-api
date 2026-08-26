@@ -3,6 +3,7 @@ package io.point3.p3api.payment.infrastructure.external.point3;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
 import io.point3.p3api.payment.application.result.Point3CaptureResult;
 import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.payment.config.Point3Properties;
@@ -72,6 +73,20 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
     return new Point3CaptureResult(capture.id(), status, failureCode);
   }
 
+  @Override
+  public Point3RefundResult refund(String sessionId, long amount, String reason, String idempotencyKey) {
+    RefundRequest refund = new RefundRequest(amount, 0, amount * 10 / 110, reason);
+    HttpResponse<String> response = send(post("/refunds/v1/" + sessionId)
+        .header("Idempotency-Key", idempotencyKey)
+        .POST(body(refund))
+        .build(), "POINT3_REFUND");
+    if (response.statusCode() != 200) {
+      return new Point3RefundResult(false, "POINT3_REFUND_" + response.statusCode());
+    }
+    RefundResponse result = read(response.body(), RefundResponse.class, "POINT3_REFUND_PARSE");
+    return new Point3RefundResult("completed".equals(result.status()), result.status());
+  }
+
   private HttpRequest.Builder post(String path) {
     return HttpRequest.newBuilder(URI.create(point3Properties.apiBaseUrl() + path))
         .header("Authorization", "Bearer " + point3Properties.apiToken())
@@ -113,4 +128,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   private record CapturePaymentResponse(String id, String status, CaptureOutcome outcome) {}
 
   private record CaptureOutcome(String code) {}
+
+  private record RefundRequest(long refundAmount, long refundTaxFreeAmount, long refundVat, String reason) {}
+
+  private record RefundResponse(String status) {}
 }

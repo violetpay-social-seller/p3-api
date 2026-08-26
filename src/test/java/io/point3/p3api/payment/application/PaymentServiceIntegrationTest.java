@@ -502,6 +502,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
       return new Point3CaptureResult(sessionId, nextCaptureStatus, failureCode);
     }
 
+    @Override
+    public io.point3.p3api.payment.application.port.Point3RefundResult refund(
+        String sessionId, long amount, String reason, String idempotencyKey) {
+      return new io.point3.p3api.payment.application.port.Point3RefundResult(true, null);
+    }
+
     void nextCaptureStatus(Point3CaptureResult.Status nextCaptureStatus) {
       this.nextCaptureStatus = nextCaptureStatus;
     }

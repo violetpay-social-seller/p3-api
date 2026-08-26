@@ -8,4 +8,6 @@ public interface Point3PaymentPort {
   Point3PaymentSession createSession(long amount, String productName, String displayMerchantName);
 
   Point3CaptureResult capture(String sessionId);
+
+  Point3RefundResult refund(String sessionId, long amount, String reason, String idempotencyKey);
 }

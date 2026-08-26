@@ -6,10 +6,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface RefundJpaRepository extends JpaRepository<Refund, UUID> {
+public interface RefundJpaRepository
+    extends JpaRepository<Refund, UUID>, JpaSpecificationExecutor<Refund> {
   List<Refund> findAllByOrderIdOrderByCreatedAtDesc(UUID orderId);
 
   @Query("""

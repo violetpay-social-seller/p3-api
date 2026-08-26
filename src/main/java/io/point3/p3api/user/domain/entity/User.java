@@ -99,6 +99,13 @@ public class User {
     this.status = UserStatus.BANNED;
   }
 
+  public void unban() {
+    if (this.status != UserStatus.BANNED) {
+      throw new IllegalArgumentException("Only banned users can be unbanned");
+    }
+    this.status = UserStatus.ACTIVE;
+  }
+
   public boolean isActive() {
     return this.status == UserStatus.ACTIVE;
   }

@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface GalleryItemJpaRepository extends JpaRepository<StoreGalleryItem, UUID> {
+public interface GalleryItemJpaRepository
+    extends JpaRepository<StoreGalleryItem, UUID>, JpaSpecificationExecutor<StoreGalleryItem> {
 
   Optional<StoreGalleryItem> findByIdAndStoreId(UUID galleryItemId, UUID storeId);
 

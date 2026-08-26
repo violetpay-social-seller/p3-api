@@ -10,10 +10,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface OrderJpaRepository extends JpaRepository<Order, UUID> {
+public interface OrderJpaRepository
+    extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
   Optional<Order> findByIdAndBuyerUserId(UUID orderId, UUID buyerUserId);
 
   Optional<Order> findByIdAndStoreId(UUID orderId, UUID storeId);

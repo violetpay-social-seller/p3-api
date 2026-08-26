@@ -66,6 +66,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,6 +86,8 @@ import org.springframework.test.context.TestPropertySource;
       "p3.point3.payment-origin=https://pay.point3.test"
     })
 class PaymentServiceIntegrationTest extends IntegrationTestSupport {
+
+  private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
   @Autowired
   private PaymentPrepareUseCase paymentPrepareUseCase;
@@ -352,7 +356,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(fixture.form().name(), order.getMenuNameSnapshot());
     assertEquals("초코 시트, 딸기 토핑", order.getOptionSummarySnapshot());
     assertEquals(41000, order.getPaidAmount());
-    assertEquals(Instant.parse("2026-08-30T04:30:00Z"), order.getPickupAt());
+    assertEquals(pickupAt(), order.getPickupAt());
     assertEquals(OrderStatus.PAID, order.getStatus());
     assertEquals("payer-new", payer.getPayerId());
     assertEquals(
@@ -470,7 +474,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.fields().get(1).id(), textNode("38000"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
   }
@@ -484,9 +488,22 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         "초코 케이크 1호",
         "초코 시트, 딸기 토핑",
         41000,
-        Instant.parse("2026-08-30T04:30:00Z"),
+        pickupAt(),
         List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
         "픽업 10분 전에 연락 주세요."));
+  }
+
+  private LocalDate availablePickupDate() {
+    return LocalDate.now(KOREA_ZONE)
+        .plusDays(7)
+        .with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY));
+  }
+
+  private Instant pickupAt() {
+    return availablePickupDate()
+        .atTime(LocalTime.parse("13:30"))
+        .atZone(KOREA_ZONE)
+        .toInstant();
   }
 
   private User saveUser(UserRole role, String prefix) {

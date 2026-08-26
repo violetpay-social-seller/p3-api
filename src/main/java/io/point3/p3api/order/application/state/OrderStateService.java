@@ -10,9 +10,12 @@ import io.point3.p3api.notification.application.create.NotificationCreateUseCase
 import io.point3.p3api.notification.domain.type.NotificationReferenceType;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
+import io.point3.p3api.order.application.port.OrderStatusHistoryPersistencePort;
 import io.point3.p3api.order.application.result.OrderDetailResult;
 import io.point3.p3api.order.application.result.OrderResult;
 import io.point3.p3api.order.domain.entity.Order;
+import io.point3.p3api.order.domain.entity.OrderStatusHistory;
+import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.payment.application.port.PaymentAttemptPersistencePort;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
@@ -39,6 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderStateService implements OrderStateUseCase {
 
   private final OrderPersistencePort orderPersistencePort;
+  private final OrderStatusHistoryPersistencePort orderStatusHistoryPersistencePort;
   private final InquiryPersistencePort inquiryPersistencePort;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
@@ -50,7 +54,7 @@ public class OrderStateService implements OrderStateUseCase {
   @Override
   public OrderResult pickUp(CompleteOrderPickupCommand command) {
     Order order = getSellerOrder(command.orderId(), command.storeId());
-    changeStatus(order::markPickedUp);
+    changeStatus(order, null, "PICKUP_COMPLETED", order::markPickedUp);
 
     Inquiry inquiry = inquiryPersistencePort
         .findById(order.getInquiryId())
@@ -66,7 +70,11 @@ public class OrderStateService implements OrderStateUseCase {
         .findByIdAndBuyerUserId(command.orderId(), command.buyerUserId())
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
 
-    changeStatus(() -> order.requestCancel(command.reason(), Instant.now(clock)));
+    changeStatus(
+        order,
+        command.buyerUserId(),
+        command.reason(),
+        () -> order.requestCancel(command.reason(), Instant.now(clock)));
     notifySellerCancelRequested(order);
 
     return OrderResult.from(order);
@@ -92,7 +100,8 @@ public class OrderStateService implements OrderStateUseCase {
           command.reason(),
           refund.getId().toString());
       if (result.completed()) {
-        changeStatus(() -> order.refund(command.reason()));
+        changeStatus(
+            order, command.sellerUserId(), command.reason(), () -> order.refund(command.reason()));
         refund.complete(Instant.now(clock));
       } else {
         refund.fail();
@@ -112,11 +121,16 @@ public class OrderStateService implements OrderStateUseCase {
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
   }
 
-  private void changeStatus(Runnable transition) {
+  private void changeStatus(Order order, UUID changedBy, String reason, Runnable transition) {
+    OrderStatus previousStatus = order.getStatus();
     try {
       transition.run();
     } catch (IllegalStateException e) {
       throw new BaseException(OrderErrorCode.ORDER_STATUS_FORBIDDEN);
+    }
+    if (previousStatus != order.getStatus()) {
+      orderStatusHistoryPersistencePort.save(OrderStatusHistory.create(
+          order.getId(), previousStatus, order.getStatus(), changedBy, reason, Instant.now(clock)));
     }
   }
 

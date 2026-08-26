@@ -2,6 +2,8 @@ package io.point3.p3api.order.controller.response;
 
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 
 public record OrderFormSubmissionResponse(
@@ -9,6 +11,8 @@ public record OrderFormSubmissionResponse(
     UUID inquiryId,
     UUID templateId,
     UUID submittedBy,
+    LocalDate pickupDate,
+    LocalTime pickupTime,
     String answers,
     String referenceAssets,
     boolean cancellationRefundAgreed,
@@ -20,6 +24,8 @@ public record OrderFormSubmissionResponse(
         submission.getInquiryId(),
         submission.getTemplateId(),
         submission.getSubmittedBy(),
+        submission.getPickupDate(),
+        submission.getPickupTime(),
         submission.getAnswers(),
         submission.getReferenceAssets(),
         submission.isCancellationRefundAgreed(),

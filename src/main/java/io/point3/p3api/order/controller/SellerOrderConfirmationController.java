@@ -5,6 +5,7 @@ import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
+import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.application.send.SendOrderConfirmationUseCase;
@@ -13,6 +14,7 @@ import io.point3.p3api.order.controller.request.OrderConfirmationReplaceRequest;
 import io.point3.p3api.order.controller.request.OrderConfirmationSendRequest;
 import io.point3.p3api.order.controller.response.OrderConfirmationDetailResponse;
 import io.point3.p3api.order.controller.response.OrderConfirmationResponse;
+import io.point3.p3api.order.controller.response.OrderConfirmationPreviewResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +35,14 @@ public class SellerOrderConfirmationController {
   private final SendOrderConfirmationUseCase sendOrderConfirmationUseCase;
   private final OrderConfirmationQueryUseCase orderConfirmationQueryUseCase;
   private final OrderConfirmationStateUseCase orderConfirmationStateUseCase;
+  private final OrderConfirmationPreviewQueryService orderConfirmationPreviewQueryService;
+
+  @GetMapping("/preview")
+  public ApiResponse<OrderConfirmationPreviewResponse> getPreview(
+      @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(OrderConfirmationPreviewResponse.from(
+        orderConfirmationPreviewQueryService.getPreview(inquiryId, storeId)));
+  }
 
   @GetMapping
   public ApiResponse<List<OrderConfirmationDetailResponse>> getHistory(

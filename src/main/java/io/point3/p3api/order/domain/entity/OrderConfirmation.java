@@ -165,6 +165,10 @@ public class OrderConfirmation {
     this.replacedByConfirmationId = replacedByConfirmationId;
   }
 
+  public void replace() {
+    this.status = OrderConfirmationStatus.REPLACED;
+  }
+
   public void markBuyerViewed(Instant viewedAt) {
     Objects.requireNonNull(viewedAt, "viewedAt");
     if (this.buyerViewedAt == null) {

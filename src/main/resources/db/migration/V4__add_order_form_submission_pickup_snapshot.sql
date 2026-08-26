@@ -1,0 +1,3 @@
+ALTER TABLE order_form_submissions
+    ADD COLUMN pickup_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    ADD COLUMN pickup_time TIME NOT NULL DEFAULT '00:00:00';

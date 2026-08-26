@@ -1,5 +1,6 @@
 package io.point3.p3api.order.application.state;
 
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrderConfirmationStateService implements OrderConfirmationStateUseCase {
   private final OrderConfirmationQueryUseCase orderConfirmationQueryUseCase;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
 
   @Override
   public OrderConfirmation markBuyerViewed(UUID inquiryId, UUID confirmationId, UUID buyerUserId) {
@@ -32,6 +34,8 @@ public class OrderConfirmationStateService implements OrderConfirmationStateUseC
         orderConfirmationQueryUseCase.getBuyerConfirmation(inquiryId, confirmationId, buyerUserId);
     requireStatus(confirmation, OrderConfirmationStatus.SENT);
     confirmation.requestRevision(Instant.now());
+    chatTimelineItemPublisher.publishOrderConfirmationRevisionRequest(
+        inquiryId, buyerUserId, confirmationId);
     return confirmation;
   }
 

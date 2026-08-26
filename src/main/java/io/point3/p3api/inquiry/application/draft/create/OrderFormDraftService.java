@@ -8,6 +8,8 @@ import io.point3.p3api.inquiry.application.draft.model.OrderFormDraftData;
 import io.point3.p3api.inquiry.application.port.OrderFormDraftStorePort;
 import io.point3.p3api.inquiry.application.result.OrderFormDraftResult;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormAnswerValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormImageAssetValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormPickupValidator;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
@@ -26,6 +28,8 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
   private final OrderFormDraftStorePort orderFormDraftStorePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
   private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
+  private final OrderFormPickupValidator orderFormPickupValidator;
+  private final OrderFormImageAssetValidator orderFormImageAssetValidator;
 
   @Override
   public OrderFormDraftResult create(CreateOrderFormDraftCommand command) {
@@ -40,6 +44,11 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
     }
 
     orderFormAnswerValidator.validate(activeForm.fields(), toSubmissionAnswers(command));
+    orderFormImageAssetValidator.validate(activeForm.fields(), toSubmissionAnswers(command), null);
+    orderFormPickupValidator.validate(
+        command.storeId(),
+        new CreateOrderFormSubmissionCommand.PickupRequest(
+            command.pickupDate(), command.pickupTime()));
     orderFormReferenceAssetValidator.validate(
         command.storeId(), toSubmissionReferenceAssets(command));
 

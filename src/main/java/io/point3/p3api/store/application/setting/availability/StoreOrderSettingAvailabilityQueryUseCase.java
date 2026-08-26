@@ -6,6 +6,5 @@ import java.util.UUID;
 
 public interface StoreOrderSettingAvailabilityQueryUseCase {
 
-  StoreOrderSettingAvailabilityResult getAvailability(
-      UUID storeId, LocalDate from, LocalDate to);
+  StoreOrderSettingAvailabilityResult getAvailability(UUID storeId, LocalDate from, LocalDate to);
 }

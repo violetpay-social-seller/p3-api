@@ -21,7 +21,9 @@ public record StoreSettingResponse(
         result.leadTimeMinutes(),
         result.preOrderNotice(),
         result.cancellationCutoffDays(),
-        result.weeklyPickupSettings().stream().map(WeeklyPickupSettingResponse::from).toList(),
+        result.weeklyPickupSettings().stream()
+            .map(WeeklyPickupSettingResponse::from)
+            .toList(),
         result.holidays());
   }
 

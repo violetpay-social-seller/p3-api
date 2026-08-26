@@ -29,5 +29,6 @@ public class StoreWeeklyPickupSettingPersistenceAdapter
   @Override
   public void deleteAllByStoreId(UUID storeId) {
     storeWeeklyPickupSettingJpaRepository.deleteAllByStoreId(storeId);
+    storeWeeklyPickupSettingJpaRepository.flush();
   }
 }

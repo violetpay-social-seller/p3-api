@@ -46,8 +46,8 @@ public class StoreSettingService implements StoreSettingUpdateUseCase, StoreSett
   @Transactional(readOnly = true)
   public StoreSettingResult getSetting(UUID storeId) {
     requireStore(storeId);
-    StoreOperationSetting setting = storeOperationSettingPersistencePort.findByStoreId(storeId)
-        .orElse(null);
+    StoreOperationSetting setting =
+        storeOperationSettingPersistencePort.findByStoreId(storeId).orElse(null);
     if (setting == null) {
       return StoreSettingResult.empty(storeId);
     }

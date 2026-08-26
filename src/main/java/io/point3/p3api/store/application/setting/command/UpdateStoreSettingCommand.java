@@ -15,7 +15,8 @@ public record UpdateStoreSettingCommand(
     List<LocalDate> holidays) {
 
   public UpdateStoreSettingCommand {
-    weeklyPickupSettings = weeklyPickupSettings == null ? List.of() : List.copyOf(weeklyPickupSettings);
+    weeklyPickupSettings =
+        weeklyPickupSettings == null ? List.of() : List.copyOf(weeklyPickupSettings);
     holidays = holidays == null ? List.of() : List.copyOf(holidays);
   }
 

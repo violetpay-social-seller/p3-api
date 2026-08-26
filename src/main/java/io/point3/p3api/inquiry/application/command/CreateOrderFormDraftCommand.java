@@ -15,8 +15,28 @@ public record CreateOrderFormDraftCommand(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
+    boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
+
+  public CreateOrderFormDraftCommand(
+      UUID storeId,
+      UUID orderFormTemplateId,
+      LocalDate pickupDate,
+      LocalTime pickupTime,
+      boolean noticeAgreed,
+      List<FormAnswer> formAnswers,
+      List<ReferenceAsset> referenceAssets) {
+    this(
+        storeId,
+        orderFormTemplateId,
+        pickupDate,
+        pickupTime,
+        noticeAgreed,
+        false,
+        formAnswers,
+        referenceAssets);
+  }
 
   public CreateOrderFormDraftCommand {
     formAnswers = List.copyOf(formAnswers);

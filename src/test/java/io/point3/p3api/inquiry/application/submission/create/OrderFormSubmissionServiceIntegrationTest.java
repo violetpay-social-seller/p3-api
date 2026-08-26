@@ -9,6 +9,7 @@ import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.GalleryErrorCode;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.gallery.application.GalleryItemService;
@@ -31,9 +32,12 @@ import io.point3.p3api.orderform.domain.type.FieldType;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -58,6 +62,9 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreService storeService;
+
+  @Autowired
+  private StoreSettingService storeSettingService;
 
   @Autowired
   private UserJpaRepository userJpaRepository;
@@ -89,6 +96,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
+        new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(true),
         List.of(new CreateOrderFormSubmissionCommand.ReferenceAsset(
             fixture.visibleGalleryAssetId(), OrderFormReferenceAssetSource.STORE_GALLERY, 0))));
 
@@ -96,6 +104,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         submissionJpaRepository.findById(submission.getId()).orElseThrow();
     assertEquals(fixture.inquiry().getId(), persisted.getInquiryId());
     assertEquals(fixture.form().id(), persisted.getTemplateId());
+    assertEquals(true, persisted.isCancellationRefundAgreed());
     JsonNode answers = objectMapper.readTree(persisted.getAnswers());
     assertEquals(2, answers.size());
     assertAnswerSnapshot(answers.get(0), nameField.id(), "메뉴명", "TEXT", true, 0, "초코 케이크");
@@ -180,6 +189,86 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(GalleryErrorCode.GALLERY_ASSET_NOT_FOUND, exception.getErrorCode());
   }
 
+  @Test
+  @DisplayName("이미지 필드 Asset은 제출자의 업로드 파일만 허용한다")
+  void validatesImageFieldAssetOwnership() {
+    Fixture fixture = prepareFixture();
+    OrderFormFieldResult imageField = fixture.form().fields().get(2);
+    UUID buyerAssetId =
+        saveAsset(fixture.buyer().getId(), "buyer-reference.png").getId();
+
+    submissionService.create(new CreateOrderFormSubmissionCommand(
+        fixture.store().id(),
+        fixture.buyer().getId(),
+        fixture.inquiry().getId(),
+        fixture.form().id(),
+        List.of(
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                fixture.form().fields().get(0).id(), textNode("초코 케이크")),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                imageField.id(),
+                objectMapper.getNodeFactory().arrayNode().add(buyerAssetId.toString()))),
+        new CreateOrderFormSubmissionCommand.PickupRequest(
+            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+        new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
+        CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> submissionService.create(new CreateOrderFormSubmissionCommand(
+            fixture.store().id(),
+            fixture.buyer().getId(),
+            fixture.inquiry().getId(),
+            fixture.form().id(),
+            List.of(
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().fields().get(0).id(), textNode("초코 케이크")),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    imageField.id(),
+                    objectMapper
+                        .getNodeFactory()
+                        .arrayNode()
+                        .add(fixture.visibleGalleryAssetId().toString()))),
+            new CreateOrderFormSubmissionCommand.PickupRequest(
+                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
+            CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
+
+    assertEquals(AssetErrorCode.ASSET_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("휴무일 픽업 요청은 영속 주문서 제출에서 다시 거절한다")
+  void rejectsSubmissionWithHolidayPickup() {
+    Fixture fixture = prepareFixture();
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        fixture.store().id(),
+        0,
+        "주문 전 공지",
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+            .toList(),
+        List.of(LocalDate.parse("2026-08-30"))));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> submissionService.create(new CreateOrderFormSubmissionCommand(
+            fixture.store().id(),
+            fixture.buyer().getId(),
+            fixture.inquiry().getId(),
+            fixture.form().id(),
+            List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
+                fixture.form().fields().get(0).id(), textNode("초코 케이크"))),
+            new CreateOrderFormSubmissionCommand.PickupRequest(
+                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
+            CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
+  }
+
   private Fixture prepareFixture() {
     User seller = saveUser(UserRole.SELLER, "seller");
     User buyer = saveUser(UserRole.BUYER, "buyer");
@@ -200,11 +289,26 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         "주문서",
         List.of(
             new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
-            new CreateOrderFormCommand.Field("기본 금액", FieldType.NUMBER, false, null, 1))));
+            new CreateOrderFormCommand.Field("기본 금액", FieldType.NUMBER, false, null, 1),
+            new CreateOrderFormCommand.Field("참고 이미지", FieldType.IMAGE, false, null, 2))));
+    savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     UUID visibleGalleryAssetId = createVisibleGalleryAsset(store.id(), seller.getId());
 
     return new Fixture(seller, buyer, store, form, inquiry, visibleGalleryAssetId);
+  }
+
+  private void savePickupSettings(UUID storeId) {
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        storeId,
+        0,
+        "주문 전 공지",
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+            .toList(),
+        List.of()));
   }
 
   private UUID createVisibleGalleryAsset(UUID storeId, UUID sellerId) {

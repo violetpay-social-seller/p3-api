@@ -80,8 +80,9 @@ public class OrderFormAnswerValidator {
   }
 
   private void validateSingleSelect(OrderFormFieldResult field, JsonNode value) {
-    if (!value.isTextual() || field.options().stream()
-        .noneMatch(option -> option.active() && option.value().equals(value.asText()))) {
+    if (!value.isTextual()
+        || field.options().stream()
+            .noneMatch(option -> option.active() && option.value().equals(value.asText()))) {
       throwInvalidFieldValue();
     }
   }

@@ -7,6 +7,8 @@ import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePo
 import io.point3.p3api.inquiry.application.submission.snapshot.OrderFormAnswerSnapshotFactory;
 import io.point3.p3api.inquiry.application.submission.snapshot.OrderFormReferenceSnapshotFactory;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormAnswerValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormImageAssetValidator;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormPickupValidator;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
@@ -23,6 +25,8 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
   private final OrderFormAnswerValidator orderFormAnswerValidator;
   private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
+  private final OrderFormPickupValidator orderFormPickupValidator;
+  private final OrderFormImageAssetValidator orderFormImageAssetValidator;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
   private final OrderFormReferenceSnapshotFactory referenceSnapshotFactory;
 
@@ -33,6 +37,9 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
     validateOrderFormSubmissionRequirements(command, activeForm);
 
     orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
+    orderFormImageAssetValidator.validate(
+        activeForm.fields(), command.formAnswers(), command.buyerUserId());
+    orderFormPickupValidator.validate(command.storeId(), command.pickupRequest());
     orderFormReferenceAssetValidator.validate(command.storeId(), command.referenceAssets());
 
     String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
@@ -44,7 +51,8 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
         activeForm.id(),
         command.buyerUserId(),
         answersSnapshot,
-        referenceAssets);
+        referenceAssets,
+        command.cancellationRefundAgreement().agreed());
 
     return submissionPersistencePort.save(submission);
   }

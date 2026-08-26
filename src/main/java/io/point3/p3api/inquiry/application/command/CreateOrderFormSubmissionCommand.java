@@ -15,7 +15,29 @@ public record CreateOrderFormSubmissionCommand(
     List<FormAnswer> formAnswers,
     PickupRequest pickupRequest,
     NoticeAgreement noticeAgreement,
+    CancellationRefundAgreement cancellationRefundAgreement,
     List<ReferenceAsset> referenceAssets) {
+
+  public CreateOrderFormSubmissionCommand(
+      UUID storeId,
+      UUID buyerUserId,
+      UUID inquiryId,
+      UUID orderFormTemplateId,
+      List<FormAnswer> formAnswers,
+      PickupRequest pickupRequest,
+      NoticeAgreement noticeAgreement,
+      List<ReferenceAsset> referenceAssets) {
+    this(
+        storeId,
+        buyerUserId,
+        inquiryId,
+        orderFormTemplateId,
+        formAnswers,
+        pickupRequest,
+        noticeAgreement,
+        new CancellationRefundAgreement(false),
+        referenceAssets);
+  }
 
   public CreateOrderFormSubmissionCommand {
     formAnswers = List.copyOf(formAnswers);
@@ -37,6 +59,8 @@ public record CreateOrderFormSubmissionCommand(
   public record PickupRequest(LocalDate pickupDate, LocalTime pickupTime) {}
 
   public record NoticeAgreement(boolean agreed) {}
+
+  public record CancellationRefundAgreement(boolean agreed) {}
 
   public record ReferenceAsset(UUID assetId, OrderFormReferenceAssetSource source, int sortOrder) {}
 

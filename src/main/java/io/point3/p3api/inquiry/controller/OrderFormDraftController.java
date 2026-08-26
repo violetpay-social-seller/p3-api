@@ -60,6 +60,7 @@ public class OrderFormDraftController {
         request.pickupDate(),
         request.pickupTime(),
         request.noticeAgreed(),
+        request.cancellationRefundAgreed(),
         request.formAnswers().stream()
             .map(answer -> new CreateOrderFormDraftCommand.FormAnswer(
                 answer.fieldId(), objectMapper.valueToTree(answer.value())))

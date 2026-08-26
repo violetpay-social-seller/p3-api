@@ -18,9 +18,13 @@ import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.application.send.SendOrderConfirmationUseCase;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
+import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
+import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
+import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import java.time.Clock;
+import java.time.ZoneId;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,11 +35,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrderConfirmationService implements SendOrderConfirmationUseCase {
 
+  private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
+
   private final StorePersistencePort storePersistencePort;
   private final InquiryChatAccessService inquiryChatAccessService;
   private final ChatTimelineItemPublisher chatTimelineItemPublisher;
   private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
+  private final OrderFormQueryUseCase orderFormQueryUseCase;
 
   private final Clock clock;
   private final ObjectMapper objectMapper;
@@ -47,8 +54,14 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     Inquiry inquiry =
         inquiryChatAccessService.getSellerInquiry(command.inquiryId(), command.storeId());
 
-    // 주문서가 있다면 현재 채팅방에서 제출된 주문서가 맞는지 검증
+    // 최신 제출 주문서가 현재 채팅방 소속인지 검증
     OrderFormSubmission submission = findOrderFormSubmission(command, inquiry);
+    OrderFormResult template = orderFormQueryUseCase.getSellerTemplate(
+        command.storeId(), submission.getTemplateId());
+    ConfirmationAmount amount = calculateAmount(submission, command);
+    OrderConfirmation previousConfirmation = orderConfirmationPersistencePort
+        .findLatestByInquiryIdAndStatus(inquiry.getId(), OrderConfirmationStatus.SENT)
+        .orElse(null);
 
     // 현재 스토어 조회
     Store store = storePersistencePort
@@ -58,12 +71,12 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     // 주문확정서 생성
     OrderConfirmation confirmation = OrderConfirmation.create(
         inquiry.getId(),
-        command.orderFormSubmissionId(),
+        submission.getId(),
         command.sellerUserId(),
-        command.confirmationTitle(),
+        template.name(),
         command.summaryText(),
-        command.amount(),
-        command.pickupAt(),
+        amount.finalAmount(),
+        submission.getPickupDate().atTime(submission.getPickupTime()).atZone(KOREA_ZONE_ID).toInstant(),
         store.getName(),
         createOrderSummary(submission),
         createAdditionalItems(command),
@@ -74,6 +87,10 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
 
     // 저장
     OrderConfirmation savedConfirmation = orderConfirmationPersistencePort.save(confirmation);
+
+    if (previousConfirmation != null) {
+      previousConfirmation.replaceWith(savedConfirmation.getId());
+    }
 
     ChatTimelineItem savedTimeLineItem = chatTimelineItemPublisher.publishOrderConfirmation(
         savedConfirmation.getInquiryId(),
@@ -86,7 +103,10 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   private OrderFormSubmission findOrderFormSubmission(
       SendOrderConfirmationCommand command, Inquiry inquiry) {
     if (command.orderFormSubmissionId() == null) {
-      return null;
+      return orderFormSubmissionPersistencePort.findAllByInquiryId(inquiry.getId()).stream()
+          .findFirst()
+          .orElseThrow(() ->
+              new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
     }
 
     OrderFormSubmission submission = orderFormSubmissionPersistencePort
@@ -99,6 +119,36 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     return submission;
+  }
+
+  private ConfirmationAmount calculateAmount(
+      OrderFormSubmission submission, SendOrderConfirmationCommand command) {
+    long additionalAmount = command.additionalItems().stream()
+        .map(SendOrderConfirmationCommand.AdditionalItem::amount)
+        .filter(java.util.Objects::nonNull)
+        .mapToLong(Long::longValue)
+        .sum();
+    long baseAmount = 0;
+    boolean inquiryRequired = false;
+    try {
+      for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
+        for (JsonNode option : answer.path("selectedOptions")) {
+          try {
+            baseAmount = Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
+          } catch (NumberFormatException e) {
+            inquiryRequired = true;
+          }
+        }
+      }
+    } catch (JsonProcessingException e) {
+      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+
+    long automaticAmount = Math.addExact(baseAmount, additionalAmount);
+    if (!inquiryRequired && command.amount() != automaticAmount) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID);
+    }
+    return new ConfirmationAmount(inquiryRequired ? command.amount() : automaticAmount);
   }
 
   private String createOrderSummary(OrderFormSubmission submission) {
@@ -148,4 +198,6 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
 
   private record OrderSummarySnapshot(
       UUID orderFormSubmissionId, JsonNode answers, JsonNode referenceAssets) {}
+
+  private record ConfirmationAmount(long finalAmount) {}
 }

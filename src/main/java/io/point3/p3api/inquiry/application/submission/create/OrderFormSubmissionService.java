@@ -11,6 +11,8 @@ import io.point3.p3api.inquiry.application.submission.validation.OrderFormImageA
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormPickupValidator;
 import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
+import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
   private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
   private final OrderFormPickupValidator orderFormPickupValidator;
   private final OrderFormImageAssetValidator orderFormImageAssetValidator;
+  private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final OrderFormAnswerSnapshotFactory snapshotFactory;
   private final OrderFormReferenceSnapshotFactory referenceSnapshotFactory;
 
@@ -50,11 +53,17 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
         command.inquiryId(),
         activeForm.id(),
         command.buyerUserId(),
+        command.pickupRequest().pickupDate(),
+        command.pickupRequest().pickupTime(),
         answersSnapshot,
         referenceAssets,
         command.cancellationRefundAgreement().agreed());
 
-    return submissionPersistencePort.save(submission);
+    OrderFormSubmission savedSubmission = submissionPersistencePort.save(submission);
+    orderConfirmationPersistencePort
+        .findLatestByInquiryIdAndStatus(command.inquiryId(), OrderConfirmationStatus.SENT)
+        .ifPresent(confirmation -> confirmation.replace());
+    return savedSubmission;
   }
 
   private static void validateOrderFormSubmissionRequirements(

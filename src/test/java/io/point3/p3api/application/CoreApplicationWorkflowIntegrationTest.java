@@ -56,6 +56,7 @@ import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
 import io.point3.p3api.orderform.application.OrderFormService;
+import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
@@ -217,8 +218,11 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         LocalDate.parse("2026-09-01"),
         LocalTime.parse("15:00"),
         true,
-        List.of(new CreateOrderFormDraftCommand.FormAnswer(
-            fixture.form().fields().get(0).id(), textNode("바닐라 케이크"))),
+        List.of(
+            new CreateOrderFormDraftCommand.FormAnswer(
+                fixture.form().fields().get(0).id(), textNode("바닐라 케이크")),
+            new CreateOrderFormDraftCommand.FormAnswer(
+                fixture.form().fields().get(1).id(), textNode("38000"))),
         List.of());
 
     OrderFormDraftResult draft = orderFormDraftService.create(draftCommand);
@@ -256,8 +260,11 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
             LocalDate.parse("2026-09-01"),
             LocalTime.parse("09:30"),
             true,
-            List.of(new CreateOrderFormDraftCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("바닐라 케이크"))),
+            List.of(
+                new CreateOrderFormDraftCommand.FormAnswer(
+                    fixture.form().fields().get(0).id(), textNode("바닐라 케이크")),
+                new CreateOrderFormDraftCommand.FormAnswer(
+                    fixture.form().fields().get(1).id(), textNode("38000"))),
             List.of())));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
@@ -428,7 +435,11 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     OrderFormResult form = orderFormService.create(new CreateOrderFormCommand(
         store.id(),
         "주문서 " + prefix,
-        List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0))));
+        List.of(
+            new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
+            new CreateOrderFormCommand.Field(
+                "사이즈", FieldType.SINGLE_SELECT, true, null, 1, "기본 정보", null, 0,
+                List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
     savePickupSettings(store.id());
 
     return new Fixture(seller, buyer, store, form, null, null);
@@ -454,8 +465,11 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         buyerUserId,
         inquiry.getId(),
         form.id(),
-        List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-            form.fields().get(0).id(), textNode("초코 케이크"))),
+        List.of(
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(0).id(), textNode("초코 케이크")),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(1).id(), textNode("38000"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),

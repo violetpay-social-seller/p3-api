@@ -6,6 +6,7 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
+import io.point3.p3api.orderform.application.result.OrderFormFieldOptionResult;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,8 @@ public class OrderFormAnswerSnapshotFactory {
               field.fieldType().name(),
               field.required(),
               field.sortOrder(),
-              answer.value());
+              answer.value(),
+              selectedOptions(field, answer.value()));
         })
         .toList();
 
@@ -59,11 +61,40 @@ public class OrderFormAnswerSnapshotFactory {
     }
   }
 
+  private List<OptionSnapshot> selectedOptions(OrderFormFieldResult field, Object value) {
+    if (value instanceof com.fasterxml.jackson.databind.JsonNode node) {
+      return field.options().stream()
+          .filter(option -> selected(node, option))
+          .map(option -> new OptionSnapshot(option.label(), option.value()))
+          .toList();
+    }
+    return List.of();
+  }
+
+  private boolean selected(
+      com.fasterxml.jackson.databind.JsonNode value, OrderFormFieldOptionResult option) {
+    if (value.isTextual()) {
+      return option.value().equals(value.asText());
+    }
+    if (!value.isArray()) {
+      return false;
+    }
+    for (com.fasterxml.jackson.databind.JsonNode item : value) {
+      if (option.value().equals(item.asText())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private record AnswerSnapshot(
       UUID fieldId,
       String label,
       String fieldType,
       boolean required,
       int sortOrder,
-      Object value) {}
+      Object value,
+      List<OptionSnapshot> selectedOptions) {}
+
+  private record OptionSnapshot(String label, String value) {}
 }

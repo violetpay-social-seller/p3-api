@@ -23,6 +23,7 @@ import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
+import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
@@ -31,10 +32,13 @@ import io.point3.p3api.orderform.domain.type.FieldType;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.Instant;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -59,6 +63,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreService storeService;
+
+  @Autowired
+  private StoreSettingService storeSettingService;
 
   @Autowired
   private UserJpaRepository userJpaRepository;
@@ -104,10 +111,12 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         orderSummary.get("orderFormSubmissionId").asText());
     JsonNode answers = orderSummary.get("answers");
     assertTrue(answers.isArray());
-    assertEquals(1, answers.size());
+    assertEquals(2, answers.size());
     assertEquals("메뉴명", answers.get(0).get("label").asText());
     assertEquals("TEXT", answers.get(0).get("fieldType").asText());
     assertEquals("초코 케이크", answers.get(0).get("value").asText());
+    assertEquals("10호", answers.get(1).get("selectedOptions").get(0).get("label").asText());
+    assertEquals("38000", answers.get(1).get("selectedOptions").get(0).get("value").asText());
     JsonNode additionalItems = objectMapper.readTree(persisted.getAdditionalItems());
     assertEquals(1, additionalItems.size());
     assertEquals("토핑", additionalItems.get(0).get("label").asText());
@@ -162,7 +171,12 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     OrderFormResult form = orderFormService.create(new CreateOrderFormCommand(
         store.id(),
         "주문서",
-        List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0))));
+        List.of(
+            new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
+            new CreateOrderFormCommand.Field(
+                "사이즈", FieldType.SINGLE_SELECT, true, null, 1, "기본 정보", null, 0,
+                List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
+    savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
 
@@ -177,7 +191,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         inquiry.getId(),
         form.id(),
         List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-            form.fields().get(0).id(), textNode("초코 케이크"))),
+            form.fields().get(0).id(), textNode("초코 케이크")),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                form.fields().get(1).id(), textNode("38000"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -191,6 +207,19 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   private JsonNode textNode(String value) {
     return objectMapper.getNodeFactory().textNode(value);
+  }
+
+  private void savePickupSettings(UUID storeId) {
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        storeId,
+        0,
+        "주문 전 공지",
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+            .toList(),
+        List.of()));
   }
 
   private record Fixture(

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record OrderConfirmationSendRequest(
-    @NotNull UUID orderFormSubmissionId,
+    UUID orderFormSubmissionId,
     @NotBlank @Size(max = 150) String confirmationTitle,
     @NotBlank String summaryText,
     @Min(0) long amount,

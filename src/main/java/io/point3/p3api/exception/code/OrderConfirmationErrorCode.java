@@ -20,7 +20,12 @@ public enum OrderConfirmationErrorCode implements ErrorCode {
       "ORDER_CONFIRMATION_STATUS_FORBIDDEN_400",
       "Order confirmation status can not be changed",
       HttpStatus.BAD_REQUEST,
-      "/errors/order-confirmation/status-forbidden");
+      "/errors/order-confirmation/status-forbidden"),
+  ORDER_CONFIRMATION_AMOUNT_INVALID(
+      "ORDER_CONFIRMATION_AMOUNT_INVALID_400",
+      "Order confirmation amount is invalid",
+      HttpStatus.BAD_REQUEST,
+      "/errors/order-confirmation/amount-invalid");
 
   private final String code;
   private final String title;

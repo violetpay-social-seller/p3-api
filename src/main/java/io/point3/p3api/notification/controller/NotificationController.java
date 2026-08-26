@@ -48,4 +48,10 @@ public class NotificationController {
     return ApiResponse.ok(NotificationResponse.from(
         notificationQueryUseCase.read(notificationId, currentUser.userId())));
   }
+
+  @PatchMapping("/read-all")
+  public ApiResponse<Void> readAll(@Authenticated CurrentUser currentUser) {
+    notificationQueryUseCase.readAll(currentUser.userId());
+    return ApiResponse.ok();
+  }
 }

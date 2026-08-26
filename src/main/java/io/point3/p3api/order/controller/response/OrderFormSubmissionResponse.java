@@ -11,6 +11,7 @@ public record OrderFormSubmissionResponse(
     UUID submittedBy,
     String answers,
     String referenceAssets,
+    boolean cancellationRefundAgreed,
     Instant submittedAt) {
 
   public static OrderFormSubmissionResponse from(OrderFormSubmission submission) {
@@ -21,6 +22,7 @@ public record OrderFormSubmissionResponse(
         submission.getSubmittedBy(),
         submission.getAnswers(),
         submission.getReferenceAssets(),
+        submission.isCancellationRefundAgreed(),
         submission.getSubmittedAt());
   }
 }

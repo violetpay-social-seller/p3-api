@@ -41,10 +41,7 @@ public class StoreOperationSetting {
   private Instant updatedAt;
 
   private StoreOperationSetting(
-      UUID storeId,
-      int leadTimeMinutes,
-      String preOrderNotice,
-      int cancellationCutoffDays) {
+      UUID storeId, int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
     this.storeId = storeId;
     this.leadTimeMinutes = leadTimeMinutes;
     this.preOrderNotice = preOrderNotice;
@@ -52,21 +49,14 @@ public class StoreOperationSetting {
   }
 
   public static StoreOperationSetting create(
-      UUID storeId,
-      int leadTimeMinutes,
-      String preOrderNotice,
-      int cancellationCutoffDays) {
+      UUID storeId, int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
     Objects.requireNonNull(storeId, "storeId");
 
     return new StoreOperationSetting(
-        storeId,
-        leadTimeMinutes,
-        preOrderNotice,
-        cancellationCutoffDays);
+        storeId, leadTimeMinutes, preOrderNotice, cancellationCutoffDays);
   }
 
-  public void update(
-      int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
+  public void update(int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
     this.leadTimeMinutes = leadTimeMinutes;
     this.preOrderNotice = preOrderNotice;
     this.cancellationCutoffDays = cancellationCutoffDays;

@@ -14,6 +14,7 @@ public record CreateOrderFormDraftRequest(
     @NotNull LocalDate pickupDate,
     @NotNull LocalTime pickupTime,
     boolean noticeAgreed,
+    boolean cancellationRefundAgreed,
     @Valid @NotNull List<FormAnswer> formAnswers,
     @Valid @NotNull List<ReferenceAsset> referenceAssets) {
 

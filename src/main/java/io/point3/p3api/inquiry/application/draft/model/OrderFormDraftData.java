@@ -17,8 +17,28 @@ public record OrderFormDraftData(
     LocalDate pickupDate,
     LocalTime pickupTime,
     boolean noticeAgreed,
+    boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
     List<ReferenceAsset> referenceAssets) {
+
+  public OrderFormDraftData(
+      UUID storeId,
+      UUID orderFormTemplateId,
+      LocalDate pickupDate,
+      LocalTime pickupTime,
+      boolean noticeAgreed,
+      List<FormAnswer> formAnswers,
+      List<ReferenceAsset> referenceAssets) {
+    this(
+        storeId,
+        orderFormTemplateId,
+        pickupDate,
+        pickupTime,
+        noticeAgreed,
+        false,
+        formAnswers,
+        referenceAssets);
+  }
 
   public OrderFormDraftData {
     formAnswers = List.copyOf(formAnswers);
@@ -46,6 +66,7 @@ public record OrderFormDraftData(
         command.pickupDate(),
         command.pickupTime(),
         command.noticeAgreed(),
+        command.cancellationRefundAgreed(),
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
             .toList(),

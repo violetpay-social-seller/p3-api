@@ -13,9 +13,6 @@ public record StoreOrderSettingAvailabilityResult(
   public static StoreOrderSettingAvailabilityResult from(
       StoreSettingResult setting, List<StoreOrderSettingDateAvailabilityResult> dates) {
     return new StoreOrderSettingAvailabilityResult(
-        setting.storeId(),
-        setting.preOrderNotice(),
-        setting.cancellationCutoffDays(),
-        dates);
+        setting.storeId(), setting.preOrderNotice(), setting.cancellationCutoffDays(), dates);
   }
 }

@@ -43,26 +43,41 @@ public class OrderFormSubmission {
   @JdbcTypeCode(SqlTypes.JSON)
   private String referenceAssets;
 
+  @Column(name = "cancellation_refund_agreed", nullable = false)
+  private boolean cancellationRefundAgreed;
+
   @CreationTimestamp
   @Column(name = "submitted_at", nullable = false, updatable = false)
   private Instant submittedAt;
 
   private OrderFormSubmission(
-      UUID inquiryId, UUID templateId, UUID submittedBy, String answers, String referenceAssets) {
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      String answers,
+      String referenceAssets,
+      boolean cancellationRefundAgreed) {
     this.inquiryId = inquiryId;
     this.templateId = templateId;
     this.submittedBy = submittedBy;
     this.answers = answers;
     this.referenceAssets = referenceAssets;
+    this.cancellationRefundAgreed = cancellationRefundAgreed;
   }
 
   public static OrderFormSubmission create(
-      UUID inquiryId, UUID templateId, UUID submittedBy, String answers, String referenceAssets) {
+      UUID inquiryId,
+      UUID templateId,
+      UUID submittedBy,
+      String answers,
+      String referenceAssets,
+      boolean cancellationRefundAgreed) {
     Objects.requireNonNull(inquiryId, "inquiryId");
     Objects.requireNonNull(templateId, "templateId");
     Objects.requireNonNull(submittedBy, "submittedBy");
     Objects.requireNonNull(answers, "answers");
 
-    return new OrderFormSubmission(inquiryId, templateId, submittedBy, answers, referenceAssets);
+    return new OrderFormSubmission(
+        inquiryId, templateId, submittedBy, answers, referenceAssets, cancellationRefundAgreed);
   }
 }

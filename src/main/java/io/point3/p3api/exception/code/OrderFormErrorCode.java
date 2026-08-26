@@ -40,7 +40,12 @@ public enum OrderFormErrorCode implements ErrorCode {
       "ORDER_FORM_NOTICE_AGREEMENT_REQUIRED_400",
       "Order form notice agreement is required",
       HttpStatus.BAD_REQUEST,
-      "/errors/order-form/notice-agreement-required");
+      "/errors/order-form/notice-agreement-required"),
+  ORDER_FORM_PICKUP_UNAVAILABLE(
+      "ORDER_FORM_PICKUP_UNAVAILABLE_400",
+      "Requested pickup date and time is unavailable",
+      HttpStatus.BAD_REQUEST,
+      "/errors/order-form/pickup-unavailable");
 
   private final String code;
   private final String title;

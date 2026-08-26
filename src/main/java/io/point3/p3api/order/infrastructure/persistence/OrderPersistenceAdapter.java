@@ -68,14 +68,12 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
 
     Map<LocalDate, Long> counts =
         orderJpaRepository
-            .countByStoreIdAndPickupAtBetween(
-                storeId, fromInclusive, toExclusive, statuses)
+            .countByStoreIdAndPickupAtBetween(storeId, fromInclusive, toExclusive, statuses)
             .stream()
-            .collect(
-                java.util.stream.Collectors.groupingBy(
-                    count -> count.getPickupAt().atZone(KOREA_ZONE_ID).toLocalDate(),
-                    java.util.stream.Collectors.summingLong(
-                        OrderJpaRepository.PickupAtOrderCount::getOrderCount)));
+            .collect(java.util.stream.Collectors.groupingBy(
+                count -> count.getPickupAt().atZone(KOREA_ZONE_ID).toLocalDate(),
+                java.util.stream.Collectors.summingLong(
+                    OrderJpaRepository.PickupAtOrderCount::getOrderCount)));
 
     return counts.entrySet().stream()
         .map(entry -> new OrderPickupDateCount(entry.getKey(), entry.getValue()))

@@ -27,8 +27,8 @@ public class StoreOrderSettingAvailabilityCalculator {
     }
 
     List<LocalTime> pickupSlots = getPickupSlots(date, weeklySetting, earliestPickupAt);
-    int remainingOrderCapacity = (int) Math.max(
-        weeklySetting.dailyOrderCapacity() - occupiedCount, 0);
+    int remainingOrderCapacity =
+        (int) Math.max(weeklySetting.dailyOrderCapacity() - occupiedCount, 0);
 
     return StoreOrderSettingDateAvailabilityResult.from(
         date,
@@ -43,13 +43,7 @@ public class StoreOrderSettingAvailabilityCalculator {
   private StoreOrderSettingDateAvailabilityResult unavailable(
       LocalDate date, boolean holiday, int cancellationCutoffDays) {
     return StoreOrderSettingDateAvailabilityResult.from(
-        date,
-        false,
-        holiday,
-        List.of(),
-        0,
-        0,
-        cancellationCutoffAt(date, cancellationCutoffDays));
+        date, false, holiday, List.of(), 0, 0, cancellationCutoffAt(date, cancellationCutoffDays));
   }
 
   private List<LocalTime> getPickupSlots(

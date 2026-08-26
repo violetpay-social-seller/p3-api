@@ -19,6 +19,7 @@ import io.point3.p3api.chat.infrastructure.persistence.ChatTimelineItemJpaReposi
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.NotificationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
+import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatDetailQueryService;
 import io.point3.p3api.inquiry.application.command.ConsumeOrderFormDraftCommand;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormDraftCommand;
@@ -63,9 +64,12 @@ import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepos
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -86,6 +90,9 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreService storeService;
+
+  @Autowired
+  private StoreSettingService storeSettingService;
 
   @Autowired
   private OrderFormService orderFormService;
@@ -234,6 +241,26 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertEquals(fixture.buyer().getId(), consumed.submission().getSubmittedBy());
     assertEquals(fixture.form().id(), consumed.submission().getTemplateId());
     assertEquals(consumed.submission().getId(), persistedSubmissionEvent.getReferenceId());
+  }
+
+  @Test
+  @DisplayName("주문서 draft는 픽업 가능 시간 외 요청을 저장하지 않는다")
+  void rejectsDraftWithUnavailablePickupTime() {
+    Fixture fixture = prepareFixtureWithoutInquiry("workflow-draft-pickup");
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderFormDraftService.create(new CreateOrderFormDraftCommand(
+            fixture.store().id(),
+            fixture.form().id(),
+            LocalDate.parse("2026-09-01"),
+            LocalTime.parse("09:30"),
+            true,
+            List.of(new CreateOrderFormDraftCommand.FormAnswer(
+                fixture.form().fields().get(0).id(), textNode("바닐라 케이크"))),
+            List.of())));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
   }
 
   @Test
@@ -402,8 +429,22 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서 " + prefix,
         List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0))));
+    savePickupSettings(store.id());
 
     return new Fixture(seller, buyer, store, form, null, null);
+  }
+
+  private void savePickupSettings(UUID storeId) {
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        storeId,
+        0,
+        "주문 전 공지",
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+            .toList(),
+        List.of()));
   }
 
   private OrderFormSubmission submitOrderForm(

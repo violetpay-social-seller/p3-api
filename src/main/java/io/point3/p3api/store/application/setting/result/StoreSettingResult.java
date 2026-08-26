@@ -35,10 +35,7 @@ public record StoreSettingResult(
             .sorted(Comparator.comparing(StoreWeeklyPickupSetting::getDayOfWeek))
             .map(WeeklyPickupSetting::from)
             .toList(),
-        holidays.stream()
-            .map(StoreHoliday::getHolidayDate)
-            .sorted()
-            .toList());
+        holidays.stream().map(StoreHoliday::getHolidayDate).sorted().toList());
   }
 
   public record WeeklyPickupSetting(

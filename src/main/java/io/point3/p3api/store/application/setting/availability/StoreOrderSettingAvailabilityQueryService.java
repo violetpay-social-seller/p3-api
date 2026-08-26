@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -32,11 +31,7 @@ public class StoreOrderSettingAvailabilityQueryService
 
   private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
   private static final long MAX_QUERY_DAYS = 31;
-  private static final Set<OrderStatus> OCCUPYING_ORDER_STATUSES = Set.of(
-      OrderStatus.PAID,
-      OrderStatus.CANCEL_REQUESTED,
-      OrderStatus.REFUND_PROCESSING,
-      OrderStatus.PICKED_UP);
+  private static final Set<OrderStatus> OCCUPYING_ORDER_STATUSES = Set.of(OrderStatus.PAID);
 
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;
   private final OrderPersistencePort orderPersistencePort;
@@ -93,6 +88,7 @@ public class StoreOrderSettingAvailabilityQueryService
         .countByStoreIdAndPickupAtBetween(
             storeId, fromInclusive, toExclusive, OCCUPYING_ORDER_STATUSES)
         .stream()
-        .collect(Collectors.toMap(OrderPickupDateCount::pickupDate, OrderPickupDateCount::orderCount));
+        .collect(
+            Collectors.toMap(OrderPickupDateCount::pickupDate, OrderPickupDateCount::orderCount));
   }
 }

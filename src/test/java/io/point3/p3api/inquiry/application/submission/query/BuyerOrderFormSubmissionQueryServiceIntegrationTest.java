@@ -91,8 +91,8 @@ class BuyerOrderFormSubmissionQueryServiceIntegrationTest extends IntegrationTes
     User buyer = saveUser(UserRole.BUYER, "buyer");
     StoreResult store = createStore(seller.getId(), "P3 베이커리");
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
-    OrderFormSubmission submission = orderFormSubmissionJpaRepository.saveAndFlush(
-        OrderFormSubmission.create(
+    OrderFormSubmission submission =
+        orderFormSubmissionJpaRepository.saveAndFlush(OrderFormSubmission.create(
             inquiry.getId(),
             UUID.randomUUID(),
             buyer.getId(),

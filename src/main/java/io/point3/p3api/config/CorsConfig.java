@@ -16,7 +16,7 @@ public class CorsConfig {
       @Value("${p3.cors.allowed-origins:http://localhost:3000}") List<String> allowedOrigins) {
     CorsConfiguration configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(allowedOrigins);
-    configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     configuration.setAllowCredentials(false);
     configuration.setMaxAge(3600L);

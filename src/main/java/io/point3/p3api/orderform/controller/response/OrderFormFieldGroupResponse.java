@@ -1,11 +1,17 @@
 package io.point3.p3api.orderform.controller.response;
 
 import io.point3.p3api.orderform.application.result.OrderFormFieldGroupResult;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import java.util.List;
 import java.util.UUID;
 
 public record OrderFormFieldGroupResponse(
-    UUID id, String title, String description, int sortOrder, List<OrderFormFieldResponse> fields) {
+    UUID id,
+    OrderFormCategory category,
+    String title,
+    String description,
+    int sortOrder,
+    List<OrderFormFieldResponse> fields) {
 
   public OrderFormFieldGroupResponse {
     fields = List.copyOf(fields);
@@ -19,6 +25,7 @@ public record OrderFormFieldGroupResponse(
   public static OrderFormFieldGroupResponse from(OrderFormFieldGroupResult result) {
     return new OrderFormFieldGroupResponse(
         result.id(),
+        result.category(),
         result.title(),
         result.description(),
         result.sortOrder(),

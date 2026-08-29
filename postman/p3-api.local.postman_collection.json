@@ -922,7 +922,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Invalid order form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"sortOrder\": 1 }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Invalid order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"sortOrder\": 1 }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
@@ -939,8 +939,8 @@
                   "pm.environment.set('orderFormTemplateId', data.id);",
                   "for (const field of data.fields) {",
                   "  if (field.label === 'Menu') pm.environment.set('menuFieldId', field.id);",
-                  "  if (field.label === 'Quantity') pm.environment.set('quantityFieldId', field.id);",
-                  "  if (field.label === 'Event date') pm.environment.set('eventDateFieldId', field.id);",
+                  "  if (field.label === 'Size') pm.environment.set('sizeFieldId', field.id);",
+                  "  if (field.label === 'Lettering') pm.environment.set('letteringFieldId', field.id);",
                   "  if (field.label === 'Message') pm.environment.set('messageFieldId', field.id);",
                   "  if (field.label === 'Reference image') pm.environment.set('referenceImageFieldId', field.id);",
                   "}",
@@ -963,7 +963,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Local cake order form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"settings\": \"{\\\"maxLength\\\":80}\", \"sortOrder\": 0 },\n    { \"label\": \"Quantity\", \"fieldType\": \"NUMBER\", \"required\": true, \"settings\": \"{\\\"min\\\":1,\\\"max\\\":10}\", \"sortOrder\": 1 },\n    { \"label\": \"Event date\", \"fieldType\": \"DATE\", \"required\": true, \"settings\": null, \"sortOrder\": 2 },\n    { \"label\": \"Message\", \"fieldType\": \"TEXTAREA\", \"required\": false, \"settings\": null, \"sortOrder\": 3 },\n    { \"label\": \"Reference image\", \"fieldType\": \"IMAGE\", \"required\": false, \"settings\": \"{\\\"maxCount\\\":5}\", \"sortOrder\": 4 }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Local cake order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"settings\": \"{\\\"maxLength\\\":80}\", \"sortOrder\": 0 },\n        { \"label\": \"Size\", \"fieldType\": \"SINGLE_SELECT\", \"required\": true, \"price\": null, \"settings\": null, \"sortOrder\": 1, \"options\": [\n          { \"label\": \"10호\", \"value\": \"size-10\", \"price\": 38000, \"active\": true, \"sortOrder\": 0 }\n        ] },\n        { \"label\": \"Lettering\", \"fieldType\": \"SINGLE_SELECT_WITH_TEXT\", \"required\": false, \"price\": null, \"settings\": null, \"sortOrder\": 2, \"options\": [\n          { \"label\": \"문구 추가\", \"value\": \"lettering\", \"price\": 3000, \"active\": true, \"sortOrder\": 0 }\n        ] }\n      ]\n    },\n    {\n      \"category\": \"OTHER_REQUEST\",\n      \"title\": \"기타 요청사항\",\n      \"sortOrder\": 5,\n      \"fields\": [\n        { \"label\": \"Message\", \"fieldType\": \"TEXTAREA\", \"required\": false, \"price\": null, \"settings\": null, \"sortOrder\": 0 },\n        { \"label\": \"Reference image\", \"fieldType\": \"IMAGE\", \"required\": false, \"price\": null, \"settings\": \"{\\\"maxCount\\\":5}\", \"sortOrder\": 1 }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
@@ -996,7 +996,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"fields\": [\n    { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"sortOrder\": 0 }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"sortOrder\": 0 }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
@@ -1220,7 +1220,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{quantityFieldId}}\", \"value\": 2 },\n    { \"fieldId\": \"{{eventDateFieldId}}\", \"value\": \"{{eventDate}}\" }\n  ],\n  \"referenceAssets\": []\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ],\n  \"referenceAssets\": []\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }
@@ -1250,7 +1250,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{quantityFieldId}}\", \"value\": 2 },\n    { \"fieldId\": \"{{eventDateFieldId}}\", \"value\": \"{{eventDate}}\" },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"referenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" },\n    { \"fieldId\": \"{{letteringFieldId}}\", \"value\": { \"selectedValue\": \"lettering\", \"text\": \"Happy birthday\" } },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"referenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }

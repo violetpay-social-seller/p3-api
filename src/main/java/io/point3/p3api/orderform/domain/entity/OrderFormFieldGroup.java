@@ -1,7 +1,10 @@
 package io.point3.p3api.orderform.domain.entity;
 
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +34,10 @@ public class OrderFormFieldGroup {
   @Column(name = "template_id", nullable = false)
   private UUID templateId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "category", nullable = false, length = 30)
+  private OrderFormCategory category;
+
   @Column(name = "title", nullable = false, length = 100)
   private String title;
 
@@ -40,22 +47,33 @@ public class OrderFormFieldGroup {
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
-  private OrderFormFieldGroup(UUID templateId, String title, String description, int sortOrder) {
+  private OrderFormFieldGroup(
+      UUID templateId,
+      OrderFormCategory category,
+      String title,
+      String description,
+      int sortOrder) {
     this.templateId = templateId;
+    this.category = category;
     this.title = title;
     this.description = description;
     this.sortOrder = sortOrder;
   }
 
   public static OrderFormFieldGroup create(
-      UUID templateId, String title, String description, int sortOrder) {
+      UUID templateId,
+      OrderFormCategory category,
+      String title,
+      String description,
+      int sortOrder) {
     Objects.requireNonNull(templateId, "templateId");
+    Objects.requireNonNull(category, "category");
     Objects.requireNonNull(title, "title");
 
     if (sortOrder < 0) {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormFieldGroup(templateId, title, description, sortOrder);
+    return new OrderFormFieldGroup(templateId, category, title, description, sortOrder);
   }
 }

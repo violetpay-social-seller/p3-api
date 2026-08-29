@@ -11,6 +11,7 @@ import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.application.update.UpdateOrderFormCommand;
 import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -57,7 +58,18 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
         () -> orderFormService.create(new CreateOrderFormCommand(
             store.id(),
             "주문서",
-            List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 1)))));
+            List.of(new CreateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                null,
+                1,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
   }
@@ -73,7 +85,17 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
             store.id(),
             "주문서",
             List.of(new CreateOrderFormCommand.Field(
-                "픽업 희망일", FieldType.DATE, true, "\"not-object\"", 0)))));
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                "\"not-object\"",
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
   }
@@ -89,8 +111,30 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
         created.id(),
         "수정 주문서",
         List.of(
-            new UpdateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
-            new UpdateOrderFormCommand.Field("요청사항", FieldType.TEXTAREA, false, null, 1))));
+            new UpdateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of()),
+            new UpdateOrderFormCommand.Field(
+                "요청사항",
+                FieldType.TEXTAREA,
+                false,
+                null,
+                null,
+                1,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of()))));
     OrderFormResult inactive = orderFormService.inactive(store.id(), created.id());
     BaseException exception =
         assertThrows(BaseException.class, () -> orderFormService.getActiveTemplate(store.id()));
@@ -114,20 +158,24 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 FieldType.SINGLE_SELECT,
                 true,
                 null,
+                null,
                 0,
-                "케이크",
-                "케이크 구성",
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
                 0,
-                List.of(new OrderFormFieldOptionCommand("1호", "size-1", true, 0))),
+                List.of(new OrderFormFieldOptionCommand("1호", "size-1", 10000L, true, 0))),
             new CreateOrderFormCommand.Field(
                 "요청사항",
                 FieldType.TEXTAREA,
                 false,
+                null,
                 "{\"maxLength\":100}",
                 0,
-                "추가 요청",
+                OrderFormCategory.OTHER_REQUEST,
+                OrderFormCategory.OTHER_REQUEST.getTitle(),
                 null,
-                1,
+                5,
                 List.of()))));
 
     OrderFormResult updated = orderFormService.update(new UpdateOrderFormCommand(
@@ -138,19 +186,24 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
             "요청사항",
             FieldType.TEXTAREA,
             false,
+            null,
             "{\"placeholder\":\"입력\"}",
             0,
-            "추가 요청",
+            OrderFormCategory.OTHER_REQUEST,
+            OrderFormCategory.OTHER_REQUEST.getTitle(),
             null,
-            0,
+            5,
             List.of()))));
 
     assertEquals(2, created.groups().size());
-    assertEquals("케이크", created.groups().get(0).title());
+    assertEquals(OrderFormCategory.DESIGN, created.groups().get(0).category());
+    assertEquals("디자인", created.groups().get(0).title());
     assertEquals(
         "size-1", created.groups().get(0).fields().get(0).options().get(0).value());
+    assertEquals(10000, created.groups().get(0).fields().get(0).options().get(0).price());
     assertEquals(1, updated.groups().size());
-    assertEquals("추가 요청", updated.groups().get(0).title());
+    assertEquals(OrderFormCategory.OTHER_REQUEST, updated.groups().get(0).category());
+    assertEquals("기타 요청사항", updated.groups().get(0).title());
   }
 
   @Test
@@ -164,17 +217,125 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
             store.id(),
             "주문서",
             List.of(new CreateOrderFormCommand.Field(
-                "참고 이미지", FieldType.IMAGE, false, "{\"maxCount\":6}", 0)))));
+                "참고 이미지",
+                FieldType.IMAGE,
+                false,
+                null,
+                "{\"maxCount\":6}",
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
     BaseException optionException = assertThrows(
         BaseException.class,
         () -> orderFormService.create(new CreateOrderFormCommand(
             store.id(),
             "주문서",
-            List.of(
-                new CreateOrderFormCommand.Field("크기", FieldType.SINGLE_SELECT, true, null, 0)))));
+            List.of(new CreateOrderFormCommand.Field(
+                "크기",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, imageException.getErrorCode());
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, optionException.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("고정 카테고리와 필드/옵션 가격 정책을 벗어나면 주문서 정의를 거부한다")
+  void rejectsInvalidCategoryAndPricePolicy() {
+    StoreResult store = createStore();
+
+    BaseException categoryException = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(new CreateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                "기본 정보",
+                null,
+                0,
+                List.of())))));
+    BaseException missingTextPrice = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(new CreateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                null,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
+    BaseException textareaPrice = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(new CreateOrderFormCommand.Field(
+                "요청사항",
+                FieldType.TEXTAREA,
+                false,
+                1000L,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of())))));
+    BaseException tooManyOptions = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(new CreateOrderFormCommand(
+            store.id(),
+            "주문서",
+            List.of(new CreateOrderFormCommand.Field(
+                "크기",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of(
+                    new OrderFormFieldOptionCommand("1호", "size-1", 0L, true, 0),
+                    new OrderFormFieldOptionCommand("2호", "size-2", 0L, true, 1),
+                    new OrderFormFieldOptionCommand("3호", "size-3", 0L, true, 2),
+                    new OrderFormFieldOptionCommand("4호", "size-4", 0L, true, 3),
+                    new OrderFormFieldOptionCommand("5호", "size-5", 0L, true, 4),
+                    new OrderFormFieldOptionCommand("6호", "size-6", 0L, true, 5)))))));
+
+    assertEquals(
+        OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, categoryException.getErrorCode());
+    assertEquals(
+        OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, missingTextPrice.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, textareaPrice.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, tooManyOptions.getErrorCode());
   }
 
   private StoreResult createStore() {
@@ -202,6 +363,17 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
     return new CreateOrderFormCommand(
         storeId,
         name,
-        List.of(new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0)));
+        List.of(new CreateOrderFormCommand.Field(
+            "메뉴명",
+            FieldType.TEXT,
+            true,
+            0L,
+            null,
+            0,
+            OrderFormCategory.DESIGN,
+            OrderFormCategory.DESIGN.getTitle(),
+            null,
+            0,
+            List.of())));
   }
 }

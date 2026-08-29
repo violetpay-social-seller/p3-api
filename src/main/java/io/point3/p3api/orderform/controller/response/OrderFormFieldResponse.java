@@ -11,6 +11,7 @@ public record OrderFormFieldResponse(
     String label,
     FieldType fieldType,
     boolean required,
+    Long price,
     String settings,
     int sortOrder,
     List<OrderFormFieldOptionResponse> options) {
@@ -31,6 +32,7 @@ public record OrderFormFieldResponse(
         result.label(),
         result.fieldType(),
         result.required(),
+        result.price(),
         result.settings(),
         result.sortOrder(),
         result.options().stream().map(OrderFormFieldOptionResponse::from).toList());

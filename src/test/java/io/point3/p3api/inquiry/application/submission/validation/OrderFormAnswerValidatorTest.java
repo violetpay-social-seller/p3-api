@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
+import io.point3.p3api.orderform.application.result.OrderFormFieldOptionResult;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
 import java.util.List;
@@ -24,27 +25,31 @@ class OrderFormAnswerValidatorTest {
   @DisplayName("지원 필드 타입별 유효한 답변을 허용한다")
   void acceptsValidValuesForSupportedFieldTypes() {
     UUID textFieldId = UUID.randomUUID();
-    UUID numberFieldId = UUID.randomUUID();
-    UUID dateFieldId = UUID.randomUUID();
-    UUID timeFieldId = UUID.randomUUID();
-    UUID dateTimeFieldId = UUID.randomUUID();
+    UUID textareaFieldId = UUID.randomUUID();
     UUID imageFieldId = UUID.randomUUID();
+    UUID singleSelectFieldId = UUID.randomUUID();
+    UUID singleSelectWithTextFieldId = UUID.randomUUID();
 
     validator.validate(
         List.of(
             field(textFieldId, FieldType.TEXT, true, 0),
-            field(numberFieldId, FieldType.NUMBER, true, 1),
-            field(dateFieldId, FieldType.DATE, true, 2),
-            field(timeFieldId, FieldType.TIME, true, 3),
-            field(dateTimeFieldId, FieldType.DATETIME, true, 4),
-            field(imageFieldId, FieldType.IMAGE, true, 5)),
+            field(textareaFieldId, FieldType.TEXTAREA, true, 1),
+            field(imageFieldId, FieldType.IMAGE, true, 2),
+            field(singleSelectFieldId, FieldType.SINGLE_SELECT, true, 3, List.of(option("size-1"))),
+            field(
+                singleSelectWithTextFieldId,
+                FieldType.SINGLE_SELECT_WITH_TEXT,
+                true,
+                4,
+                List.of(option("lettering")))),
         List.of(
             answer(textFieldId, json.textNode("초코 케이크")),
-            answer(numberFieldId, json.numberNode(38000)),
-            answer(dateFieldId, json.textNode("2026-08-30")),
-            answer(timeFieldId, json.textNode("13:30")),
-            answer(dateTimeFieldId, json.textNode("2026-08-30T13:30:00+09:00")),
-            answer(imageFieldId, json.arrayNode().add(UUID.randomUUID().toString()))));
+            answer(textareaFieldId, json.textNode("문구는 작게")),
+            answer(imageFieldId, json.arrayNode().add(UUID.randomUUID().toString())),
+            answer(singleSelectFieldId, json.textNode("size-1")),
+            answer(
+                singleSelectWithTextFieldId,
+                json.objectNode().put("selectedValue", "lettering").put("text", "생일 축하"))));
   }
 
   @Test
@@ -81,8 +86,27 @@ class OrderFormAnswerValidatorTest {
     BaseException exception = assertThrows(
         BaseException.class,
         () -> validator.validate(
-            List.of(field(fieldId, FieldType.NUMBER, false, 0)),
-            List.of(answer(fieldId, json.textNode("38000")))));
+            List.of(field(fieldId, FieldType.TEXT, false, 0)),
+            List.of(answer(fieldId, json.numberNode(38000)))));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("단일 선택+텍스트 답변은 selectedValue가 있어야 한다")
+  void rejectsSingleSelectWithTextWithoutSelectedValue() {
+    UUID fieldId = UUID.randomUUID();
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> validator.validate(
+            List.of(field(
+                fieldId,
+                FieldType.SINGLE_SELECT_WITH_TEXT,
+                false,
+                0,
+                List.of(option("lettering")))),
+            List.of(answer(fieldId, json.objectNode().put("text", "Happy birthday")))));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
   }
@@ -127,8 +151,29 @@ class OrderFormAnswerValidatorTest {
 
   private OrderFormFieldResult field(
       UUID fieldId, FieldType fieldType, boolean required, int sortOrder) {
+    return field(fieldId, fieldType, required, sortOrder, List.of());
+  }
+
+  private OrderFormFieldResult field(
+      UUID fieldId,
+      FieldType fieldType,
+      boolean required,
+      int sortOrder,
+      List<OrderFormFieldOptionResult> options) {
     return new OrderFormFieldResult(
-        fieldId, UUID.randomUUID(), "필드 " + sortOrder, fieldType, required, null, sortOrder);
+        fieldId,
+        UUID.randomUUID(),
+        "필드 " + sortOrder,
+        fieldType,
+        required,
+        fieldType == FieldType.TEXT ? 0L : null,
+        null,
+        sortOrder,
+        options);
+  }
+
+  private OrderFormFieldOptionResult option(String value) {
+    return new OrderFormFieldOptionResult(UUID.randomUUID(), value, value, 0, true, 0);
   }
 
   private CreateOrderFormSubmissionCommand.FormAnswer answer(UUID fieldId, JsonNode value) {

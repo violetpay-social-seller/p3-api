@@ -37,31 +37,39 @@ public class OrderFormFieldOption {
   @Column(name = "value", nullable = false, length = 100)
   private String value;
 
+  @Column(name = "price", nullable = false)
+  private long price;
+
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
   @Column(name = "active", nullable = false)
   private boolean active;
 
-  private OrderFormFieldOption(UUID fieldId, String label, String value, int sortOrder) {
+  private OrderFormFieldOption(
+      UUID fieldId, String label, String value, long price, int sortOrder) {
     this.fieldId = fieldId;
     this.label = label;
     this.value = value;
+    this.price = price;
     this.sortOrder = sortOrder;
     this.active = true;
   }
 
   public static OrderFormFieldOption create(
-      UUID fieldId, String label, String value, int sortOrder) {
+      UUID fieldId, String label, String value, long price, int sortOrder) {
     Objects.requireNonNull(fieldId, "fieldId");
     Objects.requireNonNull(label, "label");
     Objects.requireNonNull(value, "value");
 
+    if (price < 0) {
+      throw new IllegalArgumentException("price must be greater than or equal to 0");
+    }
     if (sortOrder < 0) {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormFieldOption(fieldId, label, value, sortOrder);
+    return new OrderFormFieldOption(fieldId, label, value, price, sortOrder);
   }
 
   public void inactive() {

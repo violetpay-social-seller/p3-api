@@ -18,7 +18,7 @@ import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import io.point3.p3api.orderform.domain.type.FieldType;
-import java.math.BigDecimal;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -82,10 +82,11 @@ public class OrderFormService
     Map<Integer, List<OrderFormFieldCommand>> byGroup = fields.stream()
         .map(field -> (OrderFormFieldCommand) field)
         .collect(Collectors.groupingBy(this::groupSortOrder));
-    for (int groupOrder = 0; groupOrder < byGroup.size(); groupOrder++) {
+    for (int groupOrder : byGroup.keySet().stream().sorted().toList()) {
       List<OrderFormFieldCommand> groupFields = byGroup.get(groupOrder);
       OrderFormFieldGroup group = orderFormPersistencePort.saveGroup(OrderFormFieldGroup.create(
           templateId,
+          groupCategory(groupFields.getFirst()),
           groupTitle(groupFields.getFirst()),
           groupDescription(groupFields.getFirst()),
           groupOrder));
@@ -95,6 +96,7 @@ public class OrderFormService
               field.label(),
               field.fieldType(),
               field.required(),
+              field.price(),
               normalizeSettings(field.fieldType(), field.settings()),
               field.sortOrder()))
           .toList());
@@ -108,8 +110,8 @@ public class OrderFormService
   }
 
   private OrderFormFieldOption createOption(UUID fieldId, OrderFormFieldOptionCommand option) {
-    OrderFormFieldOption result =
-        OrderFormFieldOption.create(fieldId, option.label(), option.value(), option.sortOrder());
+    OrderFormFieldOption result = OrderFormFieldOption.create(
+        fieldId, option.label(), option.value(), option.price(), option.sortOrder());
     if (!option.active()) {
       result.inactive();
     }
@@ -141,31 +143,57 @@ public class OrderFormService
     Map<Integer, List<OrderFormFieldCommand>> groups = fields.stream()
         .map(field -> (OrderFormFieldCommand) field)
         .collect(Collectors.groupingBy(this::groupSortOrder));
-    for (int groupOrder = 0; groupOrder < groups.size(); groupOrder++) {
+    for (int groupOrder : groups.keySet().stream().sorted().toList()) {
       List<OrderFormFieldCommand> groupFields = groups.get(groupOrder);
       if (groupFields == null || groupFields.isEmpty()) {
         throw invalid();
       }
       OrderFormFieldCommand first = groupFields.getFirst();
-      if (groupTitle(first) == null || groupTitle(first).isBlank()) {
-        throw invalid();
-      }
+      validateGroup(first, groupOrder);
       for (int index = 0; index < groupFields.size(); index++) {
         OrderFormFieldCommand field = groupFields.get(index);
         if (field.sortOrder() != index
+            || groupCategory(first) != groupCategory(field)
             || !groupTitle(first).equals(groupTitle(field))
             || !java.util.Objects.equals(groupDescription(first), groupDescription(field))) {
           throw invalid();
         }
+        validatePrice(field.fieldType(), field.price());
         validateOptions(field.fieldType(), field.options());
         normalizeSettings(field.fieldType(), field.settings());
       }
     }
   }
 
+  private void validateGroup(OrderFormFieldCommand field, int groupOrder) {
+    OrderFormCategory category = groupCategory(field);
+    if (category == null
+        || category.getSortOrder() != groupOrder
+        || groupTitle(field) == null
+        || !category.getTitle().equals(groupTitle(field))) {
+      throw invalid();
+    }
+  }
+
+  private void validatePrice(FieldType type, Long price) {
+    if (type == FieldType.TEXT) {
+      if (price == null || price < 0) {
+        throw invalid();
+      }
+      return;
+    }
+    if (price != null) {
+      throw invalid();
+    }
+  }
+
   private void validateOptions(FieldType type, List<OrderFormFieldOptionCommand> options) {
-    boolean selectable = type == FieldType.SINGLE_SELECT || type == FieldType.MULTI_SELECT;
+    boolean selectable =
+        type == FieldType.SINGLE_SELECT || type == FieldType.SINGLE_SELECT_WITH_TEXT;
     if (selectable != !options.isEmpty()) {
+      throw invalid();
+    }
+    if (options.size() > 5) {
       throw invalid();
     }
     for (int index = 0; index < options.size(); index++) {
@@ -174,7 +202,9 @@ public class OrderFormService
           || option.label() == null
           || option.label().isBlank()
           || option.value() == null
-          || option.value().isBlank()) {
+          || option.value().isBlank()
+          || option.price() == null
+          || option.price() < 0) {
         throw invalid();
       }
     }
@@ -195,36 +225,11 @@ public class OrderFormService
           copyText(node, accepted, "placeholder");
           copyPositiveInteger(node, accepted, "maxLength");
         }
-        case NUMBER -> copyNumberSettings(node, accepted);
-        case DATE, TIME, DATETIME -> copyDateSettings(node, accepted);
         case IMAGE -> copyImageSettings(node, accepted);
-        case SINGLE_SELECT, MULTI_SELECT -> {}
+        case SINGLE_SELECT, SINGLE_SELECT_WITH_TEXT -> {}
       }
       return accepted.isEmpty() ? null : objectMapper.writeValueAsString(accepted);
     } catch (JsonProcessingException exception) {
-      throw invalid();
-    }
-  }
-
-  private void copyNumberSettings(JsonNode node, ObjectNode accepted) {
-    copyNumber(node, accepted, "min");
-    copyNumber(node, accepted, "max");
-    copyPositiveNumber(node, accepted, "step");
-    if (accepted.has("min")
-        && accepted.has("max")
-        && new BigDecimal(accepted.get("min").asText())
-                .compareTo(new BigDecimal(accepted.get("max").asText()))
-            > 0) {
-      throw invalid();
-    }
-  }
-
-  private void copyDateSettings(JsonNode node, ObjectNode accepted) {
-    copyText(node, accepted, "min");
-    copyText(node, accepted, "max");
-    if (accepted.has("min")
-        && accepted.has("max")
-        && accepted.get("min").asText().compareTo(accepted.get("max").asText()) > 0) {
       throw invalid();
     }
   }
@@ -259,23 +264,6 @@ public class OrderFormService
     }
   }
 
-  private void copyNumber(JsonNode source, ObjectNode target, String name) {
-    JsonNode value = source.get(name);
-    if (value != null) {
-      if (!value.isNumber()) {
-        throw invalid();
-      }
-      target.set(name, value);
-    }
-  }
-
-  private void copyPositiveNumber(JsonNode source, ObjectNode target, String name) {
-    copyNumber(source, target, name);
-    if (target.has(name) && target.get(name).decimalValue().signum() <= 0) {
-      throw invalid();
-    }
-  }
-
   private void copyPositiveInteger(JsonNode source, ObjectNode target, String name) {
     JsonNode value = source.get(name);
     if (value != null) {
@@ -290,6 +278,12 @@ public class OrderFormService
     return field instanceof CreateOrderFormCommand.Field create
         ? create.groupSortOrder()
         : ((UpdateOrderFormCommand.Field) field).groupSortOrder();
+  }
+
+  private OrderFormCategory groupCategory(OrderFormFieldCommand field) {
+    return field instanceof CreateOrderFormCommand.Field create
+        ? create.groupCategory()
+        : ((UpdateOrderFormCommand.Field) field).groupCategory();
   }
 
   private String groupTitle(OrderFormFieldCommand field) {

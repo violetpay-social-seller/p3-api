@@ -46,6 +46,9 @@ public class OrderFormField {
   @Column(name = "required", nullable = false)
   private boolean required;
 
+  @Column(name = "price")
+  private Long price;
+
   @Column(name = "settings", columnDefinition = "jsonb")
   @JdbcTypeCode(SqlTypes.JSON)
   private String settings;
@@ -58,12 +61,14 @@ public class OrderFormField {
       String label,
       FieldType fieldType,
       boolean required,
+      Long price,
       String settings,
       int sortOrder) {
     this.groupId = groupId;
     this.label = label;
     this.fieldType = fieldType;
     this.required = required;
+    this.price = price;
     this.settings = settings;
     this.sortOrder = sortOrder;
   }
@@ -73,6 +78,7 @@ public class OrderFormField {
       String label,
       FieldType fieldType,
       boolean required,
+      Long price,
       String settings,
       int sortOrder) {
     Objects.requireNonNull(groupId, "groupId");
@@ -83,6 +89,6 @@ public class OrderFormField {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormField(groupId, label, fieldType, required, settings, sortOrder);
+    return new OrderFormField(groupId, label, fieldType, required, price, settings, sortOrder);
   }
 }

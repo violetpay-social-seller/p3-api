@@ -35,6 +35,7 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.StoreSettingService;
 import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.DayOfWeek;
@@ -321,8 +322,13 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private User saveUser(UserRole role, String prefix) {
-    return userJpaRepository.saveAndFlush(
-        User.create(UUID.randomUUID().toString(), uniqueEmail(prefix), prefix, role));
+    return userJpaRepository.saveAndFlush(User.create(
+        UUID.randomUUID().toString(),
+        uniqueEmail(prefix),
+        prefix,
+        role,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private Asset saveAsset(UUID uploadedBy, String filename) {

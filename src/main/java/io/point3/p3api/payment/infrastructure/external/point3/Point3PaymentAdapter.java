@@ -74,12 +74,15 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   }
 
   @Override
-  public Point3RefundResult refund(String sessionId, long amount, String reason, String idempotencyKey) {
+  public Point3RefundResult refund(
+      String sessionId, long amount, String reason, String idempotencyKey) {
     RefundRequest refund = new RefundRequest(amount, 0, amount * 10 / 110, reason);
-    HttpResponse<String> response = send(post("/refunds/v1/" + sessionId)
-        .header("Idempotency-Key", idempotencyKey)
-        .POST(body(refund))
-        .build(), "POINT3_REFUND");
+    HttpResponse<String> response = send(
+        post("/refunds/v1/" + sessionId)
+            .header("Idempotency-Key", idempotencyKey)
+            .POST(body(refund))
+            .build(),
+        "POINT3_REFUND");
     if (response.statusCode() != 200) {
       return new Point3RefundResult(false, "POINT3_REFUND_" + response.statusCode());
     }
@@ -129,7 +132,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
   private record CaptureOutcome(String code) {}
 
-  private record RefundRequest(long refundAmount, long refundTaxFreeAmount, long refundVat, String reason) {}
+  private record RefundRequest(
+      long refundAmount, long refundTaxFreeAmount, long refundVat, String reason) {}
 
   private record RefundResponse(String status) {}
 }

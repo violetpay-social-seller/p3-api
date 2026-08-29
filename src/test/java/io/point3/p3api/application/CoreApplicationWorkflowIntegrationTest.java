@@ -55,8 +55,8 @@ import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
-import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
+import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
@@ -68,6 +68,7 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.StoreSettingService;
 import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.DayOfWeek;
@@ -438,7 +439,14 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         List.of(
             new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
             new CreateOrderFormCommand.Field(
-                "사이즈", FieldType.SINGLE_SELECT, true, null, 1, "기본 정보", null, 0,
+                "사이즈",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                1,
+                "기본 정보",
+                null,
+                0,
                 List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
     savePickupSettings(store.id());
 
@@ -491,8 +499,13 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   }
 
   private User saveUser(UserRole role, String prefix) {
-    return userJpaRepository.saveAndFlush(
-        User.create(UUID.randomUUID().toString(), uniqueEmail(prefix), prefix, role));
+    return userJpaRepository.saveAndFlush(User.create(
+        UUID.randomUUID().toString(),
+        uniqueEmail(prefix),
+        prefix,
+        role,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private JsonNode textNode(String value) {

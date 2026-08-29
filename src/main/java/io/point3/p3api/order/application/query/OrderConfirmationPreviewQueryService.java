@@ -31,17 +31,19 @@ public class OrderConfirmationPreviewQueryService {
 
   public OrderConfirmationPreview getPreview(UUID inquiryId, UUID storeId) {
     inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-    OrderFormSubmission submission = submissionPersistencePort.findAllByInquiryId(inquiryId).stream()
-        .findFirst()
-        .orElseThrow(() ->
-            new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
+    OrderFormSubmission submission =
+        submissionPersistencePort.findAllByInquiryId(inquiryId).stream()
+            .findFirst()
+            .orElseThrow(() -> new BaseException(
+                OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
     long baseAmount = 0;
     boolean inquiryRequired = false;
     try {
       for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
         for (JsonNode option : answer.path("selectedOptions")) {
           try {
-            baseAmount = Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
+            baseAmount =
+                Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
           } catch (NumberFormatException e) {
             inquiryRequired = true;
           }
@@ -52,8 +54,14 @@ public class OrderConfirmationPreviewQueryService {
     }
     return new OrderConfirmationPreview(
         submission.getId(),
-        orderFormQueryUseCase.getSellerTemplate(storeId, submission.getTemplateId()).name(),
-        submission.getPickupDate().atTime(submission.getPickupTime()).atZone(KOREA_ZONE_ID).toInstant(),
+        orderFormQueryUseCase
+            .getSellerTemplate(storeId, submission.getTemplateId())
+            .name(),
+        submission
+            .getPickupDate()
+            .atTime(submission.getPickupTime())
+            .atZone(KOREA_ZONE_ID)
+            .toInstant(),
         submission.getAnswers(),
         baseAmount,
         inquiryRequired);

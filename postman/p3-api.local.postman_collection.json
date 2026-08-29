@@ -153,7 +153,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"seller\"\n}"
+              "raw": "{\n  \"role\": \"seller\",\n  \"phoneNumber\": \"010-1234-5678\"\n}"
             },
             "url": "{{baseUrl}}/auth/me/registration"
           }
@@ -379,7 +379,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"buyer\"\n}"
+              "raw": "{\n  \"role\": \"buyer\",\n  \"phoneNumber\": \"010-9876-5432\"\n}"
             },
             "url": "{{baseUrl}}/auth/me/registration"
           }

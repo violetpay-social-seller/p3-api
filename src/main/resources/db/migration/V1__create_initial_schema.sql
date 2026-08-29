@@ -4,13 +4,21 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cognito_sub VARCHAR(128) NOT NULL,
     email VARCHAR(320) NOT NULL,
+    phone_number VARCHAR(30),
+    signup_provider VARCHAR(30),
     payer_id VARCHAR(128),
     name VARCHAR(100) NOT NULL,
     role VARCHAR(30) NOT NULL,
     status VARCHAR(30) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
-    CONSTRAINT uk_users_cognito_sub UNIQUE (cognito_sub)
+    CONSTRAINT uk_users_cognito_sub UNIQUE (cognito_sub),
+    CONSTRAINT ck_users_signup_provider CHECK (
+        signup_provider IS NULL OR signup_provider IN ('GOOGLE', 'KAKAO')
+    ),
+    CONSTRAINT ck_users_signup_contact CHECK (
+        role = 'OPERATOR' OR (phone_number IS NOT NULL AND signup_provider IS NOT NULL)
+    )
 );
 
 CREATE UNIQUE INDEX uk_users_email_lower ON users (lower(email));

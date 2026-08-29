@@ -44,8 +44,6 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
   @Override
   public OrderFormSubmission create(CreateOrderFormSubmissionCommand command) {
     OrderFormResult activeForm = orderFormQueryUseCase.getActiveTemplate(command.storeId());
-    boolean isUpdate =
-        !submissionPersistencePort.findAllByInquiryId(command.inquiryId()).isEmpty();
 
     validateOrderFormSubmissionRequirements(command, activeForm);
 
@@ -74,7 +72,7 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
     orderConfirmationPersistencePort
         .findLatestByInquiryIdAndStatus(command.inquiryId(), OrderConfirmationStatus.SENT)
         .ifPresent(confirmation -> confirmation.replace());
-    notifySeller(command, isUpdate);
+    notifySeller(command, command.update());
     return savedSubmission;
   }
 

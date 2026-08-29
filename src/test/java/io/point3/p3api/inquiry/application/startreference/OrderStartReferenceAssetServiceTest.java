@@ -45,8 +45,8 @@ class OrderStartReferenceAssetServiceTest {
   }
 
   @Test
-  @DisplayName("빈 주문 시작 참조 이미지는 기존 값을 유지한다")
-  void keepsExistingAssetsWhenEmpty() {
+  @DisplayName("주문 시작 참조 이미지가 요청에 없으면 기존 값을 유지한다")
+  void keepsExistingAssetsWhenMissing() {
     UUID inquiryId = UUID.randomUUID();
     UUID buyerId = UUID.randomUUID();
     UUID assetId = UUID.randomUUID();
@@ -56,9 +56,26 @@ class OrderStartReferenceAssetServiceTest {
         buyerId,
         List.of(new OrderFormDraftData.ReferenceAsset(
             assetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
-    service.replaceIfPresent(inquiryId, buyerId, List.of());
+    service.replaceIfPresent(inquiryId, buyerId, null);
 
     assertEquals(assetId, service.findAllByInquiryId(inquiryId).get(0).assetId());
+  }
+
+  @Test
+  @DisplayName("주문 시작 참조 이미지는 문의 단위로 비울 수 있다")
+  void clearsStartReferenceAssets() {
+    UUID inquiryId = UUID.randomUUID();
+    UUID buyerId = UUID.randomUUID();
+    UUID assetId = UUID.randomUUID();
+
+    service.replaceIfPresent(
+        inquiryId,
+        buyerId,
+        List.of(new OrderFormDraftData.ReferenceAsset(
+            assetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
+    service.clear(inquiryId);
+
+    assertEquals(0, service.findAllByInquiryId(inquiryId).size());
   }
 
   @Test

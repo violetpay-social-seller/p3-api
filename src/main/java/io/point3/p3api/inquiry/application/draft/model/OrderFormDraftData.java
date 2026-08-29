@@ -42,8 +42,7 @@ public record OrderFormDraftData(
 
   public OrderFormDraftData {
     formAnswers = List.copyOf(formAnswers);
-    startReferenceAssets =
-        startReferenceAssets == null ? List.of() : List.copyOf(startReferenceAssets);
+    startReferenceAssets = startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -53,7 +52,11 @@ public record OrderFormDraftData(
 
   @Override
   public List<ReferenceAsset> startReferenceAssets() {
-    return List.copyOf(startReferenceAssets);
+    return startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
+  }
+
+  public boolean hasStartReferenceAssets() {
+    return startReferenceAssets != null;
   }
 
   public record FormAnswer(UUID fieldId, JsonNode value) {}
@@ -71,8 +74,11 @@ public record OrderFormDraftData(
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
             .toList(),
-        command.startReferenceAssets().stream()
-            .map(asset -> new ReferenceAsset(asset.assetId(), asset.source(), asset.sortOrder()))
-            .toList());
+        command.hasStartReferenceAssets()
+            ? command.startReferenceAssets().stream()
+                .map(
+                    asset -> new ReferenceAsset(asset.assetId(), asset.source(), asset.sortOrder()))
+                .toList()
+            : null);
   }
 }

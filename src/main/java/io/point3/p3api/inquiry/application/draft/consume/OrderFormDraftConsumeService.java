@@ -49,8 +49,7 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
     Inquiry inquiry =
         openInquiryUseCase.open(OpenInquiryCommand.of(draft.storeId(), command.buyerUserId()));
 
-    orderFormReferenceAssetValidator.validate(
-        draft.storeId(), toSubmissionReferenceAssets(draft), command.buyerUserId());
+    validateStartReferenceAssets(draft, command.buyerUserId());
     orderStartReferenceAssetService.replaceIfPresent(
         inquiry.getId(), command.buyerUserId(), draft.startReferenceAssets());
 
@@ -86,7 +85,8 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         new CreateOrderFormSubmissionCommand.NoticeAgreement(draft.noticeAgreed()),
         new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(
             draft.cancellationRefundAgreed()),
-        CreateOrderFormSubmissionCommand.emptyReferenceAssets());
+        CreateOrderFormSubmissionCommand.emptyReferenceAssets(),
+        !draft.hasStartReferenceAssets());
   }
 
   private static List<CreateOrderFormSubmissionCommand.ReferenceAsset> toSubmissionReferenceAssets(
@@ -95,5 +95,18 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
             asset.assetId(), asset.source(), asset.sortOrder()))
         .toList();
+  }
+
+  private void validateStartReferenceAssets(OrderFormDraftData draft, UUID buyerUserId) {
+    if (!draft.hasStartReferenceAssets()) {
+      return;
+    }
+
+    if (draft.startReferenceAssets().isEmpty()) {
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
+    }
+
+    orderFormReferenceAssetValidator.validate(
+        draft.storeId(), toSubmissionReferenceAssets(draft), buyerUserId);
   }
 }

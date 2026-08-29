@@ -16,7 +16,8 @@ public record CreateOrderFormSubmissionCommand(
     PickupRequest pickupRequest,
     NoticeAgreement noticeAgreement,
     CancellationRefundAgreement cancellationRefundAgreement,
-    List<ReferenceAsset> referenceAssets) {
+    List<ReferenceAsset> referenceAssets,
+    boolean update) {
 
   public CreateOrderFormSubmissionCommand(
       UUID storeId,
@@ -36,7 +37,31 @@ public record CreateOrderFormSubmissionCommand(
         pickupRequest,
         noticeAgreement,
         new CancellationRefundAgreement(false),
-        referenceAssets);
+        referenceAssets,
+        false);
+  }
+
+  public CreateOrderFormSubmissionCommand(
+      UUID storeId,
+      UUID buyerUserId,
+      UUID inquiryId,
+      UUID orderFormTemplateId,
+      List<FormAnswer> formAnswers,
+      PickupRequest pickupRequest,
+      NoticeAgreement noticeAgreement,
+      CancellationRefundAgreement cancellationRefundAgreement,
+      List<ReferenceAsset> referenceAssets) {
+    this(
+        storeId,
+        buyerUserId,
+        inquiryId,
+        orderFormTemplateId,
+        formAnswers,
+        pickupRequest,
+        noticeAgreement,
+        cancellationRefundAgreement,
+        referenceAssets,
+        false);
   }
 
   public CreateOrderFormSubmissionCommand {

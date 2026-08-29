@@ -1220,7 +1220,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ],\n  \"startReferenceAssets\": []\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ]\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }

@@ -49,8 +49,7 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
         command.storeId(),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             command.pickupDate(), command.pickupTime()));
-    orderFormReferenceAssetValidator.validate(
-        command.storeId(), toSubmissionStartReferenceAssets(command));
+    validateStartReferenceAssets(command);
 
     return orderFormDraftStorePort.save(OrderFormDraftData.from(command));
   }
@@ -69,5 +68,18 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
         .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
             asset.assetId(), asset.source(), asset.sortOrder()))
         .toList();
+  }
+
+  private void validateStartReferenceAssets(CreateOrderFormDraftCommand command) {
+    if (!command.hasStartReferenceAssets()) {
+      return;
+    }
+
+    if (command.startReferenceAssets().isEmpty()) {
+      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
+    }
+
+    orderFormReferenceAssetValidator.validate(
+        command.storeId(), toSubmissionStartReferenceAssets(command));
   }
 }

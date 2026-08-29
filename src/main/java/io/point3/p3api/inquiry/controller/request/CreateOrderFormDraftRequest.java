@@ -20,8 +20,7 @@ public record CreateOrderFormDraftRequest(
 
   public CreateOrderFormDraftRequest {
     formAnswers = formAnswers == null ? null : List.copyOf(formAnswers);
-    startReferenceAssets =
-        startReferenceAssets == null ? List.of() : List.copyOf(startReferenceAssets);
+    startReferenceAssets = startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -31,7 +30,7 @@ public record CreateOrderFormDraftRequest(
 
   @Override
   public List<ReferenceAsset> startReferenceAssets() {
-    return List.copyOf(startReferenceAssets);
+    return startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
   public record FormAnswer(@NotNull UUID fieldId, @NotNull Object value) {}

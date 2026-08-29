@@ -26,11 +26,15 @@ public class OrderStartReferenceAssetService {
       UUID inquiryId,
       UUID submittedBy,
       List<OrderFormDraftData.ReferenceAsset> startReferenceAssets) {
-    if (startReferenceAssets == null || startReferenceAssets.isEmpty()) {
+    if (startReferenceAssets == null) {
       return;
     }
 
     orderStartReferenceAssetPersistencePort.deleteAllByInquiryId(inquiryId);
+    if (startReferenceAssets.isEmpty()) {
+      return;
+    }
+
     orderStartReferenceAssetPersistencePort.saveAll(startReferenceAssets.stream()
         .map(asset -> OrderStartReferenceAsset.create(
             inquiryId,
@@ -41,6 +45,10 @@ public class OrderStartReferenceAssetService {
                 asset.assetId(), asset.source().name(), asset.sortOrder())),
             asset.sortOrder()))
         .toList());
+  }
+
+  public void clear(UUID inquiryId) {
+    orderStartReferenceAssetPersistencePort.deleteAllByInquiryId(inquiryId);
   }
 
   @Transactional(readOnly = true)

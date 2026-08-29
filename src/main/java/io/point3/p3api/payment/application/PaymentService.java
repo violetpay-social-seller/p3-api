@@ -302,6 +302,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
         paymentAttempt.getPayerUserId(),
         "PAYMENT_SUCCEEDED",
         completedAt));
+    orderStartReferenceAssetService.clear(inquiry.getId());
 
     notifyPaymentCompleted(inquiry, order);
 

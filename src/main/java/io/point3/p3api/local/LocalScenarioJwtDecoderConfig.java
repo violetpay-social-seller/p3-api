@@ -2,6 +2,7 @@ package io.point3.p3api.local;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,9 +33,10 @@ public class LocalScenarioJwtDecoderConfig {
       @Value("${p3.local-scenario.operator.email}") String operatorEmail,
       @Value("${p3.local-scenario.operator.name}") String operatorName) {
     Map<String, LocalScenarioUser> usersByToken = Map.of(
-        sellerToken, new LocalScenarioUser(sellerCognitoSub, sellerEmail, sellerName),
-        buyerToken, new LocalScenarioUser(buyerCognitoSub, buyerEmail, buyerName),
-        operatorToken, new LocalScenarioUser(operatorCognitoSub, operatorEmail, operatorName));
+        sellerToken, new LocalScenarioUser(sellerCognitoSub, sellerEmail, sellerName, "Google"),
+        buyerToken, new LocalScenarioUser(buyerCognitoSub, buyerEmail, buyerName, "Kakao"),
+        operatorToken,
+            new LocalScenarioUser(operatorCognitoSub, operatorEmail, operatorName, null));
 
     return token -> {
       LocalScenarioUser user = usersByToken.get(token);
@@ -49,11 +51,21 @@ public class LocalScenarioJwtDecoderConfig {
           .subject(user.cognitoSub())
           .claim("email", user.email())
           .claim("name", user.name())
+          .claim("identities", user.identities())
           .issuedAt(now)
           .expiresAt(now.plus(Duration.ofHours(12)))
           .build();
     };
   }
 
-  private record LocalScenarioUser(String cognitoSub, String email, String name) {}
+  private record LocalScenarioUser(
+      String cognitoSub, String email, String name, String providerName) {
+
+    List<Map<String, String>> identities() {
+      if (providerName == null) {
+        return List.of();
+      }
+      return List.of(Map.of("providerName", providerName));
+    }
+  }
 }

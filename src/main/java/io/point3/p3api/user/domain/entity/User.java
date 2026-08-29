@@ -1,5 +1,6 @@
 package io.point3.p3api.user.domain.entity;
 
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.domain.type.UserStatus;
 import jakarta.persistence.*;
@@ -28,6 +29,13 @@ public class User {
   @Column(name = "email", nullable = false, length = 320)
   private String email;
 
+  @Column(name = "phone_number", length = 30)
+  private String phoneNumber;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "signup_provider", length = 30)
+  private SignupProvider signupProvider;
+
   @Column(name = "payer_id", length = 128)
   private String payerId;
 
@@ -50,21 +58,42 @@ public class User {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private User(String cognitoSub, String email, String name, UserRole role) {
+  private User(
+      String cognitoSub,
+      String email,
+      String phoneNumber,
+      SignupProvider signupProvider,
+      String name,
+      UserRole role) {
     this.cognitoSub = cognitoSub;
     this.email = email;
+    this.phoneNumber = phoneNumber;
+    this.signupProvider = signupProvider;
     this.name = name;
     this.role = role;
     this.status = UserStatus.ACTIVE;
   }
 
-  public static User create(String cognitoSub, String email, String name, UserRole role) {
+  public static User create(
+      String cognitoSub,
+      String email,
+      String name,
+      UserRole role,
+      String phoneNumber,
+      SignupProvider signupProvider) {
     Objects.requireNonNull(cognitoSub, "cognitoSub");
     Objects.requireNonNull(email, "email");
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(role, "role");
+    if (role != UserRole.OPERATOR) {
+      Objects.requireNonNull(phoneNumber, "phoneNumber");
+      Objects.requireNonNull(signupProvider, "signupProvider");
+      if (phoneNumber.isBlank()) {
+        throw new IllegalArgumentException("phoneNumber must not be blank");
+      }
+    }
 
-    return new User(cognitoSub, email, name, role);
+    return new User(cognitoSub, email, phoneNumber, signupProvider, name, role);
   }
 
   public void updateProfile(String email, String name) {

@@ -26,6 +26,7 @@ import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.DayOfWeek;
@@ -147,8 +148,13 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private User saveSeller() {
-    return userJpaRepository.saveAndFlush(
-        User.create(UUID.randomUUID().toString(), uniqueEmail("seller"), "판매자", UserRole.SELLER));
+    return userJpaRepository.saveAndFlush(User.create(
+        UUID.randomUUID().toString(),
+        uniqueEmail("seller"),
+        "판매자",
+        UserRole.SELLER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private CreateStoreCommand createStoreCommand(UUID ownerUserId, String name) {

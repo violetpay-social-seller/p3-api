@@ -21,6 +21,7 @@ import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.util.List;
@@ -124,8 +125,13 @@ class SendChatMessageServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private User saveUser(UserRole role, String prefix) {
-    return userJpaRepository.saveAndFlush(
-        User.create(UUID.randomUUID().toString(), uniqueEmail(prefix), prefix, role));
+    return userJpaRepository.saveAndFlush(User.create(
+        UUID.randomUUID().toString(),
+        uniqueEmail(prefix),
+        prefix,
+        role,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private Asset saveAsset(UUID uploadedBy, String filename) {

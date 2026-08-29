@@ -17,6 +17,7 @@ import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.io.ByteArrayInputStream;
@@ -122,7 +123,12 @@ class AssetServiceIntegrationTest extends IntegrationTestSupport {
 
   private User saveUser() {
     return userJpaRepository.saveAndFlush(User.create(
-        UUID.randomUUID().toString(), uniqueEmail("asset-user"), "사용자", UserRole.BUYER));
+        UUID.randomUUID().toString(),
+        uniqueEmail("asset-user"),
+        "사용자",
+        UserRole.BUYER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private RegisterAssetCommand command(

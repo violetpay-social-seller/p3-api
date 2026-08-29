@@ -11,6 +11,7 @@ import io.point3.p3api.notification.application.result.NotificationResult;
 import io.point3.p3api.notification.domain.type.NotificationReferenceType;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.util.UUID;
@@ -31,7 +32,12 @@ class NotificationServiceIntegrationTest extends IntegrationTestSupport {
   @Test
   void readsAllNotificationsForCurrentUser() {
     User user = userJpaRepository.saveAndFlush(User.create(
-        UUID.randomUUID().toString(), uniqueEmail("notification"), "알림 사용자", UserRole.BUYER));
+        UUID.randomUUID().toString(),
+        uniqueEmail("notification"),
+        "알림 사용자",
+        UserRole.BUYER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
     UUID orderId = UUID.randomUUID();
     NotificationResult created = notificationCreateUseCase.create(new CreateNotificationCommand(
         user.getId(),

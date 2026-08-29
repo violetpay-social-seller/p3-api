@@ -41,7 +41,7 @@ public class AuthController {
   public ApiResponse<UserSyncResponse> completeRegistration(
       @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody CompleteRegistrationRequest request) {
     CompleteRegistrationCommand command =
-        jwtCommandExtractor.extractRegistration(jwt, request.toRole());
+        jwtCommandExtractor.extractRegistration(jwt, request.toRole(), request.phoneNumber());
     UserSyncResult userSyncResult = userRegistrationUseCase.completeRegistration(command);
     return ApiResponse.ok(UserSyncResponse.from(userSyncResult));
   }

@@ -57,8 +57,13 @@ public class UserService
           }
           return UserSyncResult.registered(user);
         })
-        .orElseGet(() -> UserSyncResult.registered(userPersistencePort.save(
-            User.create(command.cognitoSub(), command.email(), command.name(), command.role()))));
+        .orElseGet(() -> UserSyncResult.registered(userPersistencePort.save(User.create(
+            command.cognitoSub(),
+            command.email(),
+            command.name(),
+            command.role(),
+            command.phoneNumber(),
+            command.signupProvider()))));
   }
 
   @Override

@@ -52,6 +52,7 @@ import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.domain.type.UserStatus;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
@@ -254,8 +255,13 @@ class OperatorManagementServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private User saveUser(UserRole role, String prefix) {
-    return userJpaRepository.save(
-        User.create("cognito-" + UUID.randomUUID(), uniqueEmail(prefix), prefix, role));
+    return userJpaRepository.save(User.create(
+        "cognito-" + UUID.randomUUID(),
+        uniqueEmail(prefix),
+        prefix,
+        role,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
   }
 
   private Store saveActiveStore(UUID ownerUserId, String name) {

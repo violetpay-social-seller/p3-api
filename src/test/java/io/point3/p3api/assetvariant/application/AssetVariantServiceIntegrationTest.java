@@ -14,6 +14,7 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.user.domain.entity.User;
+import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.util.List;
@@ -91,7 +92,12 @@ class AssetVariantServiceIntegrationTest extends IntegrationTestSupport {
 
   private Asset saveAsset() {
     User user = userJpaRepository.saveAndFlush(User.create(
-        UUID.randomUUID().toString(), uniqueEmail("variant-user"), "사용자", UserRole.SELLER));
+        UUID.randomUUID().toString(),
+        uniqueEmail("variant-user"),
+        "사용자",
+        UserRole.SELLER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
     return assetJpaRepository.saveAndFlush(Asset.create(
         UUID.randomUUID(),
         user.getId(),

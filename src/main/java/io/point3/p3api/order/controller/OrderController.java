@@ -1,5 +1,6 @@
 package io.point3.p3api.order.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
@@ -14,6 +15,7 @@ import io.point3.p3api.order.application.state.RequestOrderCancelCommand;
 import io.point3.p3api.order.controller.request.OrderCancelRequest;
 import io.point3.p3api.order.controller.response.OrderCalendarResponse;
 import io.point3.p3api.order.controller.response.OrderDetailResponse;
+import io.point3.p3api.order.controller.response.OrderListItemResponse;
 import io.point3.p3api.order.controller.response.OrderResponse;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import jakarta.validation.Valid;
@@ -34,12 +36,14 @@ public class OrderController {
   private final OrderQueryUseCase orderQueryUseCase;
   private final OrderStateUseCase orderStateUseCase;
   private final OrderCalendarQueryUseCase orderCalendarQueryUseCase;
+  private final ObjectMapper objectMapper;
 
   @GetMapping("/orders")
-  public ApiResponse<List<OrderResponse>> getBuyerOrders(@Authenticated CurrentUser currentUser) {
+  public ApiResponse<List<OrderListItemResponse>> getBuyerOrders(
+      @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
     return ApiResponse.ok(orderQueryUseCase.getBuyerOrders(currentUser.userId()).stream()
-        .map(OrderResponse::from)
+        .map(order -> OrderListItemResponse.from(order, objectMapper))
         .toList());
   }
 
@@ -62,9 +66,9 @@ public class OrderController {
   }
 
   @GetMapping("/seller/orders")
-  public ApiResponse<List<OrderResponse>> getSellerOrders(@CurrentStoreId UUID storeId) {
+  public ApiResponse<List<OrderListItemResponse>> getSellerOrders(@CurrentStoreId UUID storeId) {
     return ApiResponse.ok(orderQueryUseCase.getSellerOrders(storeId).stream()
-        .map(OrderResponse::from)
+        .map(order -> OrderListItemResponse.from(order, objectMapper))
         .toList());
   }
 

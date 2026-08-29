@@ -18,6 +18,11 @@ public record StoreSettingResult(
     List<WeeklyPickupSetting> weeklyPickupSettings,
     List<LocalDate> holidays) {
 
+  public StoreSettingResult {
+    weeklyPickupSettings = List.copyOf(weeklyPickupSettings);
+    holidays = List.copyOf(holidays);
+  }
+
   public static StoreSettingResult empty(UUID storeId) {
     return new StoreSettingResult(storeId, 0, null, 0, List.of(), List.of());
   }
@@ -36,6 +41,16 @@ public record StoreSettingResult(
             .map(WeeklyPickupSetting::from)
             .toList(),
         holidays.stream().map(StoreHoliday::getHolidayDate).sorted().toList());
+  }
+
+  @Override
+  public List<WeeklyPickupSetting> weeklyPickupSettings() {
+    return List.copyOf(weeklyPickupSettings);
+  }
+
+  @Override
+  public List<LocalDate> holidays() {
+    return List.copyOf(holidays);
   }
 
   public record WeeklyPickupSetting(

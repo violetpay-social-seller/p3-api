@@ -53,7 +53,8 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
     orderFormImageAssetValidator.validate(
         activeForm.fields(), command.formAnswers(), command.buyerUserId());
     orderFormPickupValidator.validate(command.storeId(), command.pickupRequest());
-    orderFormReferenceAssetValidator.validate(command.storeId(), command.referenceAssets());
+    orderFormReferenceAssetValidator.validate(
+        command.storeId(), command.referenceAssets(), command.buyerUserId());
 
     String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
 

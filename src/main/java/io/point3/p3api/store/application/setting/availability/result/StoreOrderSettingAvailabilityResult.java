@@ -10,9 +10,18 @@ public record StoreOrderSettingAvailabilityResult(
     int cancellationCutoffDays,
     List<StoreOrderSettingDateAvailabilityResult> dates) {
 
+  public StoreOrderSettingAvailabilityResult {
+    dates = List.copyOf(dates);
+  }
+
   public static StoreOrderSettingAvailabilityResult from(
       StoreSettingResult setting, List<StoreOrderSettingDateAvailabilityResult> dates) {
     return new StoreOrderSettingAvailabilityResult(
         setting.storeId(), setting.preOrderNotice(), setting.cancellationCutoffDays(), dates);
+  }
+
+  @Override
+  public List<StoreOrderSettingDateAvailabilityResult> dates() {
+    return List.copyOf(dates);
   }
 }

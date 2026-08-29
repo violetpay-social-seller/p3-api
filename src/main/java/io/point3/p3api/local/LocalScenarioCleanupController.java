@@ -221,6 +221,14 @@ public class LocalScenarioCleanupController {
         )
         or submitted_by in (:userIds)
         """, params);
+    affectedRows += jdbcTemplate.update("""
+        delete from order_start_reference_assets
+        where inquiry_id in (
+          select id from inquiries where store_id in (:storeIds) or buyer_user_id in (:userIds)
+        )
+        or submitted_by in (:userIds)
+        or asset_id in (select id from assets where uploaded_by in (:userIds))
+        """, params);
     affectedRows += jdbcTemplate.update(
         "delete from inquiries where store_id in (:storeIds) or buyer_user_id in (:userIds)",
         params);

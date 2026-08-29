@@ -16,11 +16,12 @@ public record CreateOrderFormDraftRequest(
     boolean noticeAgreed,
     boolean cancellationRefundAgreed,
     @Valid @NotNull List<FormAnswer> formAnswers,
-    @Valid @NotNull List<ReferenceAsset> referenceAssets) {
+    @Valid List<ReferenceAsset> startReferenceAssets) {
 
   public CreateOrderFormDraftRequest {
     formAnswers = formAnswers == null ? null : List.copyOf(formAnswers);
-    referenceAssets = referenceAssets == null ? null : List.copyOf(referenceAssets);
+    startReferenceAssets =
+        startReferenceAssets == null ? List.of() : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -29,8 +30,8 @@ public record CreateOrderFormDraftRequest(
   }
 
   @Override
-  public List<ReferenceAsset> referenceAssets() {
-    return referenceAssets == null ? null : List.copyOf(referenceAssets);
+  public List<ReferenceAsset> startReferenceAssets() {
+    return List.copyOf(startReferenceAssets);
   }
 
   public record FormAnswer(@NotNull UUID fieldId, @NotNull Object value) {}

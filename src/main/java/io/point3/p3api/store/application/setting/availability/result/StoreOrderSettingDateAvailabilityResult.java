@@ -14,6 +14,10 @@ public record StoreOrderSettingDateAvailabilityResult(
     int remainingOrderCapacity,
     Instant cancellationCutoffAt) {
 
+  public StoreOrderSettingDateAvailabilityResult {
+    pickupSlots = List.copyOf(pickupSlots);
+  }
+
   public static StoreOrderSettingDateAvailabilityResult from(
       LocalDate date,
       boolean available,
@@ -30,5 +34,10 @@ public record StoreOrderSettingDateAvailabilityResult(
         dailyOrderCapacity,
         remainingOrderCapacity,
         cancellationCutoffAt);
+  }
+
+  @Override
+  public List<LocalTime> pickupSlots() {
+    return List.copyOf(pickupSlots);
   }
 }

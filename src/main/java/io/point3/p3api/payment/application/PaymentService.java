@@ -5,6 +5,7 @@ import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
+import io.point3.p3api.inquiry.application.startreference.OrderStartReferenceAssetService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.notification.application.create.CreateNotificationCommand;
 import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
@@ -59,6 +60,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private final OrderStatusHistoryPersistencePort orderStatusHistoryPersistencePort;
   private final UserPersistencePort userPersistencePort;
   private final StorePersistencePort storePersistencePort;
+  private final OrderStartReferenceAssetService orderStartReferenceAssetService;
   private final NotificationCreateUseCase notificationCreateUseCase;
   private final Point3PaymentPort point3PaymentPort;
   private final Point3Properties point3Properties;
@@ -276,6 +278,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     payer.connectPayer(payerId);
     confirmation.markPaid();
     inquiry.markPaid();
+    String startReferenceAssets =
+        orderStartReferenceAssetService.createOrderAssetIdSnapshot(confirmation.getInquiryId());
 
     Order order = orderPersistencePort
         .findByPaymentAttemptId(paymentAttempt.getId())
@@ -288,6 +292,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
             createOrderNumber(paymentAttempt),
             confirmation.getMenuName(),
             confirmation.getOptionSummary(),
+            startReferenceAssets,
             paymentAttempt.getAmount(),
             confirmation.getPickupAt())));
     orderStatusHistoryPersistencePort.save(OrderStatusHistory.create(

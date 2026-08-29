@@ -3,11 +3,14 @@ package io.point3.p3api.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQueryService;
@@ -20,6 +23,8 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.NotificationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
+import io.point3.p3api.gallery.domain.entity.StoreGalleryItem;
+import io.point3.p3api.gallery.infrastructure.persistence.GalleryItemJpaRepository;
 import io.point3.p3api.inquiry.application.chat.InquiryChatDetailQueryService;
 import io.point3.p3api.inquiry.application.command.ConsumeOrderFormDraftCommand;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormDraftCommand;
@@ -39,6 +44,7 @@ import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmission
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
+import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import io.point3.p3api.notification.application.NotificationService;
 import io.point3.p3api.notification.application.result.NotificationResult;
 import io.point3.p3api.notification.domain.entity.Notification;
@@ -146,6 +152,12 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   private OrderJpaRepository orderJpaRepository;
 
   @Autowired
+  private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private GalleryItemJpaRepository galleryItemJpaRepository;
+
+  @Autowired
   private PaymentAttemptJpaRepository paymentAttemptJpaRepository;
 
   @Autowired
@@ -214,6 +226,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   @DisplayName("주문서 draft는 검증 후 저장되고 로그인 후 실제 문의 제출로 소비된다")
   void createsAndConsumesOrderFormDraft() {
     Fixture fixture = prepareFixtureWithoutInquiry("workflow-draft");
+    UUID galleryAssetId =
+        createVisibleGalleryAsset(fixture.store().id(), fixture.seller().getId());
     CreateOrderFormDraftCommand draftCommand = new CreateOrderFormDraftCommand(
         fixture.store().id(),
         fixture.form().id(),
@@ -225,7 +239,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
                 fixture.form().fields().get(0).id(), textNode("바닐라 케이크")),
             new CreateOrderFormDraftCommand.FormAnswer(
                 fixture.form().fields().get(1).id(), textNode("38000"))),
-        List.of());
+        List.of(new CreateOrderFormDraftCommand.ReferenceAsset(
+            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
 
     OrderFormDraftResult draft = orderFormDraftService.create(draftCommand);
     OrderFormDraftData storedDraft =
@@ -242,11 +257,17 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertFalse(draft.draftKey().isBlank());
     assertEquals(fixture.store().id(), storedDraft.storeId());
     assertEquals("바닐라 케이크", storedDraft.formAnswers().get(0).value().asText());
+    assertEquals(galleryAssetId, storedDraft.startReferenceAssets().get(0).assetId());
     assertFalse(draftStorePort.findByDraftKey(draft.draftKey()).isPresent());
     assertEquals(InquiryStatus.WAITING, consumed.inquiry().getStatus());
     assertEquals(fixture.buyer().getId(), consumed.submission().getSubmittedBy());
     assertEquals(fixture.form().id(), consumed.submission().getTemplateId());
+    assertNull(consumed.submission().getReferenceAssets());
     assertEquals(consumed.submission().getId(), persistedSubmissionEvent.getReferenceId());
+
+    InquiryChatDetail chatDetail = inquiryChatDetailQueryService.getBuyerDetail(consumed.inquiry());
+    assertEquals(1, chatDetail.startReferenceAssets().size());
+    assertEquals(galleryAssetId, chatDetail.startReferenceAssets().get(0).assetId());
   }
 
   @Test
@@ -520,6 +541,20 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         role,
         "010-0000-0000",
         SignupProvider.GOOGLE));
+  }
+
+  private UUID createVisibleGalleryAsset(UUID storeId, UUID sellerId) {
+    Asset asset = assetJpaRepository.saveAndFlush(Asset.create(
+        UUID.randomUUID(),
+        sellerId,
+        "start-reference.png",
+        "image/png",
+        1024,
+        "original/" + UUID.randomUUID() + "/start-reference.png"));
+    StoreGalleryItem galleryItem = StoreGalleryItem.create(storeId, asset.getId(), 0);
+    galleryItem.show();
+    galleryItemJpaRepository.saveAndFlush(galleryItem);
+    return asset.getId();
   }
 
   private JsonNode textNode(String value) {

@@ -11,6 +11,8 @@ public interface OrderFormFieldCommand {
 
   boolean required();
 
+  Long price();
+
   String settings();
 
   int sortOrder();

@@ -1,6 +1,7 @@
 package io.point3.p3api.inquiry.application.submission.snapshot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
@@ -48,6 +49,7 @@ public class OrderFormAnswerSnapshotFactory {
               field.label(),
               field.fieldType().name(),
               field.required(),
+              field.price(),
               field.sortOrder(),
               answer.value(),
               selectedOptions(field, answer.value()));
@@ -62,27 +64,21 @@ public class OrderFormAnswerSnapshotFactory {
   }
 
   private List<OptionSnapshot> selectedOptions(OrderFormFieldResult field, Object value) {
-    if (value instanceof com.fasterxml.jackson.databind.JsonNode node) {
+    if (value instanceof JsonNode node) {
       return field.options().stream()
           .filter(option -> selected(node, option))
-          .map(option -> new OptionSnapshot(option.label(), option.value()))
+          .map(option -> new OptionSnapshot(option.label(), option.value(), option.price()))
           .toList();
     }
     return List.of();
   }
 
-  private boolean selected(
-      com.fasterxml.jackson.databind.JsonNode value, OrderFormFieldOptionResult option) {
+  private boolean selected(JsonNode value, OrderFormFieldOptionResult option) {
     if (value.isTextual()) {
       return option.value().equals(value.asText());
     }
-    if (!value.isArray()) {
-      return false;
-    }
-    for (com.fasterxml.jackson.databind.JsonNode item : value) {
-      if (option.value().equals(item.asText())) {
-        return true;
-      }
+    if (value.isObject()) {
+      return option.value().equals(value.path("selectedValue").asText(null));
     }
     return false;
   }
@@ -92,9 +88,10 @@ public class OrderFormAnswerSnapshotFactory {
       String label,
       String fieldType,
       boolean required,
+      Long price,
       int sortOrder,
       Object value,
       List<OptionSnapshot> selectedOptions) {}
 
-  private record OptionSnapshot(String label, String value) {}
+  private record OptionSnapshot(String label, String value, long price) {}
 }

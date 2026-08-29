@@ -12,6 +12,7 @@ public record OrderFormFieldRequest(
     @NotBlank @Size(max = 150) String label,
     @NotNull FieldType fieldType,
     boolean required,
+    @PositiveOrZero Long price,
     String settings,
     @PositiveOrZero int sortOrder,
     @Valid List<OrderFormFieldOptionRequest> options) {

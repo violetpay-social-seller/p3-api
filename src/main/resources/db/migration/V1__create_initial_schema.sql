@@ -168,11 +168,14 @@ CREATE TABLE order_form_templates (
 CREATE TABLE order_form_field_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     template_id UUID NOT NULL,
+    category VARCHAR(30) NOT NULL,
     title VARCHAR(100) NOT NULL,
     description TEXT,
     sort_order INTEGER NOT NULL,
     CONSTRAINT uk_order_form_field_groups_template_sort_order UNIQUE (template_id, sort_order),
+    CONSTRAINT uk_order_form_field_groups_template_category UNIQUE (template_id, category),
     CONSTRAINT fk_order_form_field_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_groups_category CHECK (category IN ('DESIGN', 'SHAPE', 'CAKE_FLAVOR', 'CAKE_DESIGN', 'PACKAGING', 'OTHER_REQUEST')),
     CONSTRAINT ck_order_form_field_groups_sort_order CHECK (sort_order >= 0)
 );
 
@@ -182,10 +185,16 @@ CREATE TABLE order_form_fields (
     label VARCHAR(150) NOT NULL,
     field_type VARCHAR(30) NOT NULL,
     required BOOLEAN NOT NULL DEFAULT FALSE,
+    price BIGINT,
     settings JSONB,
     sort_order INTEGER NOT NULL,
     CONSTRAINT uk_order_form_fields_group_sort_order UNIQUE (group_id, sort_order),
     CONSTRAINT fk_order_form_fields_group_id FOREIGN KEY (group_id) REFERENCES order_form_field_groups (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_fields_field_type CHECK (field_type IN ('TEXT', 'TEXTAREA', 'IMAGE', 'SINGLE_SELECT', 'SINGLE_SELECT_WITH_TEXT')),
+    CONSTRAINT ck_order_form_fields_price CHECK (
+        (field_type = 'TEXT' AND price IS NOT NULL AND price >= 0)
+        OR (field_type <> 'TEXT' AND price IS NULL)
+    ),
     CONSTRAINT ck_order_form_fields_sort_order CHECK (sort_order >= 0)
 );
 
@@ -194,10 +203,12 @@ CREATE TABLE order_form_field_options (
     field_id UUID NOT NULL,
     label VARCHAR(100) NOT NULL,
     value VARCHAR(100) NOT NULL,
+    price BIGINT NOT NULL,
     sort_order INTEGER NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uk_order_form_field_options_field_sort_order UNIQUE (field_id, sort_order),
     CONSTRAINT fk_order_form_field_options_field_id FOREIGN KEY (field_id) REFERENCES order_form_fields (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_field_options_price CHECK (price >= 0),
     CONSTRAINT ck_order_form_field_options_sort_order CHECK (sort_order >= 0)
 );
 

@@ -31,6 +31,7 @@ import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -124,7 +125,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(
         "10호", answers.get(1).get("selectedOptions").get(0).get("label").asText());
     assertEquals(
-        "38000", answers.get(1).get("selectedOptions").get(0).get("value").asText());
+        "size-10", answers.get(1).get("selectedOptions").get(0).get("value").asText());
+    assertEquals(
+        38000, answers.get(1).get("selectedOptions").get(0).get("price").asLong());
     JsonNode additionalItems = objectMapper.readTree(persisted.getAdditionalItems());
     assertEquals(1, additionalItems.size());
     assertEquals("토핑", additionalItems.get(0).get("label").asText());
@@ -233,17 +236,30 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서",
         List.of(
-            new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
+            new CreateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of()),
             new CreateOrderFormCommand.Field(
                 "사이즈",
                 FieldType.SINGLE_SELECT,
                 true,
                 null,
+                null,
                 1,
-                "기본 정보",
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
                 null,
                 0,
-                List.of(new OrderFormFieldOptionCommand("10호", "38000", true, 0))))));
+                List.of(new OrderFormFieldOptionCommand("10호", "size-10", 38000L, true, 0))))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
@@ -262,7 +278,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.fields().get(0).id(), textNode("초코 케이크")),
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.fields().get(1).id(), textNode("38000"))),
+                form.fields().get(1).id(), textNode("size-10"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),

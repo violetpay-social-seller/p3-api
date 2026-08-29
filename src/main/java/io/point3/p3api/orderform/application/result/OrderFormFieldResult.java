@@ -11,6 +11,7 @@ public record OrderFormFieldResult(
     String label,
     FieldType fieldType,
     boolean required,
+    Long price,
     String settings,
     int sortOrder,
     List<OrderFormFieldOptionResult> options) {
@@ -25,9 +26,10 @@ public record OrderFormFieldResult(
       String label,
       FieldType fieldType,
       boolean required,
+      Long price,
       String settings,
       int sortOrder) {
-    this(id, groupId, label, fieldType, required, settings, sortOrder, List.of());
+    this(id, groupId, label, fieldType, required, price, settings, sortOrder, List.of());
   }
 
   public static OrderFormFieldResult from(
@@ -38,6 +40,7 @@ public record OrderFormFieldResult(
         field.getLabel(),
         field.getFieldType(),
         field.isRequired(),
+        field.getPrice(),
         field.getSettings(),
         field.getSortOrder(),
         options);

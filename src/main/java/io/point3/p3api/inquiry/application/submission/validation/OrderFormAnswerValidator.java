@@ -5,10 +5,6 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,30 +65,31 @@ public class OrderFormAnswerValidator {
 
     switch (field.fieldType()) {
       case TEXT, TEXTAREA -> validateText(value);
-      case NUMBER -> validateNumber(value);
-      case DATE -> validateDate(value);
-      case TIME -> validateTime(value);
-      case DATETIME -> validateDateTime(value);
       case IMAGE -> validateImage(value);
       case SINGLE_SELECT -> validateSingleSelect(field, value);
-      case MULTI_SELECT -> validateMultiSelect(field, value);
+      case SINGLE_SELECT_WITH_TEXT -> validateSingleSelectWithText(field, value);
     }
   }
 
   private void validateSingleSelect(OrderFormFieldResult field, JsonNode value) {
-    if (!value.isTextual()
+    if (value == null
+        || !value.isTextual()
         || field.options().stream()
             .noneMatch(option -> option.active() && option.value().equals(value.asText()))) {
       throwInvalidFieldValue();
     }
   }
 
-  private void validateMultiSelect(OrderFormFieldResult field, JsonNode value) {
-    if (!value.isArray()) {
+  private void validateSingleSelectWithText(OrderFormFieldResult field, JsonNode value) {
+    if (!value.isObject()) {
       throwInvalidFieldValue();
     }
-    for (JsonNode item : value) {
-      validateSingleSelect(field, item);
+    JsonNode selectedValue = value.get("selectedValue");
+    validateSingleSelect(field, selectedValue);
+
+    JsonNode text = value.get("text");
+    if (text != null && !text.isNull() && !text.isTextual()) {
+      throwInvalidFieldValue();
     }
   }
 
@@ -114,48 +111,6 @@ public class OrderFormAnswerValidator {
 
   private void validateText(JsonNode value) {
     if (!value.isTextual()) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateNumber(JsonNode value) {
-    if (!value.isNumber()) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateDate(JsonNode value) {
-    if (!value.isTextual()) {
-      throwInvalidFieldValue();
-    }
-
-    try {
-      LocalDate.parse(value.asText());
-    } catch (DateTimeParseException e) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateTime(JsonNode value) {
-    if (!value.isTextual()) {
-      throwInvalidFieldValue();
-    }
-
-    try {
-      LocalTime.parse(value.asText());
-    } catch (DateTimeParseException e) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateDateTime(JsonNode value) {
-    if (!value.isTextual()) {
-      throwInvalidFieldValue();
-    }
-
-    try {
-      OffsetDateTime.parse(value.asText());
-    } catch (DateTimeParseException e) {
       throwInvalidFieldValue();
     }
   }

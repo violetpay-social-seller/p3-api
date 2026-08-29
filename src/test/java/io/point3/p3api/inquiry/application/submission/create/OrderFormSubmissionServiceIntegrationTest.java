@@ -24,11 +24,13 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import io.point3.p3api.inquiry.infrastructure.persistence.OrderFormSubmissionJpaRepository;
+import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -84,7 +86,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
   void createsSubmissionWithAnswerAndReferenceSnapshots() throws Exception {
     Fixture fixture = prepareFixture();
     OrderFormFieldResult nameField = fixture.form().fields().get(0);
-    OrderFormFieldResult priceField = fixture.form().fields().get(1);
+    OrderFormFieldResult sizeField = fixture.form().fields().get(1);
 
     OrderFormSubmission submission = submissionService.create(new CreateOrderFormSubmissionCommand(
         fixture.store().id(),
@@ -93,7 +95,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         fixture.form().id(),
         List.of(
             new CreateOrderFormSubmissionCommand.FormAnswer(nameField.id(), textNode("초코 케이크")),
-            new CreateOrderFormSubmissionCommand.FormAnswer(priceField.id(), numberNode(38000))),
+            new CreateOrderFormSubmissionCommand.FormAnswer(sizeField.id(), textNode("size-10"))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -109,7 +111,14 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     JsonNode answers = objectMapper.readTree(persisted.getAnswers());
     assertEquals(2, answers.size());
     assertAnswerSnapshot(answers.get(0), nameField.id(), "메뉴명", "TEXT", true, 0, "초코 케이크");
-    assertAnswerSnapshot(answers.get(1), priceField.id(), "기본 금액", "NUMBER", false, 1, 38000);
+    assertEquals(0, answers.get(0).get("price").asLong());
+    assertAnswerSnapshot(
+        answers.get(1), sizeField.id(), "사이즈", "SINGLE_SELECT", true, 1, "size-10");
+    assertEquals(true, answers.get(1).get("price").isNull());
+    JsonNode selectedOption = answers.get(1).get("selectedOptions").get(0);
+    assertEquals("10호", selectedOption.get("label").asText());
+    assertEquals("size-10", selectedOption.get("value").asText());
+    assertEquals(38000, selectedOption.get("price").asLong());
 
     JsonNode referenceAssets = objectMapper.readTree(persisted.getReferenceAssets());
     assertEquals(1, referenceAssets.size());
@@ -289,9 +298,42 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서",
         List.of(
-            new CreateOrderFormCommand.Field("메뉴명", FieldType.TEXT, true, null, 0),
-            new CreateOrderFormCommand.Field("기본 금액", FieldType.NUMBER, false, null, 1),
-            new CreateOrderFormCommand.Field("참고 이미지", FieldType.IMAGE, false, null, 2))));
+            new CreateOrderFormCommand.Field(
+                "메뉴명",
+                FieldType.TEXT,
+                true,
+                0L,
+                null,
+                0,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of()),
+            new CreateOrderFormCommand.Field(
+                "사이즈",
+                FieldType.SINGLE_SELECT,
+                true,
+                null,
+                null,
+                1,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of(new OrderFormFieldOptionCommand("10호", "size-10", 38000L, true, 0))),
+            new CreateOrderFormCommand.Field(
+                "참고 이미지",
+                FieldType.IMAGE,
+                false,
+                null,
+                null,
+                2,
+                OrderFormCategory.DESIGN,
+                OrderFormCategory.DESIGN.getTitle(),
+                null,
+                0,
+                List.of()))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     UUID visibleGalleryAssetId = createVisibleGalleryAsset(store.id(), seller.getId());
@@ -345,10 +387,6 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     return objectMapper.getNodeFactory().textNode(value);
   }
 
-  private JsonNode numberNode(int value) {
-    return objectMapper.getNodeFactory().numberNode(value);
-  }
-
   private void assertAnswerSnapshot(
       JsonNode snapshot,
       UUID fieldId,
@@ -363,22 +401,6 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(required, snapshot.get("required").asBoolean());
     assertEquals(sortOrder, snapshot.get("sortOrder").asInt());
     assertEquals(value, snapshot.get("value").asText());
-  }
-
-  private void assertAnswerSnapshot(
-      JsonNode snapshot,
-      UUID fieldId,
-      String label,
-      String fieldType,
-      boolean required,
-      int sortOrder,
-      int value) {
-    assertEquals(fieldId.toString(), snapshot.get("fieldId").asText());
-    assertEquals(label, snapshot.get("label").asText());
-    assertEquals(fieldType, snapshot.get("fieldType").asText());
-    assertEquals(required, snapshot.get("required").asBoolean());
-    assertEquals(sortOrder, snapshot.get("sortOrder").asInt());
-    assertEquals(value, snapshot.get("value").asInt());
   }
 
   private record Fixture(

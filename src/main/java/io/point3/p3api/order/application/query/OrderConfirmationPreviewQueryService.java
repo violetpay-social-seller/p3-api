@@ -37,16 +37,11 @@ public class OrderConfirmationPreviewQueryService {
             .orElseThrow(() -> new BaseException(
                 OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
     long baseAmount = 0;
-    boolean inquiryRequired = false;
     try {
       for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
+        baseAmount = Math.addExact(baseAmount, readSnapshotPrice(answer.path("price")));
         for (JsonNode option : answer.path("selectedOptions")) {
-          try {
-            baseAmount =
-                Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
-          } catch (NumberFormatException e) {
-            inquiryRequired = true;
-          }
+          baseAmount = Math.addExact(baseAmount, readSnapshotPrice(option.path("price")));
         }
       }
     } catch (JsonProcessingException e) {
@@ -64,6 +59,16 @@ public class OrderConfirmationPreviewQueryService {
             .toInstant(),
         submission.getAnswers(),
         baseAmount,
-        inquiryRequired);
+        false);
+  }
+
+  private long readSnapshotPrice(JsonNode price) {
+    if (price.isMissingNode() || price.isNull()) {
+      return 0;
+    }
+    if (!price.canConvertToLong() || price.asLong() < 0) {
+      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+    return price.asLong();
   }
 }

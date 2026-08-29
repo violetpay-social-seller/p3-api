@@ -95,8 +95,10 @@ public class SellerOrderFormController {
                 field.label(),
                 field.fieldType(),
                 field.required(),
+                field.price(),
                 field.settings(),
                 field.sortOrder(),
+                group.category(),
                 group.title(),
                 group.description(),
                 group.sortOrder(),
@@ -112,8 +114,10 @@ public class SellerOrderFormController {
                 field.label(),
                 field.fieldType(),
                 field.required(),
+                field.price(),
                 field.settings(),
                 field.sortOrder(),
+                group.category(),
                 group.title(),
                 group.description(),
                 group.sortOrder(),
@@ -125,7 +129,7 @@ public class SellerOrderFormController {
       List<OrderFormFieldOptionRequest> options) {
     return options.stream()
         .map(option -> new io.point3.p3api.orderform.application.OrderFormFieldOptionCommand(
-            option.label(), option.value(), option.active(), option.sortOrder()))
+            option.label(), option.value(), option.price(), option.active(), option.sortOrder()))
         .toList();
   }
 }

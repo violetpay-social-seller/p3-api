@@ -151,16 +151,11 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
         .mapToLong(Long::longValue)
         .sum();
     long baseAmount = 0;
-    boolean inquiryRequired = false;
     try {
       for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
+        baseAmount = Math.addExact(baseAmount, readSnapshotPrice(answer.path("price")));
         for (JsonNode option : answer.path("selectedOptions")) {
-          try {
-            baseAmount =
-                Math.addExact(baseAmount, Long.parseLong(option.path("value").asText()));
-          } catch (NumberFormatException e) {
-            inquiryRequired = true;
-          }
+          baseAmount = Math.addExact(baseAmount, readSnapshotPrice(option.path("price")));
         }
       }
     } catch (JsonProcessingException e) {
@@ -168,10 +163,20 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     long automaticAmount = Math.addExact(baseAmount, additionalAmount);
-    if (!inquiryRequired && command.amount() != automaticAmount) {
+    if (command.amount() != automaticAmount) {
       throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID);
     }
-    return new ConfirmationAmount(inquiryRequired ? command.amount() : automaticAmount);
+    return new ConfirmationAmount(automaticAmount);
+  }
+
+  private long readSnapshotPrice(JsonNode price) {
+    if (price.isMissingNode() || price.isNull()) {
+      return 0;
+    }
+    if (!price.canConvertToLong() || price.asLong() < 0) {
+      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+    }
+    return price.asLong();
   }
 
   private String createOrderSummary(OrderFormSubmission submission) {

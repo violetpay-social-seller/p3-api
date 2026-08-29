@@ -3,6 +3,7 @@ package io.point3.p3api.orderform.application.update;
 import io.point3.p3api.orderform.application.OrderFormFieldCommand;
 import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
 import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,8 +23,10 @@ public record UpdateOrderFormCommand(
       String label,
       FieldType fieldType,
       boolean required,
+      Long price,
       String settings,
       int sortOrder,
+      OrderFormCategory groupCategory,
       String groupTitle,
       String groupDescription,
       int groupSortOrder,
@@ -36,7 +39,18 @@ public record UpdateOrderFormCommand(
 
     public Field(
         String label, FieldType fieldType, boolean required, String settings, int sortOrder) {
-      this(label, fieldType, required, settings, sortOrder, "기본 정보", null, 0, List.of());
+      this(
+          label,
+          fieldType,
+          required,
+          null,
+          settings,
+          sortOrder,
+          OrderFormCategory.DESIGN,
+          OrderFormCategory.DESIGN.getTitle(),
+          null,
+          0,
+          List.of());
     }
   }
 }

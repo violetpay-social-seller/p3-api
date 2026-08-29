@@ -19,7 +19,7 @@ public record OrderFormDraftData(
     boolean noticeAgreed,
     boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
-    List<ReferenceAsset> referenceAssets) {
+    List<ReferenceAsset> startReferenceAssets) {
 
   public OrderFormDraftData(
       UUID storeId,
@@ -28,7 +28,7 @@ public record OrderFormDraftData(
       LocalTime pickupTime,
       boolean noticeAgreed,
       List<FormAnswer> formAnswers,
-      List<ReferenceAsset> referenceAssets) {
+      List<ReferenceAsset> startReferenceAssets) {
     this(
         storeId,
         orderFormTemplateId,
@@ -37,12 +37,13 @@ public record OrderFormDraftData(
         noticeAgreed,
         false,
         formAnswers,
-        referenceAssets);
+        startReferenceAssets);
   }
 
   public OrderFormDraftData {
     formAnswers = List.copyOf(formAnswers);
-    referenceAssets = List.copyOf(referenceAssets);
+    startReferenceAssets =
+        startReferenceAssets == null ? List.of() : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -51,8 +52,8 @@ public record OrderFormDraftData(
   }
 
   @Override
-  public List<ReferenceAsset> referenceAssets() {
-    return List.copyOf(referenceAssets);
+  public List<ReferenceAsset> startReferenceAssets() {
+    return List.copyOf(startReferenceAssets);
   }
 
   public record FormAnswer(UUID fieldId, JsonNode value) {}
@@ -70,7 +71,7 @@ public record OrderFormDraftData(
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
             .toList(),
-        command.referenceAssets().stream()
+        command.startReferenceAssets().stream()
             .map(asset -> new ReferenceAsset(asset.assetId(), asset.source(), asset.sortOrder()))
             .toList());
   }

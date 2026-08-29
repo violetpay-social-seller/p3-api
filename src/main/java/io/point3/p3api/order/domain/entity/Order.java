@@ -16,7 +16,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "orders")
@@ -52,6 +54,10 @@ public class Order {
   @Column(name = "option_summary_snapshot", nullable = false, columnDefinition = "text")
   private String optionSummarySnapshot;
 
+  @Column(name = "start_reference_assets", nullable = false, columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private String startReferenceAssets;
+
   @Column(name = "paid_amount", nullable = false)
   private long paidAmount;
 
@@ -85,6 +91,7 @@ public class Order {
       String orderNumber,
       String menuNameSnapshot,
       String optionSummarySnapshot,
+      String startReferenceAssets,
       long paidAmount,
       Instant pickupAt) {
     this.storeId = storeId;
@@ -95,6 +102,7 @@ public class Order {
     this.orderNumber = orderNumber;
     this.menuNameSnapshot = menuNameSnapshot;
     this.optionSummarySnapshot = optionSummarySnapshot;
+    this.startReferenceAssets = startReferenceAssets;
     this.paidAmount = paidAmount;
     this.pickupAt = pickupAt;
     this.status = OrderStatus.PAID;
@@ -111,6 +119,32 @@ public class Order {
       String optionSummarySnapshot,
       long paidAmount,
       Instant pickupAt) {
+    return create(
+        storeId,
+        buyerUserId,
+        inquiryId,
+        confirmationId,
+        paymentAttemptId,
+        orderNumber,
+        menuNameSnapshot,
+        optionSummarySnapshot,
+        "[]",
+        paidAmount,
+        pickupAt);
+  }
+
+  public static Order create(
+      UUID storeId,
+      UUID buyerUserId,
+      UUID inquiryId,
+      UUID confirmationId,
+      UUID paymentAttemptId,
+      String orderNumber,
+      String menuNameSnapshot,
+      String optionSummarySnapshot,
+      String startReferenceAssets,
+      long paidAmount,
+      Instant pickupAt) {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(buyerUserId, "buyerUserId");
     Objects.requireNonNull(inquiryId, "inquiryId");
@@ -119,6 +153,7 @@ public class Order {
     Objects.requireNonNull(orderNumber, "orderNumber");
     Objects.requireNonNull(menuNameSnapshot, "menuNameSnapshot");
     Objects.requireNonNull(optionSummarySnapshot, "optionSummarySnapshot");
+    Objects.requireNonNull(startReferenceAssets, "startReferenceAssets");
     Objects.requireNonNull(pickupAt, "pickupAt");
 
     if (paidAmount < 0) {
@@ -134,6 +169,7 @@ public class Order {
         orderNumber,
         menuNameSnapshot,
         optionSummarySnapshot,
+        startReferenceAssets,
         paidAmount,
         pickupAt);
   }

@@ -14,6 +14,10 @@ public record StoreOrderSettingAvailabilityResponse(
     int cancellationCutoffDays,
     List<DateAvailabilityResponse> dates) {
 
+  public StoreOrderSettingAvailabilityResponse {
+    dates = List.copyOf(dates);
+  }
+
   public static StoreOrderSettingAvailabilityResponse from(
       StoreOrderSettingAvailabilityResult result) {
     return new StoreOrderSettingAvailabilityResponse(
@@ -21,6 +25,11 @@ public record StoreOrderSettingAvailabilityResponse(
         result.preOrderNotice(),
         result.cancellationCutoffDays(),
         result.dates().stream().map(DateAvailabilityResponse::from).toList());
+  }
+
+  @Override
+  public List<DateAvailabilityResponse> dates() {
+    return List.copyOf(dates);
   }
 
   public record DateAvailabilityResponse(
@@ -32,6 +41,10 @@ public record StoreOrderSettingAvailabilityResponse(
       int remainingOrderCapacity,
       Instant cancellationCutoffAt) {
 
+    public DateAvailabilityResponse {
+      pickupSlots = List.copyOf(pickupSlots);
+    }
+
     private static DateAvailabilityResponse from(
         StoreOrderSettingDateAvailabilityResult availability) {
       return new DateAvailabilityResponse(
@@ -42,6 +55,11 @@ public record StoreOrderSettingAvailabilityResponse(
           availability.dailyOrderCapacity(),
           availability.remainingOrderCapacity(),
           availability.cancellationCutoffAt());
+    }
+
+    @Override
+    public List<LocalTime> pickupSlots() {
+      return List.copyOf(pickupSlots);
     }
   }
 }

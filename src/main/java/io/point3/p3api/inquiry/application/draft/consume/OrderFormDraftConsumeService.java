@@ -10,9 +10,12 @@ import io.point3.p3api.inquiry.application.draft.model.OrderFormDraftData;
 import io.point3.p3api.inquiry.application.open.OpenInquiryUseCase;
 import io.point3.p3api.inquiry.application.port.OrderFormDraftStorePort;
 import io.point3.p3api.inquiry.application.result.OrderFormDraftConsumeResult;
+import io.point3.p3api.inquiry.application.startreference.OrderStartReferenceAssetService;
 import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmissionCreateUseCase;
+import io.point3.p3api.inquiry.application.submission.validation.OrderFormReferenceAssetValidator;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,8 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
   private final OrderFormDraftStorePort orderFormDraftStorePort;
   private final OpenInquiryUseCase openInquiryUseCase;
   private final OrderFormSubmissionCreateUseCase orderFormSubmissionCreateUseCase;
+  private final OrderStartReferenceAssetService orderStartReferenceAssetService;
+  private final OrderFormReferenceAssetValidator orderFormReferenceAssetValidator;
   private final ChatTimelineItemPublisher timelineItemPublisher;
 
   @Override
@@ -43,6 +48,11 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
     // 사전 제출 데이터의 스토어ID와 요청 커맨드의 구매자ID를 통해 채팅방 개설
     Inquiry inquiry =
         openInquiryUseCase.open(OpenInquiryCommand.of(draft.storeId(), command.buyerUserId()));
+
+    orderFormReferenceAssetValidator.validate(
+        draft.storeId(), toSubmissionReferenceAssets(draft), command.buyerUserId());
+    orderStartReferenceAssetService.replaceIfPresent(
+        inquiry.getId(), command.buyerUserId(), draft.startReferenceAssets());
 
     // 사전 제출 데이터를 주문서제출 커맨드와 매핑하여 주문서 생성
     OrderFormSubmission submission = orderFormSubmissionCreateUseCase.create(
@@ -76,9 +86,14 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         new CreateOrderFormSubmissionCommand.NoticeAgreement(draft.noticeAgreed()),
         new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(
             draft.cancellationRefundAgreed()),
-        draft.referenceAssets().stream()
-            .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
-                asset.assetId(), asset.source(), asset.sortOrder()))
-            .toList());
+        CreateOrderFormSubmissionCommand.emptyReferenceAssets());
+  }
+
+  private static List<CreateOrderFormSubmissionCommand.ReferenceAsset> toSubmissionReferenceAssets(
+      OrderFormDraftData draft) {
+    return draft.startReferenceAssets().stream()
+        .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
+            asset.assetId(), asset.source(), asset.sortOrder()))
+        .toList();
   }
 }

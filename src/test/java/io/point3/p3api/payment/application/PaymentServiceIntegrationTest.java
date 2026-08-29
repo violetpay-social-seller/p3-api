@@ -10,15 +10,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
 import io.point3.p3api.inquiry.application.command.OpenInquiryCommand;
+import io.point3.p3api.inquiry.application.draft.model.OrderFormDraftData;
 import io.point3.p3api.inquiry.application.open.InquiryOpenService;
+import io.point3.p3api.inquiry.application.startreference.OrderStartReferenceAssetService;
 import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmissionService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
+import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.order.application.OrderConfirmationService;
@@ -135,6 +140,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderJpaRepository orderJpaRepository;
+
+  @Autowired
+  private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private OrderStartReferenceAssetService orderStartReferenceAssetService;
 
   @Autowired
   private NotificationJpaRepository notificationJpaRepository;
@@ -318,8 +329,14 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   @Test
   @DisplayName("결제 승인은 세션을 검증하고 성공 시 주문과 payerId를 저장한다")
-  void capturesPaymentAndCreatesOrder() {
+  void capturesPaymentAndCreatesOrder() throws Exception {
     Fixture fixture = prepareFixture("payment-capture");
+    Asset startReferenceAsset = saveAsset(fixture.buyer().getId(), "start-reference.png");
+    orderStartReferenceAssetService.replaceIfPresent(
+        fixture.inquiry().getId(),
+        fixture.buyer().getId(),
+        List.of(new OrderFormDraftData.ReferenceAsset(
+            startReferenceAsset.getId(), OrderFormReferenceAssetSource.USER_UPLOAD, 0)));
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
         fixture.inquiry().getId(),
@@ -357,6 +374,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertTrue(order.getOrderNumber().matches("P3-\\d{8}-[0-9a-f]{27}"));
     assertEquals(fixture.form().name(), order.getMenuNameSnapshot());
     assertEquals("초코 시트, 딸기 토핑", order.getOptionSummarySnapshot());
+    assertEquals(startReferenceAsset.getId().toString(), firstStartReferenceAsset(order));
     assertEquals(41000, order.getPaidAmount());
     assertEquals(pickupAt(), order.getPickupAt());
     assertEquals(OrderStatus.PAID, order.getStatus());
@@ -529,6 +547,20 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         role,
         "010-0000-0000",
         SignupProvider.GOOGLE));
+  }
+
+  private Asset saveAsset(UUID uploadedBy, String filename) {
+    return assetJpaRepository.saveAndFlush(Asset.create(
+        UUID.randomUUID(),
+        uploadedBy,
+        filename,
+        "image/png",
+        1024,
+        "original/" + UUID.randomUUID() + "/" + filename));
+  }
+
+  private String firstStartReferenceAsset(Order order) throws Exception {
+    return objectMapper.readTree(order.getStartReferenceAssets()).get(0).asText();
   }
 
   private JsonNode textNode(String value) {

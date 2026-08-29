@@ -18,6 +18,10 @@ public record PublicStoreResponse(
     String address,
     List<PublicRepresentativeImageResponse> representativeImages) {
 
+  public PublicStoreResponse {
+    representativeImages = List.copyOf(representativeImages);
+  }
+
   public static PublicStoreResponse from(PublicStoreResult result) {
     return new PublicStoreResponse(
         result.id(),
@@ -34,5 +38,10 @@ public record PublicStoreResponse(
         result.representativeImages().stream()
             .map(PublicRepresentativeImageResponse::from)
             .toList());
+  }
+
+  @Override
+  public List<PublicRepresentativeImageResponse> representativeImages() {
+    return List.copyOf(representativeImages);
   }
 }

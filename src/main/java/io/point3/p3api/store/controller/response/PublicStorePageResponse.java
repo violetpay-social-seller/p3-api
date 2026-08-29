@@ -11,11 +11,20 @@ public record PublicStorePageResponse(
     Instant nextCursorUpdatedAt,
     UUID nextCursorId) {
 
+  public PublicStorePageResponse {
+    items = List.copyOf(items);
+  }
+
   public static PublicStorePageResponse from(PublicStorePage page) {
     return new PublicStorePageResponse(
         page.items().stream().map(PublicStoreResponse::from).toList(),
         page.hasNext(),
         page.nextCursorUpdatedAt(),
         page.nextCursorId());
+  }
+
+  @Override
+  public List<PublicStoreResponse> items() {
+    return List.copyOf(items);
   }
 }

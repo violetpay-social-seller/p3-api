@@ -225,6 +225,23 @@ CREATE TABLE inquiries (
     CONSTRAINT fk_inquiries_buyer_user_id FOREIGN KEY (buyer_user_id) REFERENCES users (id)
 );
 
+CREATE TABLE order_start_reference_assets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    inquiry_id UUID NOT NULL,
+    submitted_by UUID NOT NULL,
+    asset_id UUID NOT NULL,
+    source VARCHAR(30) NOT NULL,
+    snapshot JSONB NOT NULL,
+    sort_order INTEGER NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    CONSTRAINT uk_order_start_reference_assets_inquiry_sort_order UNIQUE (inquiry_id, sort_order),
+    CONSTRAINT fk_order_start_reference_assets_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries (id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_start_reference_assets_submitted_by FOREIGN KEY (submitted_by) REFERENCES users (id),
+    CONSTRAINT fk_order_start_reference_assets_asset_id FOREIGN KEY (asset_id) REFERENCES assets (id),
+    CONSTRAINT ck_order_start_reference_assets_sort_order CHECK (sort_order >= 0),
+    CONSTRAINT ck_order_start_reference_assets_source CHECK (source IN ('STORE_GALLERY', 'USER_UPLOAD'))
+);
+
 CREATE TABLE order_form_submissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     inquiry_id UUID NOT NULL,
@@ -324,6 +341,7 @@ CREATE TABLE orders (
     order_number VARCHAR(40) NOT NULL,
     menu_name_snapshot VARCHAR(150) NOT NULL,
     option_summary_snapshot TEXT NOT NULL,
+    start_reference_assets JSONB NOT NULL DEFAULT '[]'::jsonb,
     paid_amount BIGINT NOT NULL,
     pickup_at TIMESTAMPTZ NOT NULL,
     status VARCHAR(30) NOT NULL,
@@ -400,6 +418,8 @@ CREATE INDEX ix_order_form_field_groups_template_id ON order_form_field_groups (
 CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
 CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
+CREATE INDEX ix_order_start_reference_assets_inquiry_id
+    ON order_start_reference_assets (inquiry_id);
 CREATE INDEX ix_order_form_submissions_inquiry_id ON order_form_submissions (inquiry_id);
 CREATE INDEX ix_chat_messages_inquiry_id_created_at ON chat_messages (inquiry_id, created_at);
 CREATE INDEX ix_chat_timeline_items_inquiry_id_created_at_id ON chat_timeline_items (inquiry_id, created_at, id);

@@ -3,6 +3,7 @@ package io.point3.p3api.inquiry.application.chat;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ChatErrorCode;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
+import io.point3.p3api.inquiry.application.startreference.OrderStartReferenceAssetService;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
@@ -20,6 +21,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
 
   private final StorePersistencePort storePersistencePort;
   private final UserPersistencePort userPersistencePort;
+  private final OrderStartReferenceAssetService orderStartReferenceAssetService;
 
   @Override
   public InquiryChatDetail getBuyerDetail(Inquiry inquiry) {
@@ -30,6 +32,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(owner.getId(), owner.getName()),
+        orderStartReferenceAssetService.findAllByInquiryId(inquiry.getId()),
         inquiry.getBuyerLastReadAt(),
         inquiry.getSellerLastReadAt());
   }
@@ -43,6 +46,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(buyer.getId(), buyer.getName()),
+        orderStartReferenceAssetService.findAllByInquiryId(inquiry.getId()),
         inquiry.getSellerLastReadAt(),
         inquiry.getBuyerLastReadAt());
   }

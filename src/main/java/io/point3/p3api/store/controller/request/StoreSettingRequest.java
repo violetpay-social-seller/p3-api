@@ -17,6 +17,11 @@ public record StoreSettingRequest(
     @NotNull List<@Valid WeeklyPickupSettingRequest> weeklyPickupSettings,
     @NotNull List<LocalDate> holidays) {
 
+  public StoreSettingRequest {
+    weeklyPickupSettings = weeklyPickupSettings == null ? null : List.copyOf(weeklyPickupSettings);
+    holidays = holidays == null ? null : List.copyOf(holidays);
+  }
+
   public UpdateStoreSettingCommand toCommand(UUID storeId) {
     return new UpdateStoreSettingCommand(
         storeId,
@@ -25,6 +30,16 @@ public record StoreSettingRequest(
         cancellationCutoffDays,
         weeklyPickupSettings.stream().map(WeeklyPickupSettingRequest::toCommand).toList(),
         holidays);
+  }
+
+  @Override
+  public List<WeeklyPickupSettingRequest> weeklyPickupSettings() {
+    return weeklyPickupSettings == null ? null : List.copyOf(weeklyPickupSettings);
+  }
+
+  @Override
+  public List<LocalDate> holidays() {
+    return holidays == null ? null : List.copyOf(holidays);
   }
 
   public record WeeklyPickupSettingRequest(

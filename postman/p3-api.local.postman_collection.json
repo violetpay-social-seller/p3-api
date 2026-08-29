@@ -1220,7 +1220,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ],\n  \"referenceAssets\": []\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ],\n  \"startReferenceAssets\": []\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }
@@ -1250,7 +1250,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" },\n    { \"fieldId\": \"{{letteringFieldId}}\", \"value\": { \"selectedValue\": \"lettering\", \"text\": \"Happy birthday\" } },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"referenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" },\n    { \"fieldId\": \"{{letteringFieldId}}\", \"value\": { \"selectedValue\": \"lettering\", \"text\": \"Happy birthday\" } },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"startReferenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }

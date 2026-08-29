@@ -15,6 +15,11 @@ public record StoreSettingResponse(
     List<WeeklyPickupSettingResponse> weeklyPickupSettings,
     List<LocalDate> holidays) {
 
+  public StoreSettingResponse {
+    weeklyPickupSettings = List.copyOf(weeklyPickupSettings);
+    holidays = List.copyOf(holidays);
+  }
+
   public static StoreSettingResponse from(StoreSettingResult result) {
     return new StoreSettingResponse(
         result.storeId(),
@@ -25,6 +30,16 @@ public record StoreSettingResponse(
             .map(WeeklyPickupSettingResponse::from)
             .toList(),
         result.holidays());
+  }
+
+  @Override
+  public List<WeeklyPickupSettingResponse> weeklyPickupSettings() {
+    return List.copyOf(weeklyPickupSettings);
+  }
+
+  @Override
+  public List<LocalDate> holidays() {
+    return List.copyOf(holidays);
   }
 
   public record WeeklyPickupSettingResponse(

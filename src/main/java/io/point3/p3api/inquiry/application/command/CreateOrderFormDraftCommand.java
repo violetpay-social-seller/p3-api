@@ -17,7 +17,7 @@ public record CreateOrderFormDraftCommand(
     boolean noticeAgreed,
     boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
-    List<ReferenceAsset> referenceAssets) {
+    List<ReferenceAsset> startReferenceAssets) {
 
   public CreateOrderFormDraftCommand(
       UUID storeId,
@@ -26,7 +26,7 @@ public record CreateOrderFormDraftCommand(
       LocalTime pickupTime,
       boolean noticeAgreed,
       List<FormAnswer> formAnswers,
-      List<ReferenceAsset> referenceAssets) {
+      List<ReferenceAsset> startReferenceAssets) {
     this(
         storeId,
         orderFormTemplateId,
@@ -35,12 +35,13 @@ public record CreateOrderFormDraftCommand(
         noticeAgreed,
         false,
         formAnswers,
-        referenceAssets);
+        startReferenceAssets);
   }
 
   public CreateOrderFormDraftCommand {
     formAnswers = List.copyOf(formAnswers);
-    referenceAssets = List.copyOf(referenceAssets);
+    startReferenceAssets =
+        startReferenceAssets == null ? List.of() : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -49,8 +50,8 @@ public record CreateOrderFormDraftCommand(
   }
 
   @Override
-  public List<ReferenceAsset> referenceAssets() {
-    return List.copyOf(referenceAssets);
+  public List<ReferenceAsset> startReferenceAssets() {
+    return List.copyOf(startReferenceAssets);
   }
 
   public record FormAnswer(UUID fieldId, JsonNode value) {}

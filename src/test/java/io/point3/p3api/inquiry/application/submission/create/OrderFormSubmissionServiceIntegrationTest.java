@@ -24,13 +24,14 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import io.point3.p3api.inquiry.infrastructure.persistence.OrderFormSubmissionJpaRepository;
-import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
+import io.point3.p3api.orderform.application.OrderFormOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
-import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
+import io.point3.p3api.orderform.application.result.OrderFormOptionGroupResult;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -85,8 +86,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("주문서 제출은 활성 양식 검증 후 답변과 갤러리 참고 이미지를 스냅샷으로 저장한다")
   void createsSubmissionWithAnswerAndReferenceSnapshots() throws Exception {
     Fixture fixture = prepareFixture();
-    OrderFormFieldResult nameField = fixture.form().fields().get(0);
-    OrderFormFieldResult sizeField = fixture.form().fields().get(1);
+    OrderFormOptionGroupResult nameField = fixture.form().optionGroups().get(0);
+    OrderFormOptionGroupResult sizeField = fixture.form().optionGroups().get(1);
 
     OrderFormSubmission submission = submissionService.create(new CreateOrderFormSubmissionCommand(
         fixture.store().id(),
@@ -94,8 +95,10 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         fixture.inquiry().getId(),
         fixture.form().id(),
         List.of(
-            new CreateOrderFormSubmissionCommand.FormAnswer(nameField.id(), textNode("초코 케이크")),
-            new CreateOrderFormSubmissionCommand.FormAnswer(sizeField.id(), textNode("size-10"))),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                nameField.id(), selections(selection("menu").put("text", "초코 케이크"))),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                sizeField.id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -110,11 +113,11 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(true, persisted.isCancellationRefundAgreed());
     JsonNode answers = objectMapper.readTree(persisted.getAnswers());
     assertEquals(2, answers.size());
-    assertAnswerSnapshot(answers.get(0), nameField.id(), "메뉴명", "TEXT", true, 0, "초코 케이크");
-    assertEquals(0, answers.get(0).get("price").asLong());
-    assertAnswerSnapshot(
-        answers.get(1), sizeField.id(), "사이즈", "SINGLE_SELECT", true, 1, "size-10");
-    assertEquals(true, answers.get(1).get("price").isNull());
+    assertAnswerSnapshot(answers.get(0), nameField.id(), "메뉴명", "SINGLE", true, 0);
+    assertEquals(
+        "초코 케이크", answers.get(0).get("selectedOptions").get(0).get("text").asText());
+    assertEquals(0, answers.get(0).get("selectedOptions").get(0).get("price").asLong());
+    assertAnswerSnapshot(answers.get(1), sizeField.id(), "사이즈", "SINGLE", true, 1);
     JsonNode selectedOption = answers.get(1).get("selectedOptions").get(0);
     assertEquals("10호", selectedOption.get("label").asText());
     assertEquals("size-10", selectedOption.get("value").asText());
@@ -142,7 +145,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.inquiry().getId(),
             fixture.form().id(),
             List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("초코 케이크"))),
+                fixture.form().optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
                 LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(false),
@@ -164,7 +168,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.inquiry().getId(),
             fixture.form().id(),
             List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                UUID.randomUUID(), textNode("알 수 없는 답변"))),
+                UUID.randomUUID(), selections(selection("unknown")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
                 LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -189,7 +193,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.inquiry().getId(),
             fixture.form().id(),
             List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("초코 케이크"))),
+                fixture.form().optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
                 LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -203,7 +208,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("이미지 필드 Asset은 제출자의 업로드 파일만 허용한다")
   void validatesImageFieldAssetOwnership() {
     Fixture fixture = prepareFixture();
-    OrderFormFieldResult imageField = fixture.form().fields().get(2);
+    OrderFormOptionGroupResult imageField = fixture.form().optionGroups().get(2);
     UUID buyerAssetId =
         saveAsset(fixture.buyer().getId(), "buyer-reference.png").getId();
 
@@ -214,10 +219,14 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         fixture.form().id(),
         List.of(
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("초코 케이크")),
+                fixture.form().optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크"))),
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 imageField.id(),
-                objectMapper.getNodeFactory().arrayNode().add(buyerAssetId.toString()))),
+                selections(selection("reference")
+                    .set(
+                        "assetIds",
+                        objectMapper.getNodeFactory().arrayNode().add(buyerAssetId.toString()))))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -232,13 +241,17 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.form().id(),
             List.of(
                 new CreateOrderFormSubmissionCommand.FormAnswer(
-                    fixture.form().fields().get(0).id(), textNode("초코 케이크")),
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "초코 케이크"))),
                 new CreateOrderFormSubmissionCommand.FormAnswer(
                     imageField.id(),
-                    objectMapper
-                        .getNodeFactory()
-                        .arrayNode()
-                        .add(fixture.visibleGalleryAssetId().toString()))),
+                    selections(selection("reference")
+                        .set(
+                            "assetIds",
+                            objectMapper
+                                .getNodeFactory()
+                                .arrayNode()
+                                .add(fixture.visibleGalleryAssetId().toString()))))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
                 LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -270,7 +283,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.inquiry().getId(),
             fixture.form().id(),
             List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("초코 케이크"))),
+                fixture.form().optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
                 LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -298,42 +312,24 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서",
         List.of(
-            new CreateOrderFormCommand.Field(
+            optionGroup(
                 "메뉴명",
-                FieldType.TEXT,
+                SelectionType.SINGLE,
                 true,
-                0L,
-                null,
                 0,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of()),
-            new CreateOrderFormCommand.Field(
+                option("메뉴명", "menu", OptionInputType.TEXT, 0L, null, 0)),
+            optionGroup(
                 "사이즈",
-                FieldType.SINGLE_SELECT,
+                SelectionType.SINGLE,
                 true,
-                null,
-                null,
                 1,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of(new OrderFormFieldOptionCommand("10호", "size-10", 38000L, true, 0))),
-            new CreateOrderFormCommand.Field(
+                option("10호", "size-10", OptionInputType.SELECT, 38000L, null, 0)),
+            optionGroup(
                 "참고 이미지",
-                FieldType.IMAGE,
+                SelectionType.SINGLE,
                 false,
-                null,
-                null,
                 2,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of()))));
+                option("참고 이미지", "reference", OptionInputType.IMAGE, null, null, 0)))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     UUID visibleGalleryAssetId = createVisibleGalleryAsset(store.id(), seller.getId());
@@ -383,24 +379,59 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         "original/" + UUID.randomUUID() + "/" + filename));
   }
 
-  private JsonNode textNode(String value) {
-    return objectMapper.getNodeFactory().textNode(value);
+  private CreateOrderFormCommand.OptionGroup optionGroup(
+      String label,
+      SelectionType selectionType,
+      boolean required,
+      int sortOrder,
+      OrderFormOptionCommand option) {
+    return new CreateOrderFormCommand.OptionGroup(
+        label,
+        selectionType,
+        required,
+        sortOrder,
+        OrderFormCategory.DESIGN,
+        OrderFormCategory.DESIGN.getTitle(),
+        null,
+        0,
+        List.of(option));
+  }
+
+  private OrderFormOptionCommand option(
+      String label,
+      String value,
+      OptionInputType inputType,
+      Long price,
+      String settings,
+      int sortOrder) {
+    return new OrderFormOptionCommand(label, value, inputType, price, settings, true, sortOrder);
+  }
+
+  private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {
+    return objectMapper.getNodeFactory().objectNode().put("optionValue", optionValue);
+  }
+
+  private com.fasterxml.jackson.databind.node.ArrayNode selections(JsonNode... selectedOptions) {
+    com.fasterxml.jackson.databind.node.ArrayNode selections =
+        objectMapper.getNodeFactory().arrayNode();
+    for (JsonNode selectedOption : selectedOptions) {
+      selections.add(selectedOption);
+    }
+    return selections;
   }
 
   private void assertAnswerSnapshot(
       JsonNode snapshot,
-      UUID fieldId,
+      UUID optionGroupId,
       String label,
-      String fieldType,
+      String selectionType,
       boolean required,
-      int sortOrder,
-      String value) {
-    assertEquals(fieldId.toString(), snapshot.get("fieldId").asText());
+      int sortOrder) {
+    assertEquals(optionGroupId.toString(), snapshot.get("optionGroupId").asText());
     assertEquals(label, snapshot.get("label").asText());
-    assertEquals(fieldType, snapshot.get("fieldType").asText());
+    assertEquals(selectionType, snapshot.get("selectionType").asText());
     assertEquals(required, snapshot.get("required").asBoolean());
     assertEquals(sortOrder, snapshot.get("sortOrder").asInt());
-    assertEquals(value, snapshot.get("value").asText());
   }
 
   private record Fixture(

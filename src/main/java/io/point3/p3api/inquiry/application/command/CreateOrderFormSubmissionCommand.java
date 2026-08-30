@@ -79,7 +79,7 @@ public record CreateOrderFormSubmissionCommand(
     return List.copyOf(referenceAssets);
   }
 
-  public record FormAnswer(UUID fieldId, JsonNode value) {}
+  public record FormAnswer(UUID optionGroupId, JsonNode value) {}
 
   public record PickupRequest(LocalDate pickupDate, LocalTime pickupTime) {}
 

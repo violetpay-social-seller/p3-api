@@ -61,12 +61,13 @@ import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
-import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
+import io.point3.p3api.orderform.application.OrderFormOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
 import io.point3.p3api.store.application.StoreService;
@@ -236,9 +237,10 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         true,
         List.of(
             new CreateOrderFormDraftCommand.FormAnswer(
-                fixture.form().fields().get(0).id(), textNode("바닐라 케이크")),
+                fixture.form().optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "바닐라 케이크"))),
             new CreateOrderFormDraftCommand.FormAnswer(
-                fixture.form().fields().get(1).id(), textNode("38000"))),
+                fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
         List.of(new CreateOrderFormDraftCommand.ReferenceAsset(
             galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
 
@@ -256,7 +258,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
     assertFalse(draft.draftKey().isBlank());
     assertEquals(fixture.store().id(), storedDraft.storeId());
-    assertEquals("바닐라 케이크", storedDraft.formAnswers().get(0).value().asText());
+    assertEquals(
+        "바닐라 케이크", storedDraft.formAnswers().get(0).value().get(0).get("text").asText());
     assertEquals(galleryAssetId, storedDraft.startReferenceAssets().get(0).assetId());
     assertFalse(draftStorePort.findByDraftKey(draft.draftKey()).isPresent());
     assertEquals(InquiryStatus.WAITING, consumed.inquiry().getStatus());
@@ -285,9 +288,10 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
             true,
             List.of(
                 new CreateOrderFormDraftCommand.FormAnswer(
-                    fixture.form().fields().get(0).id(), textNode("바닐라 케이크")),
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "바닐라 케이크"))),
                 new CreateOrderFormDraftCommand.FormAnswer(
-                    fixture.form().fields().get(1).id(), textNode("38000"))),
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
             List.of())));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
@@ -459,30 +463,9 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서 " + prefix,
         List.of(
-            new CreateOrderFormCommand.Field(
-                "메뉴명",
-                FieldType.TEXT,
-                true,
-                0L,
-                null,
-                0,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of()),
-            new CreateOrderFormCommand.Field(
-                "사이즈",
-                FieldType.SINGLE_SELECT,
-                true,
-                null,
-                null,
-                1,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of(new OrderFormFieldOptionCommand("10호", "size-10", 38000L, true, 0))))));
+            optionGroup("메뉴명", true, 0, option("메뉴명", "menu", OptionInputType.TEXT, 0L, 0)),
+            optionGroup(
+                "사이즈", true, 1, option("10호", "size-10", OptionInputType.SELECT, 38000L, 0)))));
     savePickupSettings(store.id());
 
     return new Fixture(seller, buyer, store, form, null, null);
@@ -510,9 +493,10 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         form.id(),
         List.of(
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.fields().get(0).id(), textNode("초코 케이크")),
+                form.optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크"))),
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.fields().get(1).id(), textNode("size-10"))),
+                form.optionGroups().get(1).id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -557,8 +541,36 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     return asset.getId();
   }
 
-  private JsonNode textNode(String value) {
-    return objectMapper.getNodeFactory().textNode(value);
+  private CreateOrderFormCommand.OptionGroup optionGroup(
+      String label, boolean required, int sortOrder, OrderFormOptionCommand option) {
+    return new CreateOrderFormCommand.OptionGroup(
+        label,
+        SelectionType.SINGLE,
+        required,
+        sortOrder,
+        OrderFormCategory.DESIGN,
+        OrderFormCategory.DESIGN.getTitle(),
+        null,
+        0,
+        List.of(option));
+  }
+
+  private OrderFormOptionCommand option(
+      String label, String value, OptionInputType inputType, Long price, int sortOrder) {
+    return new OrderFormOptionCommand(label, value, inputType, price, null, true, sortOrder);
+  }
+
+  private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {
+    return objectMapper.getNodeFactory().objectNode().put("optionValue", optionValue);
+  }
+
+  private com.fasterxml.jackson.databind.node.ArrayNode selections(JsonNode... selectedOptions) {
+    com.fasterxml.jackson.databind.node.ArrayNode selections =
+        objectMapper.getNodeFactory().arrayNode();
+    for (JsonNode selectedOption : selectedOptions) {
+      selections.add(selectedOption);
+    }
+    return selections;
   }
 
   private record Fixture(

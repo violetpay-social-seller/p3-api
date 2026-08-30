@@ -13,12 +13,13 @@ import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.application.update.OrderFormUpdateUseCase;
 import io.point3.p3api.orderform.application.update.UpdateOrderFormCommand;
-import io.point3.p3api.orderform.domain.entity.OrderFormField;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormCategoryGroup;
+import io.point3.p3api.orderform.domain.entity.OrderFormOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormOptionGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -32,6 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class OrderFormService
     implements OrderFormCreateUseCase, OrderFormUpdateUseCase, OrderFormQueryUseCase {
+  private static final int MAX_OPTIONS = 6;
+  private static final int MAX_IMAGE_COUNT = 5;
+
   private final OrderFormPersistencePort orderFormPersistencePort;
   private final ObjectMapper objectMapper;
 
@@ -40,20 +44,20 @@ public class OrderFormService
     if (orderFormPersistencePort.existsActiveTemplateByStoreId(command.storeId())) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_ACTIVE_ALREADY_EXISTS);
     }
-    validateFields(command.fields());
+    validateOptionGroups(command.optionGroups());
     OrderFormTemplate template = orderFormPersistencePort.saveTemplate(
         OrderFormTemplate.create(command.storeId(), command.name()));
-    saveDefinition(template.getId(), command.fields());
+    saveDefinition(template.getId(), command.optionGroups());
     return getResult(template);
   }
 
   @Override
   public OrderFormResult update(UpdateOrderFormCommand command) {
     OrderFormTemplate template = findTemplate(command.storeId(), command.templateId());
-    validateFields(command.fields());
+    validateOptionGroups(command.optionGroups());
     template.updateName(command.name());
-    orderFormPersistencePort.deleteGroupsByTemplateId(template.getId());
-    saveDefinition(template.getId(), command.fields());
+    orderFormPersistencePort.deleteCategoryGroupsByTemplateId(template.getId());
+    saveDefinition(template.getId(), command.optionGroups());
     return getResult(template);
   }
 
@@ -78,40 +82,47 @@ public class OrderFormService
         .orElseThrow(() -> new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND)));
   }
 
-  private void saveDefinition(UUID templateId, List<? extends OrderFormFieldCommand> fields) {
-    Map<Integer, List<OrderFormFieldCommand>> byGroup = fields.stream()
-        .map(field -> (OrderFormFieldCommand) field)
+  private void saveDefinition(
+      UUID templateId, List<? extends OrderFormOptionGroupCommand> optionGroups) {
+    Map<Integer, List<OrderFormOptionGroupCommand>> byGroup = optionGroups.stream()
+        .map(optionGroup -> (OrderFormOptionGroupCommand) optionGroup)
         .collect(Collectors.groupingBy(this::groupSortOrder));
     for (int groupOrder : byGroup.keySet().stream().sorted().toList()) {
-      List<OrderFormFieldCommand> groupFields = byGroup.get(groupOrder);
-      OrderFormFieldGroup group = orderFormPersistencePort.saveGroup(OrderFormFieldGroup.create(
-          templateId,
-          groupCategory(groupFields.getFirst()),
-          groupTitle(groupFields.getFirst()),
-          groupDescription(groupFields.getFirst()),
-          groupOrder));
-      List<OrderFormField> saved = orderFormPersistencePort.saveFields(groupFields.stream()
-          .map(field -> OrderFormField.create(
-              group.getId(),
-              field.label(),
-              field.fieldType(),
-              field.required(),
-              field.price(),
-              normalizeSettings(field.fieldType(), field.settings()),
-              field.sortOrder()))
-          .toList());
+      List<OrderFormOptionGroupCommand> categoryOptionGroups = byGroup.get(groupOrder);
+      OrderFormCategoryGroup group =
+          orderFormPersistencePort.saveCategoryGroup(OrderFormCategoryGroup.create(
+              templateId,
+              groupCategory(categoryOptionGroups.getFirst()),
+              groupTitle(categoryOptionGroups.getFirst()),
+              groupDescription(categoryOptionGroups.getFirst()),
+              groupOrder));
+      List<OrderFormOptionGroup> saved =
+          orderFormPersistencePort.saveOptionGroups(categoryOptionGroups.stream()
+              .map(optionGroup -> OrderFormOptionGroup.create(
+                  group.getId(),
+                  optionGroup.label(),
+                  optionGroup.selectionType(),
+                  optionGroup.required(),
+                  optionGroup.sortOrder()))
+              .toList());
       for (int index = 0; index < saved.size(); index++) {
-        OrderFormField field = saved.get(index);
-        orderFormPersistencePort.saveOptions(groupFields.get(index).options().stream()
-            .map(option -> createOption(field.getId(), option))
+        OrderFormOptionGroup optionGroup = saved.get(index);
+        orderFormPersistencePort.saveOptions(categoryOptionGroups.get(index).options().stream()
+            .map(option -> createOption(optionGroup.getId(), option))
             .toList());
       }
     }
   }
 
-  private OrderFormFieldOption createOption(UUID fieldId, OrderFormFieldOptionCommand option) {
-    OrderFormFieldOption result = OrderFormFieldOption.create(
-        fieldId, option.label(), option.value(), option.price(), option.sortOrder());
+  private OrderFormOption createOption(UUID optionGroupId, OrderFormOptionCommand option) {
+    OrderFormOption result = OrderFormOption.create(
+        optionGroupId,
+        option.label(),
+        option.value(),
+        option.inputType(),
+        option.price(),
+        normalizeSettings(option.inputType(), option.settings()),
+        option.sortOrder());
     if (!option.active()) {
       result.inactive();
     }
@@ -119,15 +130,16 @@ public class OrderFormService
   }
 
   private OrderFormResult getResult(OrderFormTemplate template) {
-    List<OrderFormFieldGroup> groups =
-        orderFormPersistencePort.findGroupsByTemplateId(template.getId());
-    List<OrderFormField> fields = orderFormPersistencePort.findFieldsByTemplateId(template.getId());
+    List<OrderFormCategoryGroup> groups =
+        orderFormPersistencePort.findCategoryGroupsByTemplateId(template.getId());
+    List<OrderFormOptionGroup> optionGroups =
+        orderFormPersistencePort.findOptionGroupsByTemplateId(template.getId());
     return OrderFormResult.from(
         template,
         groups,
-        fields,
-        orderFormPersistencePort.findOptionsByFieldIds(
-            fields.stream().map(OrderFormField::getId).toList()));
+        optionGroups,
+        orderFormPersistencePort.findOptionsByOptionGroupIds(
+            optionGroups.stream().map(OrderFormOptionGroup::getId).toList()));
   }
 
   private OrderFormTemplate findTemplate(UUID storeId, UUID templateId) {
@@ -136,89 +148,86 @@ public class OrderFormService
         .orElseThrow(() -> new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND));
   }
 
-  private void validateFields(List<? extends OrderFormFieldCommand> fields) {
-    if (fields == null || fields.isEmpty()) {
+  private void validateOptionGroups(List<? extends OrderFormOptionGroupCommand> optionGroups) {
+    if (optionGroups == null || optionGroups.isEmpty()) {
       throw invalid();
     }
-    Map<Integer, List<OrderFormFieldCommand>> groups = fields.stream()
-        .map(field -> (OrderFormFieldCommand) field)
+    Map<Integer, List<OrderFormOptionGroupCommand>> groups = optionGroups.stream()
+        .map(optionGroup -> (OrderFormOptionGroupCommand) optionGroup)
         .collect(Collectors.groupingBy(this::groupSortOrder));
     for (int groupOrder : groups.keySet().stream().sorted().toList()) {
-      List<OrderFormFieldCommand> groupFields = groups.get(groupOrder);
-      if (groupFields == null || groupFields.isEmpty()) {
+      List<OrderFormOptionGroupCommand> categoryOptionGroups = groups.get(groupOrder);
+      if (categoryOptionGroups == null || categoryOptionGroups.isEmpty()) {
         throw invalid();
       }
-      OrderFormFieldCommand first = groupFields.getFirst();
+      OrderFormOptionGroupCommand first = categoryOptionGroups.getFirst();
       validateGroup(first, groupOrder);
-      for (int index = 0; index < groupFields.size(); index++) {
-        OrderFormFieldCommand field = groupFields.get(index);
-        if (field.sortOrder() != index
-            || groupCategory(first) != groupCategory(field)
-            || !groupTitle(first).equals(groupTitle(field))
-            || !java.util.Objects.equals(groupDescription(first), groupDescription(field))) {
+      for (int index = 0; index < categoryOptionGroups.size(); index++) {
+        OrderFormOptionGroupCommand optionGroup = categoryOptionGroups.get(index);
+        if (optionGroup.sortOrder() != index
+            || groupCategory(first) != groupCategory(optionGroup)
+            || !groupTitle(first).equals(groupTitle(optionGroup))
+            || !java.util.Objects.equals(groupDescription(first), groupDescription(optionGroup))) {
           throw invalid();
         }
-        validateFieldTypePolicy(groupCategory(field), field.fieldType());
-        validatePrice(field.fieldType(), field.price());
-        validateOptions(field.fieldType(), field.options());
-        normalizeSettings(field.fieldType(), field.settings());
+        validateSelectionTypePolicy(groupCategory(optionGroup), optionGroup.selectionType());
+        validateOptions(optionGroup.options());
       }
     }
   }
 
-  private void validateGroup(OrderFormFieldCommand field, int groupOrder) {
-    OrderFormCategory category = groupCategory(field);
+  private void validateGroup(OrderFormOptionGroupCommand optionGroup, int groupOrder) {
+    OrderFormCategory category = groupCategory(optionGroup);
     if (category == null
         || category.getSortOrder() != groupOrder
-        || groupTitle(field) == null
-        || !category.getTitle().equals(groupTitle(field))) {
+        || groupTitle(optionGroup) == null
+        || !category.getTitle().equals(groupTitle(optionGroup))) {
       throw invalid();
     }
   }
 
-  private void validatePrice(FieldType type, Long price) {
-    if (type == FieldType.TEXT) {
-      if (price == null || price < 0) {
-        throw invalid();
-      }
-      return;
-    }
-    if (price != null) {
+  private void validateOptions(List<OrderFormOptionCommand> options) {
+    if (options == null || options.isEmpty()) {
       throw invalid();
     }
-  }
-
-  private void validateOptions(FieldType type, List<OrderFormFieldOptionCommand> options) {
-    boolean selectable = type == FieldType.SINGLE_SELECT
-        || type == FieldType.SINGLE_SELECT_WITH_TEXT
-        || type == FieldType.MULTI_SELECT;
-    if (selectable != !options.isEmpty()) {
-      throw invalid();
-    }
-    if (options.size() > 5) {
+    if (options.size() > MAX_OPTIONS) {
       throw invalid();
     }
     for (int index = 0; index < options.size(); index++) {
-      OrderFormFieldOptionCommand option = options.get(index);
+      OrderFormOptionCommand option = options.get(index);
       if (option.sortOrder() != index
           || option.label() == null
           || option.label().isBlank()
           || option.value() == null
           || option.value().isBlank()
-          || option.price() == null
-          || option.price() < 0) {
+          || option.inputType() == null) {
         throw invalid();
       }
+      validateOptionPrice(option.inputType(), option.price());
+      normalizeSettings(option.inputType(), option.settings());
     }
   }
 
-  private void validateFieldTypePolicy(OrderFormCategory category, FieldType type) {
-    if (type == FieldType.MULTI_SELECT && category != OrderFormCategory.CAKE_DESIGN) {
+  private void validateSelectionTypePolicy(
+      OrderFormCategory category, SelectionType selectionType) {
+    if (selectionType == SelectionType.MULTI && category != OrderFormCategory.CAKE_DESIGN) {
       throw invalid();
     }
   }
 
-  private String normalizeSettings(FieldType type, String settings) {
+  private void validateOptionPrice(OptionInputType type, Long price) {
+    boolean priced = type == OptionInputType.SELECT
+        || type == OptionInputType.SELECT_WITH_TEXT
+        || type == OptionInputType.TEXT;
+    if (priced && (price == null || price < 0)) {
+      throw invalid();
+    }
+    if (!priced && price != null) {
+      throw invalid();
+    }
+  }
+
+  private String normalizeSettings(OptionInputType type, String settings) {
     if (settings == null || settings.isBlank()) {
       return null;
     }
@@ -234,7 +243,7 @@ public class OrderFormService
           copyPositiveInteger(node, accepted, "maxLength");
         }
         case IMAGE -> copyImageSettings(node, accepted);
-        case SINGLE_SELECT, SINGLE_SELECT_WITH_TEXT, MULTI_SELECT -> {}
+        case SELECT, SELECT_WITH_TEXT -> {}
       }
       return accepted.isEmpty() ? null : objectMapper.writeValueAsString(accepted);
     } catch (JsonProcessingException exception) {
@@ -244,7 +253,7 @@ public class OrderFormService
 
   private void copyImageSettings(JsonNode node, ObjectNode accepted) {
     copyPositiveInteger(node, accepted, "maxCount");
-    if (accepted.has("maxCount") && accepted.get("maxCount").asInt() > 5) {
+    if (accepted.has("maxCount") && accepted.get("maxCount").asInt() > MAX_IMAGE_COUNT) {
       throw invalid();
     }
     JsonNode types = node.get("allowedContentTypes");
@@ -282,28 +291,28 @@ public class OrderFormService
     }
   }
 
-  private int groupSortOrder(OrderFormFieldCommand field) {
-    return field instanceof CreateOrderFormCommand.Field create
+  private int groupSortOrder(OrderFormOptionGroupCommand optionGroup) {
+    return optionGroup instanceof CreateOrderFormCommand.OptionGroup create
         ? create.groupSortOrder()
-        : ((UpdateOrderFormCommand.Field) field).groupSortOrder();
+        : ((UpdateOrderFormCommand.OptionGroup) optionGroup).groupSortOrder();
   }
 
-  private OrderFormCategory groupCategory(OrderFormFieldCommand field) {
-    return field instanceof CreateOrderFormCommand.Field create
+  private OrderFormCategory groupCategory(OrderFormOptionGroupCommand optionGroup) {
+    return optionGroup instanceof CreateOrderFormCommand.OptionGroup create
         ? create.groupCategory()
-        : ((UpdateOrderFormCommand.Field) field).groupCategory();
+        : ((UpdateOrderFormCommand.OptionGroup) optionGroup).groupCategory();
   }
 
-  private String groupTitle(OrderFormFieldCommand field) {
-    return field instanceof CreateOrderFormCommand.Field create
+  private String groupTitle(OrderFormOptionGroupCommand optionGroup) {
+    return optionGroup instanceof CreateOrderFormCommand.OptionGroup create
         ? create.groupTitle()
-        : ((UpdateOrderFormCommand.Field) field).groupTitle();
+        : ((UpdateOrderFormCommand.OptionGroup) optionGroup).groupTitle();
   }
 
-  private String groupDescription(OrderFormFieldCommand field) {
-    return field instanceof CreateOrderFormCommand.Field create
+  private String groupDescription(OrderFormOptionGroupCommand optionGroup) {
+    return optionGroup instanceof CreateOrderFormCommand.OptionGroup create
         ? create.groupDescription()
-        : ((UpdateOrderFormCommand.Field) field).groupDescription();
+        : ((UpdateOrderFormCommand.OptionGroup) optionGroup).groupDescription();
   }
 
   private BaseException invalid() {

@@ -12,21 +12,21 @@ public record OrderFormResponse(
     boolean active,
     Instant createdAt,
     Instant updatedAt,
-    List<OrderFormFieldResponse> fields,
-    List<OrderFormFieldGroupResponse> groups) {
+    List<OrderFormOptionGroupResponse> optionGroups,
+    List<OrderFormCategoryGroupResponse> groups) {
 
   public OrderFormResponse {
-    fields = List.copyOf(fields);
+    optionGroups = List.copyOf(optionGroups);
     groups = List.copyOf(groups);
   }
 
   @Override
-  public List<OrderFormFieldResponse> fields() {
-    return List.copyOf(fields);
+  public List<OrderFormOptionGroupResponse> optionGroups() {
+    return List.copyOf(optionGroups);
   }
 
   @Override
-  public List<OrderFormFieldGroupResponse> groups() {
+  public List<OrderFormCategoryGroupResponse> groups() {
     return List.copyOf(groups);
   }
 
@@ -38,7 +38,7 @@ public record OrderFormResponse(
         result.active(),
         result.createdAt(),
         result.updatedAt(),
-        result.fields().stream().map(OrderFormFieldResponse::from).toList(),
-        result.groups().stream().map(OrderFormFieldGroupResponse::from).toList());
+        result.optionGroups().stream().map(OrderFormOptionGroupResponse::from).toList(),
+        result.groups().stream().map(OrderFormCategoryGroupResponse::from).toList());
   }
 }

@@ -36,12 +36,13 @@ import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
-import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
+import io.point3.p3api.orderform.application.OrderFormOptionCommand;
 import io.point3.p3api.orderform.application.OrderFormService;
 import io.point3.p3api.orderform.application.create.CreateOrderFormCommand;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import io.point3.p3api.payment.application.capture.CapturePaymentCommand;
 import io.point3.p3api.payment.application.capture.PaymentCaptureUseCase;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
@@ -463,30 +464,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         store.id(),
         "주문서 " + prefix,
         List.of(
-            new CreateOrderFormCommand.Field(
-                "메뉴명",
-                FieldType.TEXT,
-                true,
-                0L,
-                null,
-                0,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of()),
-            new CreateOrderFormCommand.Field(
-                "사이즈",
-                FieldType.SINGLE_SELECT,
-                true,
-                null,
-                null,
-                1,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
-                null,
-                0,
-                List.of(new OrderFormFieldOptionCommand("10호", "size-10", 38000L, true, 0))))));
+            optionGroup("메뉴명", true, 0, option("메뉴명", "menu", OptionInputType.TEXT, 0L, 0)),
+            optionGroup(
+                "사이즈", true, 1, option("10호", "size-10", OptionInputType.SELECT, 38000L, 0)))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
@@ -503,9 +483,10 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         form.id(),
         List.of(
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.fields().get(0).id(), textNode("초코 케이크")),
+                form.optionGroups().get(0).id(),
+                selections(selection("menu").put("text", "초코 케이크"))),
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.fields().get(1).id(), textNode("size-10"))),
+                form.optionGroups().get(1).id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -563,8 +544,36 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     return objectMapper.readTree(order.getStartReferenceAssets()).get(0).asText();
   }
 
-  private JsonNode textNode(String value) {
-    return objectMapper.getNodeFactory().textNode(value);
+  private CreateOrderFormCommand.OptionGroup optionGroup(
+      String label, boolean required, int sortOrder, OrderFormOptionCommand option) {
+    return new CreateOrderFormCommand.OptionGroup(
+        label,
+        SelectionType.SINGLE,
+        required,
+        sortOrder,
+        OrderFormCategory.DESIGN,
+        OrderFormCategory.DESIGN.getTitle(),
+        null,
+        0,
+        List.of(option));
+  }
+
+  private OrderFormOptionCommand option(
+      String label, String value, OptionInputType inputType, Long price, int sortOrder) {
+    return new OrderFormOptionCommand(label, value, inputType, price, null, true, sortOrder);
+  }
+
+  private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {
+    return objectMapper.getNodeFactory().objectNode().put("optionValue", optionValue);
+  }
+
+  private com.fasterxml.jackson.databind.node.ArrayNode selections(JsonNode... selectedOptions) {
+    com.fasterxml.jackson.databind.node.ArrayNode selections =
+        objectMapper.getNodeFactory().arrayNode();
+    for (JsonNode selectedOption : selectedOptions) {
+      selections.add(selectedOption);
+    }
+    return selections;
   }
 
   private void savePickupSettings(UUID storeId) {

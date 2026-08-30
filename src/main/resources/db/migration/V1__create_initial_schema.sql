@@ -165,51 +165,51 @@ CREATE TABLE order_form_templates (
     CONSTRAINT fk_order_form_templates_store_id FOREIGN KEY (store_id) REFERENCES stores (id) ON DELETE CASCADE
 );
 
-CREATE TABLE order_form_field_groups (
+CREATE TABLE order_form_category_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     template_id UUID NOT NULL,
     category VARCHAR(30) NOT NULL,
     title VARCHAR(100) NOT NULL,
     description TEXT,
     sort_order INTEGER NOT NULL,
-    CONSTRAINT uk_order_form_field_groups_template_sort_order UNIQUE (template_id, sort_order),
-    CONSTRAINT uk_order_form_field_groups_template_category UNIQUE (template_id, category),
-    CONSTRAINT fk_order_form_field_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
-    CONSTRAINT ck_order_form_field_groups_category CHECK (category IN ('DESIGN', 'SHAPE', 'CAKE_FLAVOR', 'CAKE_DESIGN', 'PACKAGING', 'OTHER_REQUEST')),
-    CONSTRAINT ck_order_form_field_groups_sort_order CHECK (sort_order >= 0)
+    CONSTRAINT uk_order_form_category_groups_template_sort_order UNIQUE (template_id, sort_order),
+    CONSTRAINT uk_order_form_category_groups_template_category UNIQUE (template_id, category),
+    CONSTRAINT fk_order_form_category_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_category_groups_category CHECK (category IN ('DESIGN', 'SHAPE', 'CAKE_FLAVOR', 'CAKE_DESIGN', 'PACKAGING', 'OTHER_REQUEST')),
+    CONSTRAINT ck_order_form_category_groups_sort_order CHECK (sort_order >= 0)
 );
 
-CREATE TABLE order_form_fields (
+CREATE TABLE order_form_option_groups (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    group_id UUID NOT NULL,
+    category_group_id UUID NOT NULL,
     label VARCHAR(150) NOT NULL,
-    field_type VARCHAR(30) NOT NULL,
+    selection_type VARCHAR(30) NOT NULL,
     required BOOLEAN NOT NULL DEFAULT FALSE,
+    sort_order INTEGER NOT NULL,
+    CONSTRAINT uk_order_form_option_groups_category_group_sort_order UNIQUE (category_group_id, sort_order),
+    CONSTRAINT fk_order_form_option_groups_category_group_id FOREIGN KEY (category_group_id) REFERENCES order_form_category_groups (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_option_groups_selection_type CHECK (selection_type IN ('SINGLE', 'MULTI')),
+    CONSTRAINT ck_order_form_option_groups_sort_order CHECK (sort_order >= 0)
+);
+
+CREATE TABLE order_form_options (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    option_group_id UUID NOT NULL,
+    label VARCHAR(100) NOT NULL,
+    value VARCHAR(100) NOT NULL,
+    input_type VARCHAR(30) NOT NULL,
     price BIGINT,
     settings JSONB,
     sort_order INTEGER NOT NULL,
-    CONSTRAINT uk_order_form_fields_group_sort_order UNIQUE (group_id, sort_order),
-    CONSTRAINT fk_order_form_fields_group_id FOREIGN KEY (group_id) REFERENCES order_form_field_groups (id) ON DELETE CASCADE,
-    CONSTRAINT ck_order_form_fields_field_type CHECK (field_type IN ('TEXT', 'TEXTAREA', 'IMAGE', 'SINGLE_SELECT', 'SINGLE_SELECT_WITH_TEXT', 'MULTI_SELECT')),
-    CONSTRAINT ck_order_form_fields_price CHECK (
-        (field_type = 'TEXT' AND price IS NOT NULL AND price >= 0)
-        OR (field_type <> 'TEXT' AND price IS NULL)
-    ),
-    CONSTRAINT ck_order_form_fields_sort_order CHECK (sort_order >= 0)
-);
-
-CREATE TABLE order_form_field_options (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    field_id UUID NOT NULL,
-    label VARCHAR(100) NOT NULL,
-    value VARCHAR(100) NOT NULL,
-    price BIGINT NOT NULL,
-    sort_order INTEGER NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT uk_order_form_field_options_field_sort_order UNIQUE (field_id, sort_order),
-    CONSTRAINT fk_order_form_field_options_field_id FOREIGN KEY (field_id) REFERENCES order_form_fields (id) ON DELETE CASCADE,
-    CONSTRAINT ck_order_form_field_options_price CHECK (price >= 0),
-    CONSTRAINT ck_order_form_field_options_sort_order CHECK (sort_order >= 0)
+    CONSTRAINT uk_order_form_options_group_sort_order UNIQUE (option_group_id, sort_order),
+    CONSTRAINT fk_order_form_options_group_id FOREIGN KEY (option_group_id) REFERENCES order_form_option_groups (id) ON DELETE CASCADE,
+    CONSTRAINT ck_order_form_options_input_type CHECK (input_type IN ('SELECT', 'SELECT_WITH_TEXT', 'TEXT', 'TEXTAREA', 'IMAGE')),
+    CONSTRAINT ck_order_form_options_price CHECK (
+        (input_type IN ('SELECT', 'SELECT_WITH_TEXT', 'TEXT') AND price IS NOT NULL AND price >= 0)
+        OR (input_type IN ('TEXTAREA', 'IMAGE') AND price IS NULL)
+    ),
+    CONSTRAINT ck_order_form_options_sort_order CHECK (sort_order >= 0)
 );
 
 CREATE TABLE inquiries (
@@ -414,9 +414,9 @@ CREATE INDEX ix_store_gallery_items_store_id_status ON store_gallery_items (stor
 CREATE UNIQUE INDEX uk_order_form_templates_store_active
     ON order_form_templates (store_id)
     WHERE active;
-CREATE INDEX ix_order_form_field_groups_template_id ON order_form_field_groups (template_id);
-CREATE INDEX ix_order_form_fields_group_id ON order_form_fields (group_id);
-CREATE INDEX ix_order_form_field_options_field_id ON order_form_field_options (field_id);
+CREATE INDEX ix_order_form_category_groups_template_id ON order_form_category_groups (template_id);
+CREATE INDEX ix_order_form_option_groups_category_group_id ON order_form_option_groups (category_group_id);
+CREATE INDEX ix_order_form_options_option_group_id ON order_form_options (option_group_id);
 CREATE INDEX ix_inquiries_buyer_user_id ON inquiries (buyer_user_id);
 CREATE INDEX ix_order_start_reference_assets_inquiry_id
     ON order_start_reference_assets (inquiry_id);

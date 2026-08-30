@@ -8,14 +8,14 @@ import java.util.List;
 
 public record OrderFormCreateRequest(
     @NotBlank @Size(max = 100) String name,
-    @Valid @NotEmpty List<OrderFormFieldGroupRequest> groups) {
+    @Valid @NotEmpty List<OrderFormCategoryGroupRequest> groups) {
 
   public OrderFormCreateRequest {
     groups = groups == null ? null : List.copyOf(groups);
   }
 
   @Override
-  public List<OrderFormFieldGroupRequest> groups() {
+  public List<OrderFormCategoryGroupRequest> groups() {
     return groups == null ? null : List.copyOf(groups);
   }
 }

@@ -43,8 +43,9 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_NOTICE_AGREEMENT_REQUIRED);
     }
 
-    orderFormAnswerValidator.validate(activeForm.fields(), toSubmissionAnswers(command));
-    orderFormImageAssetValidator.validate(activeForm.fields(), toSubmissionAnswers(command), null);
+    orderFormAnswerValidator.validate(activeForm.optionGroups(), toSubmissionAnswers(command));
+    orderFormImageAssetValidator.validate(
+        activeForm.optionGroups(), toSubmissionAnswers(command), null);
     orderFormPickupValidator.validate(
         command.storeId(),
         new CreateOrderFormSubmissionCommand.PickupRequest(
@@ -58,7 +59,7 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
       CreateOrderFormDraftCommand command) {
     return command.formAnswers().stream()
         .map(answer ->
-            new CreateOrderFormSubmissionCommand.FormAnswer(answer.fieldId(), answer.value()))
+            new CreateOrderFormSubmissionCommand.FormAnswer(answer.optionGroupId(), answer.value()))
         .toList();
   }
 

@@ -36,7 +36,7 @@ class LocalScenarioOrderFormDraftStoreTest {
   }
 
   private OrderFormDraftData draft() {
-    UUID fieldId = UUID.randomUUID();
+    UUID optionGroupId = UUID.randomUUID();
     UUID assetId = UUID.randomUUID();
     return new OrderFormDraftData(
         UUID.randomUUID(),
@@ -44,7 +44,7 @@ class LocalScenarioOrderFormDraftStoreTest {
         LocalDate.of(2026, 9, 1),
         LocalTime.of(14, 30),
         true,
-        List.of(new OrderFormDraftData.FormAnswer(fieldId, TextNode.valueOf("cake"))),
+        List.of(new OrderFormDraftData.FormAnswer(optionGroupId, TextNode.valueOf("cake"))),
         List.of(new OrderFormDraftData.ReferenceAsset(
             assetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
   }

@@ -1,50 +1,45 @@
 package io.point3.p3api.orderform.application.update;
 
-import io.point3.p3api.orderform.application.OrderFormFieldCommand;
-import io.point3.p3api.orderform.application.OrderFormFieldOptionCommand;
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.application.OrderFormOptionCommand;
+import io.point3.p3api.orderform.application.OrderFormOptionGroupCommand;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import java.util.List;
 import java.util.UUID;
 
 public record UpdateOrderFormCommand(
-    UUID storeId, UUID templateId, String name, List<Field> fields) {
+    UUID storeId, UUID templateId, String name, List<OptionGroup> optionGroups) {
 
   public UpdateOrderFormCommand {
-    fields = List.copyOf(fields);
+    optionGroups = List.copyOf(optionGroups);
   }
 
   @Override
-  public List<Field> fields() {
-    return List.copyOf(fields);
+  public List<OptionGroup> optionGroups() {
+    return List.copyOf(optionGroups);
   }
 
-  public record Field(
+  public record OptionGroup(
       String label,
-      FieldType fieldType,
+      SelectionType selectionType,
       boolean required,
-      Long price,
-      String settings,
       int sortOrder,
       OrderFormCategory groupCategory,
       String groupTitle,
       String groupDescription,
       int groupSortOrder,
-      List<OrderFormFieldOptionCommand> options)
-      implements OrderFormFieldCommand {
+      List<OrderFormOptionCommand> options)
+      implements OrderFormOptionGroupCommand {
 
-    public Field {
+    public OptionGroup {
       options = options == null ? List.of() : List.copyOf(options);
     }
 
-    public Field(
-        String label, FieldType fieldType, boolean required, String settings, int sortOrder) {
+    public OptionGroup(String label, SelectionType selectionType, boolean required, int sortOrder) {
       this(
           label,
-          fieldType,
+          selectionType,
           required,
-          null,
-          settings,
           sortOrder,
           OrderFormCategory.DESIGN,
           OrderFormCategory.DESIGN.getTitle(),

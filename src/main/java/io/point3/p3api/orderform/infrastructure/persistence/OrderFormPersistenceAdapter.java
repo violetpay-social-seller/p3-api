@@ -1,9 +1,9 @@
 package io.point3.p3api.orderform.infrastructure.persistence;
 
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
-import io.point3.p3api.orderform.domain.entity.OrderFormField;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormCategoryGroup;
+import io.point3.p3api.orderform.domain.entity.OrderFormOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormOptionGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.Optional;
@@ -18,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
 
   private final OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
-  private final OrderFormFieldGroupJpaRepository orderFormFieldGroupJpaRepository;
-  private final OrderFormFieldJpaRepository orderFormFieldJpaRepository;
-  private final OrderFormFieldOptionJpaRepository orderFormFieldOptionJpaRepository;
+  private final OrderFormCategoryGroupJpaRepository orderFormCategoryGroupJpaRepository;
+  private final OrderFormOptionGroupJpaRepository orderFormOptionGroupJpaRepository;
+  private final OrderFormOptionJpaRepository orderFormOptionJpaRepository;
 
   @Override
   public OrderFormTemplate saveTemplate(OrderFormTemplate template) {
@@ -28,18 +28,18 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
   }
 
   @Override
-  public OrderFormFieldGroup saveGroup(OrderFormFieldGroup group) {
-    return orderFormFieldGroupJpaRepository.save(group);
+  public OrderFormCategoryGroup saveCategoryGroup(OrderFormCategoryGroup group) {
+    return orderFormCategoryGroupJpaRepository.save(group);
   }
 
   @Override
-  public List<OrderFormField> saveFields(List<OrderFormField> fields) {
-    return orderFormFieldJpaRepository.saveAll(fields);
+  public List<OrderFormOptionGroup> saveOptionGroups(List<OrderFormOptionGroup> optionGroups) {
+    return orderFormOptionGroupJpaRepository.saveAll(optionGroups);
   }
 
   @Override
-  public List<OrderFormFieldOption> saveOptions(List<OrderFormFieldOption> options) {
-    return orderFormFieldOptionJpaRepository.saveAll(options);
+  public List<OrderFormOption> saveOptions(List<OrderFormOption> options) {
+    return orderFormOptionJpaRepository.saveAll(options);
   }
 
   @Override
@@ -62,32 +62,35 @@ public class OrderFormPersistenceAdapter implements OrderFormPersistencePort {
 
   @Override
   @Transactional(readOnly = true)
-  public List<OrderFormField> findFieldsByTemplateId(UUID templateId) {
+  public List<OrderFormOptionGroup> findOptionGroupsByTemplateId(UUID templateId) {
     List<UUID> groupIds =
-        orderFormFieldGroupJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId).stream()
-            .map(OrderFormFieldGroup::getId)
+        orderFormCategoryGroupJpaRepository
+            .findAllByTemplateIdOrderBySortOrderAsc(templateId)
+            .stream()
+            .map(OrderFormCategoryGroup::getId)
             .toList();
-    return orderFormFieldJpaRepository.findAllByGroupIdInOrderBySortOrderAsc(groupIds);
+    return orderFormOptionGroupJpaRepository.findAllByCategoryGroupIdInOrderBySortOrderAsc(
+        groupIds);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<OrderFormFieldGroup> findGroupsByTemplateId(UUID templateId) {
-    return orderFormFieldGroupJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId);
+  public List<OrderFormCategoryGroup> findCategoryGroupsByTemplateId(UUID templateId) {
+    return orderFormCategoryGroupJpaRepository.findAllByTemplateIdOrderBySortOrderAsc(templateId);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<OrderFormFieldOption> findOptionsByFieldIds(List<UUID> fieldIds) {
-    if (fieldIds.isEmpty()) {
+  public List<OrderFormOption> findOptionsByOptionGroupIds(List<UUID> optionGroupIds) {
+    if (optionGroupIds.isEmpty()) {
       return List.of();
     }
-    return orderFormFieldOptionJpaRepository.findAllByFieldIdInOrderBySortOrderAsc(fieldIds);
+    return orderFormOptionJpaRepository.findAllByOptionGroupIdInOrderBySortOrderAsc(optionGroupIds);
   }
 
   @Override
-  public void deleteGroupsByTemplateId(UUID templateId) {
-    orderFormFieldGroupJpaRepository.deleteByTemplateId(templateId);
-    orderFormFieldGroupJpaRepository.flush();
+  public void deleteCategoryGroupsByTemplateId(UUID templateId) {
+    orderFormCategoryGroupJpaRepository.deleteByTemplateId(templateId);
+    orderFormCategoryGroupJpaRepository.flush();
   }
 }

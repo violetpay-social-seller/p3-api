@@ -33,7 +33,8 @@ public record CreateOrderFormDraftRequest(
     return startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
-  public record FormAnswer(@NotNull UUID fieldId, @NotNull Object value) {}
+  public record FormAnswer(
+      @NotNull UUID optionGroupId, @NotNull Object value) {}
 
   public record ReferenceAsset(
       @NotNull UUID assetId,

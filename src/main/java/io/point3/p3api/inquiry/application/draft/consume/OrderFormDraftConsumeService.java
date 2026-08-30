@@ -78,8 +78,8 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         inquiryId,
         draft.orderFormTemplateId(),
         draft.formAnswers().stream()
-            .map(answer ->
-                new CreateOrderFormSubmissionCommand.FormAnswer(answer.fieldId(), answer.value()))
+            .map(answer -> new CreateOrderFormSubmissionCommand.FormAnswer(
+                answer.optionGroupId(), answer.value()))
             .toList(),
         new CreateOrderFormSubmissionCommand.PickupRequest(draft.pickupDate(), draft.pickupTime()),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(draft.noticeAgreed()),

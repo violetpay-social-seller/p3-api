@@ -47,14 +47,15 @@ public class OrderFormSubmissionService implements OrderFormSubmissionCreateUseC
 
     validateOrderFormSubmissionRequirements(command, activeForm);
 
-    orderFormAnswerValidator.validate(activeForm.fields(), command.formAnswers());
+    orderFormAnswerValidator.validate(activeForm.optionGroups(), command.formAnswers());
     orderFormImageAssetValidator.validate(
-        activeForm.fields(), command.formAnswers(), command.buyerUserId());
+        activeForm.optionGroups(), command.formAnswers(), command.buyerUserId());
     orderFormPickupValidator.validate(command.storeId(), command.pickupRequest());
     orderFormReferenceAssetValidator.validate(
         command.storeId(), command.referenceAssets(), command.buyerUserId());
 
-    String answersSnapshot = snapshotFactory.create(activeForm.fields(), command.formAnswers());
+    String answersSnapshot =
+        snapshotFactory.create(activeForm.optionGroups(), command.formAnswers());
 
     String referenceAssets = referenceSnapshotFactory.create(command.referenceAssets());
 

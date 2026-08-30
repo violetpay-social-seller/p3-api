@@ -59,7 +59,7 @@ public record OrderFormDraftData(
     return startReferenceAssets != null;
   }
 
-  public record FormAnswer(UUID fieldId, JsonNode value) {}
+  public record FormAnswer(UUID optionGroupId, JsonNode value) {}
 
   public record ReferenceAsset(UUID assetId, OrderFormReferenceAssetSource source, int sortOrder) {}
 
@@ -72,7 +72,7 @@ public record OrderFormDraftData(
         command.noticeAgreed(),
         command.cancellationRefundAgreed(),
         command.formAnswers().stream()
-            .map(answer -> new FormAnswer(answer.fieldId(), answer.value()))
+            .map(answer -> new FormAnswer(answer.optionGroupId(), answer.value()))
             .toList(),
         command.hasStartReferenceAssets()
             ? command.startReferenceAssets().stream()

@@ -8,9 +8,9 @@ import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import io.point3.p3api.orderform.application.result.OrderFormResult;
 import io.point3.p3api.orderform.application.update.OrderFormUpdateUseCase;
 import io.point3.p3api.orderform.application.update.UpdateOrderFormCommand;
+import io.point3.p3api.orderform.controller.request.OrderFormCategoryGroupRequest;
 import io.point3.p3api.orderform.controller.request.OrderFormCreateRequest;
-import io.point3.p3api.orderform.controller.request.OrderFormFieldGroupRequest;
-import io.point3.p3api.orderform.controller.request.OrderFormFieldOptionRequest;
+import io.point3.p3api.orderform.controller.request.OrderFormOptionRequest;
 import io.point3.p3api.orderform.controller.request.OrderFormUpdateRequest;
 import io.point3.p3api.orderform.controller.response.OrderFormResponse;
 import jakarta.validation.Valid;
@@ -78,58 +78,61 @@ public class SellerOrderFormController {
   }
 
   private CreateOrderFormCommand toCommand(UUID storeId, OrderFormCreateRequest request) {
-    return new CreateOrderFormCommand(storeId, request.name(), toCreateFields(request.groups()));
+    return new CreateOrderFormCommand(
+        storeId, request.name(), toCreateOptionGroups(request.groups()));
   }
 
   private UpdateOrderFormCommand toCommand(
       UUID storeId, UUID templateId, OrderFormUpdateRequest request) {
     return new UpdateOrderFormCommand(
-        storeId, templateId, request.name(), toUpdateFields(request.groups()));
+        storeId, templateId, request.name(), toUpdateOptionGroups(request.groups()));
   }
 
-  private List<CreateOrderFormCommand.Field> toCreateFields(
-      List<OrderFormFieldGroupRequest> groups) {
+  private List<CreateOrderFormCommand.OptionGroup> toCreateOptionGroups(
+      List<OrderFormCategoryGroupRequest> groups) {
     return groups.stream()
-        .flatMap(group -> group.fields().stream()
-            .map(field -> new CreateOrderFormCommand.Field(
-                field.label(),
-                field.fieldType(),
-                field.required(),
-                field.price(),
-                field.settings(),
-                field.sortOrder(),
+        .flatMap(group -> group.optionGroups().stream()
+            .map(optionGroup -> new CreateOrderFormCommand.OptionGroup(
+                optionGroup.label(),
+                optionGroup.selectionType(),
+                optionGroup.required(),
+                optionGroup.sortOrder(),
                 group.category(),
                 group.title(),
                 group.description(),
                 group.sortOrder(),
-                toOptions(field.options()))))
+                toOptions(optionGroup.options()))))
         .toList();
   }
 
-  private List<UpdateOrderFormCommand.Field> toUpdateFields(
-      List<OrderFormFieldGroupRequest> groups) {
+  private List<UpdateOrderFormCommand.OptionGroup> toUpdateOptionGroups(
+      List<OrderFormCategoryGroupRequest> groups) {
     return groups.stream()
-        .flatMap(group -> group.fields().stream()
-            .map(field -> new UpdateOrderFormCommand.Field(
-                field.label(),
-                field.fieldType(),
-                field.required(),
-                field.price(),
-                field.settings(),
-                field.sortOrder(),
+        .flatMap(group -> group.optionGroups().stream()
+            .map(optionGroup -> new UpdateOrderFormCommand.OptionGroup(
+                optionGroup.label(),
+                optionGroup.selectionType(),
+                optionGroup.required(),
+                optionGroup.sortOrder(),
                 group.category(),
                 group.title(),
                 group.description(),
                 group.sortOrder(),
-                toOptions(field.options()))))
+                toOptions(optionGroup.options()))))
         .toList();
   }
 
-  private List<io.point3.p3api.orderform.application.OrderFormFieldOptionCommand> toOptions(
-      List<OrderFormFieldOptionRequest> options) {
+  private List<io.point3.p3api.orderform.application.OrderFormOptionCommand> toOptions(
+      List<OrderFormOptionRequest> options) {
     return options.stream()
-        .map(option -> new io.point3.p3api.orderform.application.OrderFormFieldOptionCommand(
-            option.label(), option.value(), option.price(), option.active(), option.sortOrder()))
+        .map(option -> new io.point3.p3api.orderform.application.OrderFormOptionCommand(
+            option.label(),
+            option.value(),
+            option.inputType(),
+            option.price(),
+            option.settings(),
+            option.active(),
+            option.sortOrder()))
         .toList();
   }
 }

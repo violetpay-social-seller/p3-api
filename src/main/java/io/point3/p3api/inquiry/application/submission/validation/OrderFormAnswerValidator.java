@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
-import io.point3.p3api.orderform.application.result.OrderFormFieldResult;
+import io.point3.p3api.orderform.application.result.OrderFormOptionGroupResult;
+import io.point3.p3api.orderform.application.result.OrderFormOptionResult;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,38 +22,38 @@ public class OrderFormAnswerValidator {
   private static final int MAX_IMAGE_COUNT = 5;
 
   public void validate(
-      List<OrderFormFieldResult> fields,
+      List<OrderFormOptionGroupResult> optionGroups,
       List<CreateOrderFormSubmissionCommand.FormAnswer> answers) {
-    Map<UUID, OrderFormFieldResult> fieldMap =
-        fields.stream().collect(Collectors.toMap(OrderFormFieldResult::id, Function.identity()));
+    Map<UUID, OrderFormOptionGroupResult> optionGroupMap = optionGroups.stream()
+        .collect(Collectors.toMap(OrderFormOptionGroupResult::id, Function.identity()));
 
     Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap = answers.stream()
         .collect(Collectors.toMap(
-            CreateOrderFormSubmissionCommand.FormAnswer::fieldId, Function.identity()));
+            CreateOrderFormSubmissionCommand.FormAnswer::optionGroupId, Function.identity()));
 
-    ensureNoUnknownFields(fieldMap, answerMap);
-    ensureRequiredFieldsAnswered(fields, answerMap);
+    ensureNoUnknownOptionGroups(optionGroupMap, answerMap);
+    ensureRequiredOptionGroupsAnswered(optionGroups, answerMap);
 
     for (CreateOrderFormSubmissionCommand.FormAnswer answer : answers) {
-      OrderFormFieldResult field = fieldMap.get(answer.fieldId());
-      validateValue(field, answer.value());
+      OrderFormOptionGroupResult optionGroup = optionGroupMap.get(answer.optionGroupId());
+      validateValue(optionGroup, answer.value());
     }
   }
 
-  private void ensureNoUnknownFields(
-      Map<UUID, OrderFormFieldResult> fieldMap,
+  private void ensureNoUnknownOptionGroups(
+      Map<UUID, OrderFormOptionGroupResult> optionGroupMap,
       Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
-    if (!fieldMap.keySet().containsAll(answerMap.keySet())) {
+    if (!optionGroupMap.keySet().containsAll(answerMap.keySet())) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_UNKNOWN_FIELD);
     }
   }
 
-  private void ensureRequiredFieldsAnswered(
-      List<OrderFormFieldResult> fields,
+  private void ensureRequiredOptionGroupsAnswered(
+      List<OrderFormOptionGroupResult> optionGroups,
       Map<UUID, CreateOrderFormSubmissionCommand.FormAnswer> answerMap) {
-    for (OrderFormFieldResult field : fields) {
-      if (field.required()) {
-        CreateOrderFormSubmissionCommand.FormAnswer answer = answerMap.get(field.id());
+    for (OrderFormOptionGroupResult optionGroup : optionGroups) {
+      if (optionGroup.required()) {
+        CreateOrderFormSubmissionCommand.FormAnswer answer = answerMap.get(optionGroup.id());
         if (answer == null || isEmpty(answer.value())) {
           throw new BaseException(OrderFormErrorCode.ORDER_FORM_REQUIRED_FIELD_MISSING);
         }
@@ -58,99 +61,87 @@ public class OrderFormAnswerValidator {
     }
   }
 
-  private void validateValue(OrderFormFieldResult field, JsonNode value) {
+  private void validateValue(OrderFormOptionGroupResult optionGroup, JsonNode value) {
     if (isEmpty(value)) {
       return;
     }
 
-    switch (field.fieldType()) {
-      case TEXT, TEXTAREA -> validateText(value);
-      case IMAGE -> validateImage(value);
-      case SINGLE_SELECT -> validateSingleSelect(field, value);
-      case SINGLE_SELECT_WITH_TEXT -> validateSingleSelectWithText(field, value);
-      case MULTI_SELECT -> validateMultiSelect(field, value);
-    }
-  }
-
-  private void validateSingleSelect(OrderFormFieldResult field, JsonNode value) {
-    if (value == null
-        || !value.isTextual()
-        || field.options().stream()
-            .noneMatch(option -> option.active() && option.value().equals(value.asText()))) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateSingleSelectWithText(OrderFormFieldResult field, JsonNode value) {
-    if (!value.isObject()) {
-      throwInvalidFieldValue();
-    }
-    JsonNode selectedValue = value.get("selectedValue");
-    validateSingleSelect(field, selectedValue);
-
-    JsonNode text = value.get("text");
-    if (text != null && !text.isNull() && !text.isTextual()) {
-      throwInvalidFieldValue();
-    }
-  }
-
-  private void validateMultiSelect(OrderFormFieldResult field, JsonNode value) {
     if (!value.isArray()) {
+      throwInvalidFieldValue();
+    }
+
+    if (optionGroup.selectionType() == SelectionType.SINGLE && value.size() != 1) {
       throwInvalidFieldValue();
     }
 
     HashSet<String> selectedValues = new HashSet<>();
-    value.forEach(node -> {
-      if (!node.isTextual()) {
+    Map<String, OrderFormOptionResult> optionMap = optionGroup.options().stream()
+        .collect(Collectors.toMap(OrderFormOptionResult::value, Function.identity()));
+
+    for (JsonNode selected : value) {
+      if (!selected.isObject()) {
         throwInvalidFieldValue();
       }
 
-      String selectedValue = node.asText();
-      if (selectedValue.isBlank() || !selectedValues.add(selectedValue)) {
+      JsonNode optionValueNode = selected.get("optionValue");
+      if (optionValueNode == null || !optionValueNode.isTextual()) {
         throwInvalidFieldValue();
       }
 
-      boolean activeOption = field.options().stream()
-          .anyMatch(option -> option.active() && option.value().equals(selectedValue));
-      if (!activeOption) {
+      String optionValue = optionValueNode.asText();
+      if (optionValue.isBlank() || !selectedValues.add(optionValue)) {
         throwInvalidFieldValue();
       }
-    });
+
+      OrderFormOptionResult option = optionMap.get(optionValue);
+      if (option == null || !option.active()) {
+        throwInvalidFieldValue();
+      }
+
+      validateSelectedOption(option.inputType(), selected);
+    }
   }
 
-  private boolean isEmpty(JsonNode value) {
-    if (value == null || value.isNull()) {
-      return true;
+  private void validateSelectedOption(OptionInputType inputType, JsonNode selected) {
+    switch (inputType) {
+      case SELECT -> validateSelect(selected);
+      case SELECT_WITH_TEXT, TEXT, TEXTAREA -> validateText(selected);
+      case IMAGE -> validateImage(selected);
     }
-
-    if (value.isTextual()) {
-      return value.asText().isBlank();
-    }
-
-    if (value.isArray()) {
-      return value.isEmpty();
-    }
-
-    return false;
   }
 
-  private void validateText(JsonNode value) {
-    if (!value.isTextual()) {
+  private void validateSelect(JsonNode selected) {
+    if (hasPresent(selected.get("text")) || hasPresent(selected.get("assetIds"))) {
       throwInvalidFieldValue();
     }
   }
 
-  private void validateImage(JsonNode value) {
-    if (!value.isArray()) {
+  private void validateText(JsonNode selected) {
+    JsonNode text = selected.get("text");
+    if (text == null || !text.isTextual() || text.asText().isBlank()) {
+      throwInvalidFieldValue();
+    }
+    if (hasPresent(selected.get("assetIds"))) {
+      throwInvalidFieldValue();
+    }
+  }
+
+  private void validateImage(JsonNode selected) {
+    JsonNode assetIds = selected.get("assetIds");
+    if (assetIds == null || !assetIds.isArray() || assetIds.isEmpty()) {
       throwInvalidFieldValue();
     }
 
-    if (value.size() > MAX_IMAGE_COUNT) {
+    if (assetIds.size() > MAX_IMAGE_COUNT) {
       throw new BaseException(OrderFormErrorCode.ORDER_FORM_IMAGE_COUNT_EXCEEDED);
     }
 
-    HashSet<String> assetIds = new HashSet<>();
-    value.forEach(node -> {
+    if (hasPresent(selected.get("text"))) {
+      throwInvalidFieldValue();
+    }
+
+    HashSet<String> selectedAssetIds = new HashSet<>();
+    assetIds.forEach(node -> {
       if (!node.isTextual()) {
         throwInvalidFieldValue();
       }
@@ -162,10 +153,18 @@ public class OrderFormAnswerValidator {
         throwInvalidFieldValue();
       }
 
-      if (!assetIds.add(assetId)) {
+      if (!selectedAssetIds.add(assetId)) {
         throwInvalidFieldValue();
       }
     });
+  }
+
+  private boolean hasPresent(JsonNode value) {
+    return value != null && !value.isNull();
+  }
+
+  private boolean isEmpty(JsonNode value) {
+    return value == null || value.isNull() || (value.isArray() && value.isEmpty());
   }
 
   private void throwInvalidFieldValue() {

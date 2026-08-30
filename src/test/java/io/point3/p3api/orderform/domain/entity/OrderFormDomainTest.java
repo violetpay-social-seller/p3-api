@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.OptionInputType;
 import io.point3.p3api.orderform.domain.type.OrderFormCategory;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,22 +27,23 @@ class OrderFormDomainTest {
   }
 
   @Test
-  @DisplayName("주문서 필드 그룹과 필드는 음수 정렬 순서를 허용하지 않는다")
-  void rejectsNegativeSortOrderForGroupAndField() {
+  @DisplayName("주문서 카테고리 그룹과 옵션그룹은 음수 정렬 순서를 허용하지 않는다")
+  void rejectsNegativeSortOrderForCategoryGroupAndOptionGroup() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> OrderFormFieldGroup.create(
+        () -> OrderFormCategoryGroup.create(
             UUID.randomUUID(), OrderFormCategory.DESIGN, "디자인", null, -1));
     assertThrows(
         IllegalArgumentException.class,
-        () -> OrderFormField.create(UUID.randomUUID(), "메뉴명", FieldType.TEXT, true, 0L, null, -1));
+        () ->
+            OrderFormOptionGroup.create(UUID.randomUUID(), "메뉴명", SelectionType.SINGLE, true, -1));
   }
 
   @Test
-  @DisplayName("주문서 선택지는 활성 상태로 생성되고 비활성화할 수 있다")
-  void createsAndInactivatesFieldOption() {
-    OrderFormFieldOption option =
-        OrderFormFieldOption.create(UUID.randomUUID(), "1호", "size-1", 1000, 0);
+  @DisplayName("주문서 옵션은 활성 상태로 생성되고 비활성화할 수 있다")
+  void createsAndInactivatesOption() {
+    OrderFormOption option = OrderFormOption.create(
+        UUID.randomUUID(), "1호", "size-1", OptionInputType.SELECT, 1000L, null, 0);
 
     assertTrue(option.isActive());
     option.inactive();
@@ -53,13 +55,15 @@ class OrderFormDomainTest {
   }
 
   @Test
-  @DisplayName("주문서 선택지는 음수 가격과 정렬 순서를 허용하지 않는다")
-  void rejectsNegativePriceAndSortOrderForFieldOption() {
+  @DisplayName("주문서 옵션은 음수 가격과 정렬 순서를 허용하지 않는다")
+  void rejectsNegativePriceAndSortOrderForOption() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> OrderFormFieldOption.create(UUID.randomUUID(), "1호", "size-1", -1, 0));
+        () -> OrderFormOption.create(
+            UUID.randomUUID(), "1호", "size-1", OptionInputType.SELECT, -1L, null, 0));
     assertThrows(
         IllegalArgumentException.class,
-        () -> OrderFormFieldOption.create(UUID.randomUUID(), "1호", "size-1", 0, -1));
+        () -> OrderFormOption.create(
+            UUID.randomUUID(), "1호", "size-1", OptionInputType.SELECT, 0L, null, -1));
   }
 }

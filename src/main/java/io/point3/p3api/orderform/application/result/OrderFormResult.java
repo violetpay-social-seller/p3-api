@@ -1,8 +1,8 @@
 package io.point3.p3api.orderform.application.result;
 
-import io.point3.p3api.orderform.domain.entity.OrderFormField;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormCategoryGroup;
+import io.point3.p3api.orderform.domain.entity.OrderFormOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormOptionGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.time.Instant;
 import java.util.Comparator;
@@ -17,49 +17,51 @@ public record OrderFormResult(
     boolean active,
     Instant createdAt,
     Instant updatedAt,
-    List<OrderFormFieldResult> fields,
-    List<OrderFormFieldGroupResult> groups) {
+    List<OrderFormOptionGroupResult> optionGroups,
+    List<OrderFormCategoryGroupResult> groups) {
 
   public OrderFormResult {
-    fields = List.copyOf(fields);
+    optionGroups = List.copyOf(optionGroups);
     groups = List.copyOf(groups);
   }
 
   @Override
-  public List<OrderFormFieldResult> fields() {
-    return List.copyOf(fields);
+  public List<OrderFormOptionGroupResult> optionGroups() {
+    return List.copyOf(optionGroups);
   }
 
   @Override
-  public List<OrderFormFieldGroupResult> groups() {
+  public List<OrderFormCategoryGroupResult> groups() {
     return List.copyOf(groups);
   }
 
   public static OrderFormResult from(
       OrderFormTemplate template,
-      List<OrderFormFieldGroup> groups,
-      List<OrderFormField> fields,
-      List<OrderFormFieldOption> options) {
-    Map<UUID, List<OrderFormFieldOptionResult>> optionsByFieldId = options.stream()
+      List<OrderFormCategoryGroup> groups,
+      List<OrderFormOptionGroup> optionGroups,
+      List<OrderFormOption> options) {
+    Map<UUID, List<OrderFormOptionResult>> optionsByOptionGroupId = options.stream()
         .collect(java.util.stream.Collectors.groupingBy(
-            OrderFormFieldOption::getFieldId,
+            OrderFormOption::getOptionGroupId,
             java.util.stream.Collectors.mapping(
-                OrderFormFieldOptionResult::from, java.util.stream.Collectors.toList())));
-    Map<UUID, List<OrderFormFieldResult>> fieldsByGroupId = fields.stream()
-        .map(field -> OrderFormFieldResult.from(
-            field, optionsByFieldId.getOrDefault(field.getId(), List.of())))
-        .collect(java.util.stream.Collectors.groupingBy(
-            OrderFormFieldResult::groupId, java.util.stream.Collectors.toList()));
-    List<OrderFormFieldGroupResult> groupResults = groups.stream()
-        .sorted(Comparator.comparingInt(OrderFormFieldGroup::getSortOrder))
-        .map(group -> OrderFormFieldGroupResult.of(
+                OrderFormOptionResult::from, java.util.stream.Collectors.toList())));
+    Map<UUID, List<OrderFormOptionGroupResult>> optionGroupsByCategoryGroupId =
+        optionGroups.stream()
+            .map(optionGroup -> OrderFormOptionGroupResult.from(
+                optionGroup, optionsByOptionGroupId.getOrDefault(optionGroup.getId(), List.of())))
+            .collect(java.util.stream.Collectors.groupingBy(
+                OrderFormOptionGroupResult::categoryGroupId, java.util.stream.Collectors.toList()));
+    List<OrderFormCategoryGroupResult> categoryGroupResults = groups.stream()
+        .sorted(Comparator.comparingInt(OrderFormCategoryGroup::getSortOrder))
+        .map(group -> OrderFormCategoryGroupResult.of(
             group,
-            fieldsByGroupId.getOrDefault(group.getId(), List.of()).stream()
-                .sorted(Comparator.comparingInt(OrderFormFieldResult::sortOrder))
+            optionGroupsByCategoryGroupId.getOrDefault(group.getId(), List.of()).stream()
+                .sorted(Comparator.comparingInt(OrderFormOptionGroupResult::sortOrder))
                 .toList()))
         .toList();
-    List<OrderFormFieldResult> fieldResults =
-        groupResults.stream().flatMap(group -> group.fields().stream()).toList();
+    List<OrderFormOptionGroupResult> optionGroupResults = categoryGroupResults.stream()
+        .flatMap(group -> group.optionGroups().stream())
+        .toList();
     return new OrderFormResult(
         template.getId(),
         template.getStoreId(),
@@ -67,7 +69,7 @@ public record OrderFormResult(
         template.isActive(),
         template.getCreatedAt(),
         template.getUpdatedAt(),
-        fieldResults,
-        groupResults);
+        optionGroupResults,
+        categoryGroupResults);
   }
 }

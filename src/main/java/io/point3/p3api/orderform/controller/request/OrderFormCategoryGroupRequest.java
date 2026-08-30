@@ -9,14 +9,19 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-public record OrderFormFieldGroupRequest(
+public record OrderFormCategoryGroupRequest(
     @NotNull OrderFormCategory category,
     @NotBlank @Size(max = 100) String title,
     String description,
     @PositiveOrZero int sortOrder,
-    @Valid @NotEmpty List<OrderFormFieldRequest> fields) {
+    @Valid @NotEmpty List<OrderFormOptionGroupRequest> optionGroups) {
 
-  public OrderFormFieldGroupRequest {
-    fields = fields == null ? null : List.copyOf(fields);
+  public OrderFormCategoryGroupRequest {
+    optionGroups = optionGroups == null ? null : List.copyOf(optionGroups);
+  }
+
+  @Override
+  public List<OrderFormOptionGroupRequest> optionGroups() {
+    return optionGroups == null ? null : List.copyOf(optionGroups);
   }
 }

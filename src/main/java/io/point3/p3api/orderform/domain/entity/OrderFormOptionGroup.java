@@ -1,6 +1,6 @@
 package io.point3.p3api.orderform.domain.entity;
 
-import io.point3.p3api.orderform.domain.type.FieldType;
+import io.point3.p3api.orderform.domain.type.SelectionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,80 +15,65 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(
-    name = "order_form_fields",
+    name = "order_form_option_groups",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_order_form_fields_group_sort_order",
-            columnNames = {"group_id", "sort_order"}))
+            name = "uk_order_form_option_groups_category_group_sort_order",
+            columnNames = {"category_group_id", "sort_order"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderFormField {
+public class OrderFormOptionGroup {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
 
-  @Column(name = "group_id", nullable = false)
-  private UUID groupId;
+  @Column(name = "category_group_id", nullable = false)
+  private UUID categoryGroupId;
 
   @Column(name = "label", nullable = false, length = 150)
   private String label;
 
   @Enumerated(EnumType.STRING)
-  @Column(name = "field_type", nullable = false, length = 30)
-  private FieldType fieldType;
+  @Column(name = "selection_type", nullable = false, length = 30)
+  private SelectionType selectionType;
 
   @Column(name = "required", nullable = false)
   private boolean required;
 
-  @Column(name = "price")
-  private Long price;
-
-  @Column(name = "settings", columnDefinition = "jsonb")
-  @JdbcTypeCode(SqlTypes.JSON)
-  private String settings;
-
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
-  private OrderFormField(
-      UUID groupId,
+  private OrderFormOptionGroup(
+      UUID categoryGroupId,
       String label,
-      FieldType fieldType,
+      SelectionType selectionType,
       boolean required,
-      Long price,
-      String settings,
       int sortOrder) {
-    this.groupId = groupId;
+    this.categoryGroupId = categoryGroupId;
     this.label = label;
-    this.fieldType = fieldType;
+    this.selectionType = selectionType;
     this.required = required;
-    this.price = price;
-    this.settings = settings;
     this.sortOrder = sortOrder;
   }
 
-  public static OrderFormField create(
-      UUID groupId,
+  public static OrderFormOptionGroup create(
+      UUID categoryGroupId,
       String label,
-      FieldType fieldType,
+      SelectionType selectionType,
       boolean required,
-      Long price,
-      String settings,
       int sortOrder) {
-    Objects.requireNonNull(groupId, "groupId");
+    Objects.requireNonNull(categoryGroupId, "categoryGroupId");
     Objects.requireNonNull(label, "label");
-    Objects.requireNonNull(fieldType, "fieldType");
+    Objects.requireNonNull(selectionType, "selectionType");
 
     if (sortOrder < 0) {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormField(groupId, label, fieldType, required, price, settings, sortOrder);
+    return new OrderFormOptionGroup(categoryGroupId, label, selectionType, required, sortOrder);
   }
 }

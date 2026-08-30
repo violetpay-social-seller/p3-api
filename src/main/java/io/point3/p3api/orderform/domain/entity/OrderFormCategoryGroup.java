@@ -18,14 +18,14 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-    name = "order_form_field_groups",
+    name = "order_form_category_groups",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_order_form_field_groups_template_sort_order",
+            name = "uk_order_form_category_groups_template_sort_order",
             columnNames = {"template_id", "sort_order"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderFormFieldGroup {
+public class OrderFormCategoryGroup {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
@@ -47,7 +47,7 @@ public class OrderFormFieldGroup {
   @Column(name = "sort_order", nullable = false)
   private int sortOrder;
 
-  private OrderFormFieldGroup(
+  private OrderFormCategoryGroup(
       UUID templateId,
       OrderFormCategory category,
       String title,
@@ -60,7 +60,7 @@ public class OrderFormFieldGroup {
     this.sortOrder = sortOrder;
   }
 
-  public static OrderFormFieldGroup create(
+  public static OrderFormCategoryGroup create(
       UUID templateId,
       OrderFormCategory category,
       String title,
@@ -74,6 +74,6 @@ public class OrderFormFieldGroup {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormFieldGroup(templateId, category, title, description, sortOrder);
+    return new OrderFormCategoryGroup(templateId, category, title, description, sortOrder);
   }
 }

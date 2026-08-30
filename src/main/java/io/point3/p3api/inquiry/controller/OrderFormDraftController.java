@@ -63,7 +63,7 @@ public class OrderFormDraftController {
         request.cancellationRefundAgreed(),
         request.formAnswers().stream()
             .map(answer -> new CreateOrderFormDraftCommand.FormAnswer(
-                answer.fieldId(), objectMapper.valueToTree(answer.value())))
+                answer.optionGroupId(), objectMapper.valueToTree(answer.value())))
             .toList(),
         request.startReferenceAssets() == null
             ? null

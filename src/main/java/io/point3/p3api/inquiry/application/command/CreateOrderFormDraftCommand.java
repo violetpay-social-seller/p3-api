@@ -57,7 +57,7 @@ public record CreateOrderFormDraftCommand(
     return startReferenceAssets != null;
   }
 
-  public record FormAnswer(UUID fieldId, JsonNode value) {}
+  public record FormAnswer(UUID optionGroupId, JsonNode value) {}
 
   public record ReferenceAsset(
       @NotNull UUID assetId,

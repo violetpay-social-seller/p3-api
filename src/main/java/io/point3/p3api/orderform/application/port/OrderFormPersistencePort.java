@@ -1,8 +1,8 @@
 package io.point3.p3api.orderform.application.port;
 
-import io.point3.p3api.orderform.domain.entity.OrderFormField;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldGroup;
-import io.point3.p3api.orderform.domain.entity.OrderFormFieldOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormCategoryGroup;
+import io.point3.p3api.orderform.domain.entity.OrderFormOption;
+import io.point3.p3api.orderform.domain.entity.OrderFormOptionGroup;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import java.util.List;
 import java.util.Optional;
@@ -12,11 +12,11 @@ public interface OrderFormPersistencePort {
 
   OrderFormTemplate saveTemplate(OrderFormTemplate template);
 
-  OrderFormFieldGroup saveGroup(OrderFormFieldGroup group);
+  OrderFormCategoryGroup saveCategoryGroup(OrderFormCategoryGroup group);
 
-  List<OrderFormField> saveFields(List<OrderFormField> fields);
+  List<OrderFormOptionGroup> saveOptionGroups(List<OrderFormOptionGroup> optionGroups);
 
-  List<OrderFormFieldOption> saveOptions(List<OrderFormFieldOption> options);
+  List<OrderFormOption> saveOptions(List<OrderFormOption> options);
 
   Optional<OrderFormTemplate> findTemplateByIdAndStoreId(UUID templateId, UUID storeId);
 
@@ -24,11 +24,11 @@ public interface OrderFormPersistencePort {
 
   boolean existsActiveTemplateByStoreId(UUID storeId);
 
-  List<OrderFormField> findFieldsByTemplateId(UUID templateId);
+  List<OrderFormOptionGroup> findOptionGroupsByTemplateId(UUID templateId);
 
-  List<OrderFormFieldGroup> findGroupsByTemplateId(UUID templateId);
+  List<OrderFormCategoryGroup> findCategoryGroupsByTemplateId(UUID templateId);
 
-  List<OrderFormFieldOption> findOptionsByFieldIds(List<UUID> fieldIds);
+  List<OrderFormOption> findOptionsByOptionGroupIds(List<UUID> optionGroupIds);
 
-  void deleteGroupsByTemplateId(UUID templateId);
+  void deleteCategoryGroupsByTemplateId(UUID templateId);
 }

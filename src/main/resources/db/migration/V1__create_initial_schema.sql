@@ -190,7 +190,7 @@ CREATE TABLE order_form_fields (
     sort_order INTEGER NOT NULL,
     CONSTRAINT uk_order_form_fields_group_sort_order UNIQUE (group_id, sort_order),
     CONSTRAINT fk_order_form_fields_group_id FOREIGN KEY (group_id) REFERENCES order_form_field_groups (id) ON DELETE CASCADE,
-    CONSTRAINT ck_order_form_fields_field_type CHECK (field_type IN ('TEXT', 'TEXTAREA', 'IMAGE', 'SINGLE_SELECT', 'SINGLE_SELECT_WITH_TEXT')),
+    CONSTRAINT ck_order_form_fields_field_type CHECK (field_type IN ('TEXT', 'TEXTAREA', 'IMAGE', 'SINGLE_SELECT', 'SINGLE_SELECT_WITH_TEXT', 'MULTI_SELECT')),
     CONSTRAINT ck_order_form_fields_price CHECK (
         (field_type = 'TEXT' AND price IS NOT NULL AND price >= 0)
         OR (field_type <> 'TEXT' AND price IS NULL)

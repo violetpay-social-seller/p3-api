@@ -68,6 +68,7 @@ public class OrderFormAnswerValidator {
       case IMAGE -> validateImage(value);
       case SINGLE_SELECT -> validateSingleSelect(field, value);
       case SINGLE_SELECT_WITH_TEXT -> validateSingleSelectWithText(field, value);
+      case MULTI_SELECT -> validateMultiSelect(field, value);
     }
   }
 
@@ -91,6 +92,30 @@ public class OrderFormAnswerValidator {
     if (text != null && !text.isNull() && !text.isTextual()) {
       throwInvalidFieldValue();
     }
+  }
+
+  private void validateMultiSelect(OrderFormFieldResult field, JsonNode value) {
+    if (!value.isArray()) {
+      throwInvalidFieldValue();
+    }
+
+    HashSet<String> selectedValues = new HashSet<>();
+    value.forEach(node -> {
+      if (!node.isTextual()) {
+        throwInvalidFieldValue();
+      }
+
+      String selectedValue = node.asText();
+      if (selectedValue.isBlank() || !selectedValues.add(selectedValue)) {
+        throwInvalidFieldValue();
+      }
+
+      boolean activeOption = field.options().stream()
+          .anyMatch(option -> option.active() && option.value().equals(selectedValue));
+      if (!activeOption) {
+        throwInvalidFieldValue();
+      }
+    });
   }
 
   private boolean isEmpty(JsonNode value) {

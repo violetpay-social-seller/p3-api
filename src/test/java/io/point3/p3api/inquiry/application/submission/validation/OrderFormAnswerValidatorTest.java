@@ -29,6 +29,7 @@ class OrderFormAnswerValidatorTest {
     UUID imageFieldId = UUID.randomUUID();
     UUID singleSelectFieldId = UUID.randomUUID();
     UUID singleSelectWithTextFieldId = UUID.randomUUID();
+    UUID multiSelectFieldId = UUID.randomUUID();
 
     validator.validate(
         List.of(
@@ -41,7 +42,13 @@ class OrderFormAnswerValidatorTest {
                 FieldType.SINGLE_SELECT_WITH_TEXT,
                 true,
                 4,
-                List.of(option("lettering")))),
+                List.of(option("lettering"))),
+            field(
+                multiSelectFieldId,
+                FieldType.MULTI_SELECT,
+                true,
+                5,
+                List.of(option("flower"), option("ribbon")))),
         List.of(
             answer(textFieldId, json.textNode("초코 케이크")),
             answer(textareaFieldId, json.textNode("문구는 작게")),
@@ -49,7 +56,8 @@ class OrderFormAnswerValidatorTest {
             answer(singleSelectFieldId, json.textNode("size-1")),
             answer(
                 singleSelectWithTextFieldId,
-                json.objectNode().put("selectedValue", "lettering").put("text", "생일 축하"))));
+                json.objectNode().put("selectedValue", "lettering").put("text", "생일 축하")),
+            answer(multiSelectFieldId, json.arrayNode().add("flower").add("ribbon"))));
   }
 
   @Test
@@ -107,6 +115,25 @@ class OrderFormAnswerValidatorTest {
                 0,
                 List.of(option("lettering")))),
             List.of(answer(fieldId, json.objectNode().put("text", "Happy birthday")))));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("복수 선택 답변은 옵션 value 배열이어야 하며 중복을 허용하지 않는다")
+  void rejectsInvalidMultiSelectValues() {
+    UUID fieldId = UUID.randomUUID();
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> validator.validate(
+            List.of(field(
+                fieldId,
+                FieldType.MULTI_SELECT,
+                false,
+                0,
+                List.of(option("flower"), option("ribbon")))),
+            List.of(answer(fieldId, json.arrayNode().add("flower").add("flower")))));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
   }

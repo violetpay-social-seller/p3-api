@@ -158,6 +158,7 @@ public class OrderFormService
             || !java.util.Objects.equals(groupDescription(first), groupDescription(field))) {
           throw invalid();
         }
+        validateFieldTypePolicy(groupCategory(field), field.fieldType());
         validatePrice(field.fieldType(), field.price());
         validateOptions(field.fieldType(), field.options());
         normalizeSettings(field.fieldType(), field.settings());
@@ -188,8 +189,9 @@ public class OrderFormService
   }
 
   private void validateOptions(FieldType type, List<OrderFormFieldOptionCommand> options) {
-    boolean selectable =
-        type == FieldType.SINGLE_SELECT || type == FieldType.SINGLE_SELECT_WITH_TEXT;
+    boolean selectable = type == FieldType.SINGLE_SELECT
+        || type == FieldType.SINGLE_SELECT_WITH_TEXT
+        || type == FieldType.MULTI_SELECT;
     if (selectable != !options.isEmpty()) {
       throw invalid();
     }
@@ -210,6 +212,12 @@ public class OrderFormService
     }
   }
 
+  private void validateFieldTypePolicy(OrderFormCategory category, FieldType type) {
+    if (type == FieldType.MULTI_SELECT && category != OrderFormCategory.CAKE_DESIGN) {
+      throw invalid();
+    }
+  }
+
   private String normalizeSettings(FieldType type, String settings) {
     if (settings == null || settings.isBlank()) {
       return null;
@@ -226,7 +234,7 @@ public class OrderFormService
           copyPositiveInteger(node, accepted, "maxLength");
         }
         case IMAGE -> copyImageSettings(node, accepted);
-        case SINGLE_SELECT, SINGLE_SELECT_WITH_TEXT -> {}
+        case SINGLE_SELECT, SINGLE_SELECT_WITH_TEXT, MULTI_SELECT -> {}
       }
       return accepted.isEmpty() ? null : objectMapper.writeValueAsString(accepted);
     } catch (JsonProcessingException exception) {

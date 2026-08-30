@@ -24,7 +24,10 @@ class OrderFormAnswerSnapshotFactoryTest {
   void snapshotsServerFieldAndOptionPrices() throws Exception {
     UUID textFieldId = UUID.randomUUID();
     UUID selectFieldId = UUID.randomUUID();
+    UUID multiSelectFieldId = UUID.randomUUID();
     UUID optionId = UUID.randomUUID();
+    UUID flowerOptionId = UUID.randomUUID();
+    UUID ribbonOptionId = UUID.randomUUID();
 
     String snapshot = factory.create(
         List.of(
@@ -39,8 +42,21 @@ class OrderFormAnswerSnapshotFactoryTest {
                 null,
                 null,
                 1,
-                List.of(new OrderFormFieldOptionResult(
-                    optionId, "문구 추가", "lettering", 3000, true, 0)))),
+                List.of(
+                    new OrderFormFieldOptionResult(optionId, "문구 추가", "lettering", 3000, true, 0))),
+            new OrderFormFieldResult(
+                multiSelectFieldId,
+                UUID.randomUUID(),
+                "케이크 디자인",
+                FieldType.MULTI_SELECT,
+                false,
+                null,
+                null,
+                2,
+                List.of(
+                    new OrderFormFieldOptionResult(flowerOptionId, "플라워", "flower", 5000, true, 0),
+                    new OrderFormFieldOptionResult(
+                        ribbonOptionId, "리본", "ribbon", 2000, true, 1)))),
         List.of(
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 textFieldId, objectMapper.getNodeFactory().textNode("초코 케이크")),
@@ -50,7 +66,10 @@ class OrderFormAnswerSnapshotFactoryTest {
                     .getNodeFactory()
                     .objectNode()
                     .put("selectedValue", "lettering")
-                    .put("text", "Happy birthday"))));
+                    .put("text", "Happy birthday")),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
+                multiSelectFieldId,
+                objectMapper.getNodeFactory().arrayNode().add("flower").add("ribbon"))));
 
     JsonNode answers = objectMapper.readTree(snapshot);
     assertEquals("메뉴명", answers.get(0).get("label").asText());
@@ -64,5 +83,13 @@ class OrderFormAnswerSnapshotFactoryTest {
     assertEquals(
         "lettering", answers.get(1).get("selectedOptions").get(0).get("value").asText());
     assertEquals(3000, answers.get(1).get("selectedOptions").get(0).get("price").asLong());
+    assertEquals("MULTI_SELECT", answers.get(2).get("fieldType").asText());
+    assertEquals(
+        "플라워", answers.get(2).get("selectedOptions").get(0).get("label").asText());
+    assertEquals("리본", answers.get(2).get("selectedOptions").get(1).get("label").asText());
+    assertEquals(
+        7000,
+        answers.get(2).get("selectedOptions").get(0).get("price").asLong()
+            + answers.get(2).get("selectedOptions").get(1).get("price").asLong());
   }
 }

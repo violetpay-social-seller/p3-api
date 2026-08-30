@@ -207,6 +207,52 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("복수 선택 필드는 케이크 디자인 카테고리에서만 허용한다")
+  void allowsMultiSelectOnlyForCakeDesignCategory() {
+    StoreResult store = createStore();
+
+    CreateOrderFormCommand.Field cakeDesignMultiSelect = new CreateOrderFormCommand.Field(
+        "디자인 옵션",
+        FieldType.MULTI_SELECT,
+        true,
+        null,
+        null,
+        0,
+        OrderFormCategory.CAKE_DESIGN,
+        OrderFormCategory.CAKE_DESIGN.getTitle(),
+        null,
+        3,
+        List.of(
+            new OrderFormFieldOptionCommand("플라워", "flower", 5000L, true, 0),
+            new OrderFormFieldOptionCommand("리본", "ribbon", 2000L, true, 1)));
+    CreateOrderFormCommand.Field flavorMultiSelect = new CreateOrderFormCommand.Field(
+        "맛 옵션",
+        FieldType.MULTI_SELECT,
+        true,
+        null,
+        null,
+        0,
+        OrderFormCategory.CAKE_FLAVOR,
+        OrderFormCategory.CAKE_FLAVOR.getTitle(),
+        null,
+        2,
+        List.of(
+            new OrderFormFieldOptionCommand("초코", "choco", 0L, true, 0),
+            new OrderFormFieldOptionCommand("딸기", "strawberry", 0L, true, 1)));
+
+    OrderFormResult created = orderFormService.create(
+        new CreateOrderFormCommand(store.id(), "주문서", List.of(cakeDesignMultiSelect)));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderFormService.create(
+            new CreateOrderFormCommand(store.id(), "잘못된 주문서", List.of(flavorMultiSelect))));
+
+    assertEquals(FieldType.MULTI_SELECT, created.groups().get(0).fields().get(0).fieldType());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, exception.getErrorCode());
+  }
+
+  @Test
   @DisplayName("필드 유형과 맞지 않는 settings 및 선택지 정의를 거부한다")
   void rejectsInvalidTypeSpecificSettings() {
     StoreResult store = createStore();

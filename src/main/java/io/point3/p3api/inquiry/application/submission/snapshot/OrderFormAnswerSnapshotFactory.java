@@ -80,6 +80,13 @@ public class OrderFormAnswerSnapshotFactory {
     if (value.isObject()) {
       return option.value().equals(value.path("selectedValue").asText(null));
     }
+    if (value.isArray()) {
+      for (JsonNode selectedValue : value) {
+        if (selectedValue.isTextual() && option.value().equals(selectedValue.asText())) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 

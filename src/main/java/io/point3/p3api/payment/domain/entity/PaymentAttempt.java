@@ -125,4 +125,8 @@ public class PaymentAttempt {
   public boolean isReady() {
     return this.status == PaymentAttemptStatus.READY;
   }
+
+  public boolean needsConfirmation() {
+    return this.status == PaymentAttemptStatus.NEEDS_CONFIRMATION;
+  }
 }

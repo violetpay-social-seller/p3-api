@@ -422,8 +422,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("Point3 승인 결과가 처리 중이면 결과 확인 필요 상태로 저장하고 중복 승인을 막는다")
-  void storesNeedsConfirmation() {
+  @DisplayName("Point3 승인 결과가 처리 중이면 같은 세션 조회 결과로 결제를 완료한다")
+  void reconcilesNeedsConfirmation() {
     Fixture fixture = prepareFixture("payment-processing");
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
@@ -438,12 +438,14 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     PaymentCaptureResult result = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
         prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
-    PaymentCaptureResult duplicated = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+    point3PaymentPort.nextSessionStatus(Point3CaptureResult.Status.CAPTURED);
+    PaymentCaptureResult reconciled = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
         prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
 
     assertEquals(PaymentAttemptStatus.NEEDS_CONFIRMATION, result.status());
-    assertEquals(PaymentAttemptStatus.NEEDS_CONFIRMATION, duplicated.status());
+    assertEquals(PaymentAttemptStatus.SUCCEEDED, reconciled.status());
     assertEquals(1, point3PaymentPort.captureCount());
+    assertEquals(1, point3PaymentPort.sessionQueryCount());
   }
 
   private Fixture prepareFixture(String prefix) {
@@ -612,7 +614,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     private long lastAmount;
     private int createCount;
     private int captureCount;
+    private int sessionQueryCount;
     private Point3CaptureResult.Status nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
+    private Point3CaptureResult.Status nextSessionStatus = Point3CaptureResult.Status.PROCESSING;
 
     @Override
     public Point3PaymentSession createSession(
@@ -636,7 +640,11 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     @Override
     public Point3CaptureResult getSession(String sessionId) {
-      return capture(sessionId);
+      sessionQueryCount++;
+      String failureCode = nextSessionStatus == Point3CaptureResult.Status.CAPTURED
+          ? null
+          : "POINT3_SESSION_" + nextSessionStatus;
+      return new Point3CaptureResult(sessionId, nextSessionStatus, failureCode);
     }
 
     @Override
@@ -647,6 +655,10 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     void nextCaptureStatus(Point3CaptureResult.Status nextCaptureStatus) {
       this.nextCaptureStatus = nextCaptureStatus;
+    }
+
+    void nextSessionStatus(Point3CaptureResult.Status nextSessionStatus) {
+      this.nextSessionStatus = nextSessionStatus;
     }
 
     long lastAmount() {
@@ -661,11 +673,17 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
       return captureCount;
     }
 
+    int sessionQueryCount() {
+      return sessionQueryCount;
+    }
+
     void clear() {
       lastAmount = 0;
       createCount = 0;
       captureCount = 0;
+      sessionQueryCount = 0;
       nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
+      nextSessionStatus = Point3CaptureResult.Status.PROCESSING;
     }
   }
 }

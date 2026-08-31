@@ -107,6 +107,10 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     Optional<Order> existingOrder =
         orderPersistencePort.findByPaymentAttemptId(paymentAttempt.getId());
 
+    if (paymentAttempt.needsConfirmation()) {
+      return reconcilePayment(paymentAttempt, command.payerId());
+    }
+
     if (!paymentAttempt.isReady()) {
       return PaymentCaptureResult.of(
           paymentAttempt, existingOrder.map(Order::getId).orElse(null));
@@ -121,8 +125,19 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     Point3CaptureResult captureResult = requestCapture(paymentAttempt.getPoint3SessionId());
     validatePoint3Session(paymentAttempt, captureResult);
 
+    return applyCaptureResult(paymentAttempt, command.payerId(), captureResult);
+  }
+
+  private PaymentCaptureResult reconcilePayment(PaymentAttempt paymentAttempt, String payerId) {
+    Point3CaptureResult sessionResult = requestSession(paymentAttempt.getPoint3SessionId());
+    validatePoint3Session(paymentAttempt, sessionResult);
+    return applyCaptureResult(paymentAttempt, payerId, sessionResult);
+  }
+
+  private PaymentCaptureResult applyCaptureResult(
+      PaymentAttempt paymentAttempt, String payerId, Point3CaptureResult captureResult) {
     if (captureResult.status() == Point3CaptureResult.Status.CAPTURED) {
-      return completePayment(paymentAttempt, command.payerId());
+      return completePayment(paymentAttempt, payerId);
     }
 
     Instant completedAt = Instant.now(clock);
@@ -246,6 +261,15 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private Point3CaptureResult requestCapture(String sessionId) {
     try {
       return point3PaymentPort.capture(sessionId);
+    } catch (Point3PaymentException e) {
+      return new Point3CaptureResult(
+          sessionId, Point3CaptureResult.Status.PROCESSING, e.getFailureCode());
+    }
+  }
+
+  private Point3CaptureResult requestSession(String sessionId) {
+    try {
+      return point3PaymentPort.getSession(sessionId);
     } catch (Point3PaymentException e) {
       return new Point3CaptureResult(
           sessionId, Point3CaptureResult.Status.PROCESSING, e.getFailureCode());

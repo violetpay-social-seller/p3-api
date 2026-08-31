@@ -167,6 +167,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const body = pm.response.json();",
+                  "pm.environment.set('sellerUserId', body.data.userId);",
                   "pm.test('current seller profile fields', function () {",
                   "  pm.expect(body.data.email).to.eql(pm.environment.get('sellerEmail'));",
                   "  pm.expect(body.data.phoneNumber).to.eql('010-1234-5678');",
@@ -395,6 +396,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const body = pm.response.json();",
+                  "pm.environment.set('buyerUserId', body.data.userId);",
                   "pm.test('current buyer profile fields', function () {",
                   "  pm.expect(body.data.email).to.eql(pm.environment.get('buyerEmail'));",
                   "  pm.expect(body.data.phoneNumber).to.eql('010-9876-5432');",

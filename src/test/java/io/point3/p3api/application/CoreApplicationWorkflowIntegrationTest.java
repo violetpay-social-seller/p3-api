@@ -559,7 +559,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.optionGroups().get(1).id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            LocalDate.parse("2030-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
   }
@@ -573,7 +573,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         title,
         "초코 시트, 딸기 토핑",
         41000,
-        Instant.parse("2026-08-30T04:30:00Z"),
+        Instant.parse("2030-08-30T04:30:00Z"),
         List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
         "픽업 10분 전에 연락 주세요."));
   }

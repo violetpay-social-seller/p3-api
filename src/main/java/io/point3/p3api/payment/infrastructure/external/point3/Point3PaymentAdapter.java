@@ -61,16 +61,22 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
     CapturePaymentResponse capture =
         read(response.body(), CapturePaymentResponse.class, "POINT3_CAPTURE_PARSE");
-    Point3CaptureResult.Status status =
-        switch (capture.status()) {
-          case "captured" -> Point3CaptureResult.Status.CAPTURED;
-          case "failed" -> Point3CaptureResult.Status.FAILED;
-          default -> Point3CaptureResult.Status.PROCESSING;
-        };
-    String failureCode =
-        capture.outcome() == null ? capture.status() : capture.outcome().code();
+    return toCaptureResult(capture.id(), capture.status(), capture.outcome());
+  }
 
-    return new Point3CaptureResult(capture.id(), status, failureCode);
+  @Override
+  public Point3CaptureResult getSession(String sessionId) {
+    HttpResponse<String> response = send(
+        get("/payment/v3/session/" + sessionId).GET().build(), "POINT3_SESSION_GET");
+
+    if (response.statusCode() != 200) {
+      throw new Point3PaymentException(
+          "POINT3_SESSION_GET_" + response.statusCode(), "Point3 session lookup failed");
+    }
+
+    PaymentSessionResponse session =
+        read(response.body(), PaymentSessionResponse.class, "POINT3_SESSION_GET_PARSE");
+    return toCaptureResult(session.id(), session.status(), session.outcome());
   }
 
   @Override
@@ -91,9 +97,31 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   }
 
   private HttpRequest.Builder post(String path) {
+    return request(path);
+  }
+
+  private HttpRequest.Builder get(String path) {
+    return request(path);
+  }
+
+  private HttpRequest.Builder request(String path) {
     return HttpRequest.newBuilder(URI.create(point3Properties.apiBaseUrl() + path))
         .header("Authorization", "Bearer " + point3Properties.apiToken())
         .header("Content-Type", "application/json");
+  }
+
+  private static Point3CaptureResult toCaptureResult(
+      String sessionId, String status, CaptureOutcome outcome) {
+    String failureCode = outcome == null ? status : outcome.code();
+    return new Point3CaptureResult(sessionId, toCaptureStatus(status), failureCode);
+  }
+
+  static Point3CaptureResult.Status toCaptureStatus(String status) {
+    return switch (status) {
+      case "captured" -> Point3CaptureResult.Status.CAPTURED;
+      case "failed", "expired" -> Point3CaptureResult.Status.FAILED;
+      default -> Point3CaptureResult.Status.PROCESSING;
+    };
   }
 
   private HttpRequest.BodyPublisher body(Object body) {
@@ -129,6 +157,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   private record CreatePaymentSessionResponse(String id, long amount) {}
 
   private record CapturePaymentResponse(String id, String status, CaptureOutcome outcome) {}
+
+  private record PaymentSessionResponse(String id, String status, CaptureOutcome outcome) {}
 
   private record CaptureOutcome(String code) {}
 

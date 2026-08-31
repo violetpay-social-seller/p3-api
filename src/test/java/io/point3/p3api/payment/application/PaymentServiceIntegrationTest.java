@@ -635,6 +635,11 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     }
 
     @Override
+    public Point3CaptureResult getSession(String sessionId) {
+      return capture(sessionId);
+    }
+
+    @Override
     public io.point3.p3api.payment.application.port.Point3RefundResult refund(
         String sessionId, long amount, String reason, String idempotencyKey) {
       return new io.point3.p3api.payment.application.port.Point3RefundResult(true, null);

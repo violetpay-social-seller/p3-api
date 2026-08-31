@@ -9,5 +9,7 @@ public interface Point3PaymentPort {
 
   Point3CaptureResult capture(String sessionId);
 
+  Point3CaptureResult getSession(String sessionId);
+
   Point3RefundResult refund(String sessionId, long amount, String reason, String idempotencyKey);
 }

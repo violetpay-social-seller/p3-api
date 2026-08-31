@@ -1,0 +1,12 @@
+{
+  "NetworkInterfaces": [
+    {
+      "AssociatePublicIpAddress": true,
+      "DeleteOnTermination": true,
+      "DeviceIndex": 0,
+      "Groups": [
+        "sg-0b28b53bf148984a2"
+      ]
+    }
+  ]
+}

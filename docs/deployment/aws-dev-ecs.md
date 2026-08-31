@@ -21,6 +21,8 @@
 - ECR URI: `851563824752.dkr.ecr.ap-northeast-2.amazonaws.com/p3-ecr-api-dev`
 - Target group: `p3-tg-api-ec2-dev`
 - ALB DNS: `p3-alb-dev-991901093.ap-northeast-2.elb.amazonaws.com`
+- Launch template: `lt-083bc41e8834652c8`
+- Launch template version: `3`
 
 ## GitHub Actions variables
 
@@ -55,10 +57,11 @@ ECS task는 `bridge` 모드에서 `hostPort: 8080`으로 실행한다. ALB targe
 
 ## 현재 차단 조건
 
-ASG를 public subnet으로 옮긴 뒤 생성된 EC2 instance에 public IP가 붙지 않았다. Launch template의 network interface 설정이 public IP 자동 할당을 끄고 있으므로, NAT Gateway 없이 outbound를 확보하려면 launch template 수정 또는 다른 outbound 경로 구성이 필요하다. Launch template은 사용자 결정사항에 따라 이 작업에서 변경하지 않는다.
+ASG를 public subnet으로 옮긴 뒤 생성된 EC2 instance에 public IP가 붙지 않았다. Launch template version 2의 network interface 설정이 public IP 자동 할당을 끄고 있었기 때문이다.
+
+기존 version 2는 그대로 두고, 같은 launch template에 `AssociatePublicIpAddress=true`만 반영한 version 3을 만들었다. ASG는 `$Latest`를 사용하므로 새 instance부터 public IP가 붙는다.
 
 ECS service는 `desiredCount=0`으로 생성되어 있다. 실제 dev 배포 전 아래 조건을 먼저 해결한다.
 
-- ECS EC2 instance outbound 확보
 - `/p3/dev/api/POSTGRES_PASSWORD` SecureString 생성
 - 필요 시 RDS `p3-rds-dev` 시작

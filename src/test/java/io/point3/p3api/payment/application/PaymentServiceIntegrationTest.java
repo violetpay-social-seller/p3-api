@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import io.point3.p3api.chat.infrastructure.persistence.ChatTimelineItemJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
@@ -150,6 +152,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private NotificationJpaRepository notificationJpaRepository;
+
+  @Autowired
+  private ChatTimelineItemJpaRepository chatTimelineItemJpaRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -393,6 +398,14 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
             .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
             .stream()
             .filter(notification -> notification.getType() == NotificationType.PAYMENT_COMPLETED)
+            .count());
+    assertEquals(
+        1,
+        chatTimelineItemJpaRepository.findAll().stream()
+            .filter(item -> item.getInquiryId().equals(fixture.inquiry().getId()))
+            .filter(item -> item.getType() == ChatTimelineItemType.PAYMENT_COMPLETED)
+            .filter(item -> item.getReferenceId().equals(order.getId()))
+            .filter(item -> item.getSenderUserId().equals(fixture.buyer().getId()))
             .count());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
     assertEquals(InquiryStatus.PAID, fixture.inquiry().getStatus());

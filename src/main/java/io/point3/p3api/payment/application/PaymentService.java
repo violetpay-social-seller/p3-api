@@ -1,5 +1,6 @@
 package io.point3.p3api.payment.application;
 
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
@@ -62,6 +63,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private final StorePersistencePort storePersistencePort;
   private final OrderStartReferenceAssetService orderStartReferenceAssetService;
   private final NotificationCreateUseCase notificationCreateUseCase;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
   private final Point3PaymentPort point3PaymentPort;
   private final Point3Properties point3Properties;
   private final Clock clock;
@@ -329,6 +331,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     orderStartReferenceAssetService.clear(inquiry.getId());
 
     notifyPaymentCompleted(inquiry, order);
+    chatTimelineItemPublisher.publishPaymentCompleted(
+        inquiry.getId(), paymentAttempt.getPayerUserId(), order.getId());
 
     return PaymentCaptureResult.of(paymentAttempt, order.getId());
   }

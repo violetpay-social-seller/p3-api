@@ -35,4 +35,9 @@ public class ChatTimelineItemPublisher {
     return chatTimelineItemPort.save(ChatTimelineItem.orderConfirmationRevisionRequest(
         inquiryId, buyerUserId, orderConfirmationId));
   }
+
+  public ChatTimelineItem publishPaymentCompleted(UUID inquiryId, UUID buyerUserId, UUID orderId) {
+    return chatTimelineItemPort.save(
+        ChatTimelineItem.paymentCompleted(inquiryId, buyerUserId, orderId));
+  }
 }

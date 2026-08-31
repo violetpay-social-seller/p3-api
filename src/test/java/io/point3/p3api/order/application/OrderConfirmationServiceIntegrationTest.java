@@ -21,6 +21,8 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
+import io.point3.p3api.order.application.query.OrderConfirmationPreview;
+import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
@@ -56,6 +58,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderConfirmationService orderConfirmationService;
+
+  @Autowired
+  private OrderConfirmationPreviewQueryService orderConfirmationPreviewQueryService;
 
   @Autowired
   private OrderFormSubmissionService submissionService;
@@ -101,7 +106,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             "초코 케이크 1호",
             "초코 시트, 딸기 토핑",
             41000,
-            Instant.parse("2026-08-30T04:30:00Z"),
+            Instant.parse("2030-08-30T04:30:00Z"),
             List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
             "픽업 10분 전에 연락 주세요."));
 
@@ -159,7 +164,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   void notifiesUpdatesForResubmissionAndConfirmationReplacement() {
     Fixture fixture = prepareFixture();
     submitOrderForm(
-        fixture.store().id(), fixture.buyer().getId(), fixture.inquiry(), fixture.form());
+        fixture.store().id(), fixture.buyer().getId(), fixture.inquiry(), fixture.form(), true);
 
     SendOrderConfirmationCommand command = new SendOrderConfirmationCommand(
         fixture.inquiry().getId(),
@@ -169,7 +174,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         "초코 케이크 1호",
         "초코 시트",
         38000,
-        Instant.parse("2026-08-30T04:30:00Z"),
+        Instant.parse("2030-08-30T04:30:00Z"),
         List.of(),
         null);
     orderConfirmationService.send(command);
@@ -193,6 +198,20 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("주문확인서 미리보기는 최신 제출 주문서의 스냅샷 가격을 합산한다")
+  void previewsSubmissionSnapshotAmount() {
+    Fixture fixture = prepareFixture();
+
+    OrderConfirmationPreview preview = orderConfirmationPreviewQueryService.getPreview(
+        fixture.inquiry().getId(), fixture.store().id());
+
+    assertEquals(fixture.submission().getId(), preview.orderFormSubmissionId());
+    assertEquals("주문서", preview.confirmationTitle());
+    assertEquals(Instant.parse("2030-08-30T04:30:00Z"), preview.pickupAt());
+    assertEquals(38000, preview.baseAmount());
+  }
+
+  @Test
   @DisplayName("다른 문의방의 제출 주문서를 사용한 주문확인서 전송은 거절한다")
   void rejectsOrderConfirmationForSubmissionFromAnotherInquiry() {
     Fixture fixture = prepareFixture();
@@ -212,7 +231,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             "초코 케이크 1호",
             "초코 시트",
             38000,
-            Instant.parse("2026-08-30T04:30:00Z"),
+            Instant.parse("2030-08-30T04:30:00Z"),
             List.of(),
             null)));
 
@@ -250,6 +269,11 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   private OrderFormSubmission submitOrderForm(
       UUID storeId, UUID buyerUserId, Inquiry inquiry, OrderFormResult form) {
+    return submitOrderForm(storeId, buyerUserId, inquiry, form, false);
+  }
+
+  private OrderFormSubmission submitOrderForm(
+      UUID storeId, UUID buyerUserId, Inquiry inquiry, OrderFormResult form, boolean update) {
     return submissionService.create(new CreateOrderFormSubmissionCommand(
         storeId,
         buyerUserId,
@@ -262,9 +286,11 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.optionGroups().get(1).id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            LocalDate.parse("2030-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
-        CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
+        new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(false),
+        CreateOrderFormSubmissionCommand.emptyReferenceAssets(),
+        update));
   }
 
   private User saveUser(UserRole role, String prefix) {

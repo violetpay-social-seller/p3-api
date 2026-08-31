@@ -167,8 +167,11 @@
                 "type": "text/javascript",
                 "exec": [
                   "const body = pm.response.json();",
-                  "pm.test('current profile fields', function () {",
+                  "pm.environment.set('sellerUserId', body.data.userId);",
+                  "pm.test('current seller profile fields', function () {",
                   "  pm.expect(body.data.email).to.eql(pm.environment.get('sellerEmail'));",
+                  "  pm.expect(body.data.phoneNumber).to.eql('010-1234-5678');",
+                  "  pm.expect(body.data.signupProvider).to.eql('GOOGLE');",
                   "  pm.expect(body.data.name).to.eql(pm.environment.get('sellerName'));",
                   "  pm.expect(body.data.role).to.eql('SELLER');",
                   "  pm.expect(body.data.status).to.eql('ACTIVE');",
@@ -382,6 +385,39 @@
               "raw": "{\n  \"role\": \"buyer\",\n  \"phoneNumber\": \"010-9876-5432\"\n}"
             },
             "url": "{{baseUrl}}/auth/me/registration"
+          }
+        },
+        {
+          "name": "Auth - buyer get current profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.environment.set('buyerUserId', body.data.userId);",
+                  "pm.test('current buyer profile fields', function () {",
+                  "  pm.expect(body.data.email).to.eql(pm.environment.get('buyerEmail'));",
+                  "  pm.expect(body.data.phoneNumber).to.eql('010-9876-5432');",
+                  "  pm.expect(body.data.signupProvider).to.eql('KAKAO');",
+                  "  pm.expect(body.data.role).to.eql('BUYER');",
+                  "  pm.expect(body.data.status).to.eql('ACTIVE');",
+                  "  pm.expect(body.data.nextRoute).to.eql('BUYER_HOME');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/me"
           }
         }
       ]
@@ -922,29 +958,21 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Invalid order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"sortOrder\": 1 }\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Invalid order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Menu\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 1,\n          \"options\": [\n            {\n              \"label\": \"메뉴명\",\n              \"value\": \"menu\",\n              \"inputType\": \"TEXT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
         },
         {
-          "name": "Seller - create order form",
+          "name": "[negative] Seller - multi select outside cake design is rejected",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const data = pm.response.json().data;",
-                  "pm.environment.set('orderFormTemplateId', data.id);",
-                  "for (const field of data.fields) {",
-                  "  if (field.label === 'Menu') pm.environment.set('menuFieldId', field.id);",
-                  "  if (field.label === 'Size') pm.environment.set('sizeFieldId', field.id);",
-                  "  if (field.label === 'Lettering') pm.environment.set('letteringFieldId', field.id);",
-                  "  if (field.label === 'Message') pm.environment.set('messageFieldId', field.id);",
-                  "  if (field.label === 'Reference image') pm.environment.set('referenceImageFieldId', field.id);",
-                  "}",
-                  "pm.test('five fields are created', function () { pm.expect(data.fields).to.have.length(5); });"
+                  "pm.test('multi select is restricted to cake design', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
                 ]
               }
             }
@@ -963,7 +991,122 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Local cake order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"settings\": \"{\\\"maxLength\\\":80}\", \"sortOrder\": 0 },\n        { \"label\": \"Size\", \"fieldType\": \"SINGLE_SELECT\", \"required\": true, \"price\": null, \"settings\": null, \"sortOrder\": 1, \"options\": [\n          { \"label\": \"10호\", \"value\": \"size-10\", \"price\": 38000, \"active\": true, \"sortOrder\": 0 }\n        ] },\n        { \"label\": \"Lettering\", \"fieldType\": \"SINGLE_SELECT_WITH_TEXT\", \"required\": false, \"price\": null, \"settings\": null, \"sortOrder\": 2, \"options\": [\n          { \"label\": \"문구 추가\", \"value\": \"lettering\", \"price\": 3000, \"active\": true, \"sortOrder\": 0 }\n        ] }\n      ]\n    },\n    {\n      \"category\": \"OTHER_REQUEST\",\n      \"title\": \"기타 요청사항\",\n      \"sortOrder\": 5,\n      \"fields\": [\n        { \"label\": \"Message\", \"fieldType\": \"TEXTAREA\", \"required\": false, \"price\": null, \"settings\": null, \"sortOrder\": 0 },\n        { \"label\": \"Reference image\", \"fieldType\": \"IMAGE\", \"required\": false, \"price\": null, \"settings\": \"{\\\"maxCount\\\":5}\", \"sortOrder\": 1 }\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Invalid multi select form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Decoration\",\n          \"selectionType\": \"MULTI\",\n          \"required\": true,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"플라워\",\n              \"value\": \"flower\",\n              \"inputType\": \"SELECT\",\n              \"price\": 5000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            },\n            {\n              \"label\": \"리본\",\n              \"value\": \"ribbon\",\n              \"inputType\": \"SELECT\",\n              \"price\": 2000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 1\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "[negative] Seller - order form option count limit is enforced",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('option count over six is rejected', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Too many options form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Size\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"1호\",\n              \"value\": \"size-1\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            },\n            {\n              \"label\": \"2호\",\n              \"value\": \"size-2\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 1\n            },\n            {\n              \"label\": \"3호\",\n              \"value\": \"size-3\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 2\n            },\n            {\n              \"label\": \"4호\",\n              \"value\": \"size-4\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 3\n            },\n            {\n              \"label\": \"5호\",\n              \"value\": \"size-5\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 4\n            },\n            {\n              \"label\": \"6호\",\n              \"value\": \"size-6\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 5\n            },\n            {\n              \"label\": \"7호\",\n              \"value\": \"size-7\",\n              \"inputType\": \"SELECT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 6\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "[negative] Seller - priced option requires price",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('priced option without price is rejected', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Missing option price form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Size\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"10호\",\n              \"value\": \"size-10\",\n              \"inputType\": \"SELECT\",\n              \"price\": null,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/order-forms"
+          }
+        },
+        {
+          "name": "Seller - create order form",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "const optionGroups = data.optionGroups || data.groups.flatMap(group => group.optionGroups);",
+                  "const byLabel = Object.fromEntries(optionGroups.map(group => [group.label, group]));",
+                  "pm.environment.set('orderFormTemplateId', data.id);",
+                  "pm.environment.set('menuOptionGroupId', byLabel.Menu.id);",
+                  "pm.environment.set('sizeOptionGroupId', byLabel.Size.id);",
+                  "pm.environment.set('letteringOptionGroupId', byLabel.Lettering.id);",
+                  "pm.environment.set('cakeDesignOptionGroupId', byLabel['Cake Design Options'].id);",
+                  "pm.environment.set('messageOptionGroupId', byLabel.Message.id);",
+                  "pm.environment.set('referenceImageOptionGroupId', byLabel['Reference image'].id);",
+                  "pm.environment.set('confirmationBaseAmount', '46000');",
+                  "pm.test('option groups are created', function () { pm.expect(optionGroups).to.have.length(6); });",
+                  "pm.test('cake design group is multi select', function () { pm.expect(byLabel['Cake Design Options'].selectionType).to.eql('MULTI'); });",
+                  "pm.test('option input types are returned', function () {",
+                  "  pm.expect(byLabel.Menu.options[0].inputType).to.eql('TEXT');",
+                  "  pm.expect(byLabel.Size.options[0].inputType).to.eql('SELECT');",
+                  "  pm.expect(byLabel.Lettering.options[0].inputType).to.eql('SELECT_WITH_TEXT');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Local cake order form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Menu\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"메뉴명\",\n              \"value\": \"menu\",\n              \"inputType\": \"TEXT\",\n              \"price\": 0,\n              \"settings\": \"{\\\"maxLength\\\":80}\",\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        },\n        {\n          \"label\": \"Size\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 1,\n          \"options\": [\n            {\n              \"label\": \"10호\",\n              \"value\": \"size-10\",\n              \"inputType\": \"SELECT\",\n              \"price\": 38000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        },\n        {\n          \"label\": \"Lettering\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": false,\n          \"sortOrder\": 2,\n          \"options\": [\n            {\n              \"label\": \"문구 추가\",\n              \"value\": \"lettering\",\n              \"inputType\": \"SELECT_WITH_TEXT\",\n              \"price\": 3000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"category\": \"CAKE_DESIGN\",\n      \"title\": \"케이크 디자인\",\n      \"description\": null,\n      \"sortOrder\": 3,\n      \"optionGroups\": [\n        {\n          \"label\": \"Cake Design Options\",\n          \"selectionType\": \"MULTI\",\n          \"required\": false,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"플라워\",\n              \"value\": \"flower\",\n              \"inputType\": \"SELECT\",\n              \"price\": 5000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            },\n            {\n              \"label\": \"리본\",\n              \"value\": \"ribbon\",\n              \"inputType\": \"SELECT\",\n              \"price\": 2000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 1\n            },\n            {\n              \"label\": \"컬러 변경\",\n              \"value\": \"color-change\",\n              \"inputType\": \"SELECT_WITH_TEXT\",\n              \"price\": 1000,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 2\n            }\n          ]\n        }\n      ]\n    },\n    {\n      \"category\": \"OTHER_REQUEST\",\n      \"title\": \"기타 요청사항\",\n      \"description\": null,\n      \"sortOrder\": 5,\n      \"optionGroups\": [\n        {\n          \"label\": \"Message\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": false,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"요청사항\",\n              \"value\": \"memo\",\n              \"inputType\": \"TEXTAREA\",\n              \"price\": null,\n              \"settings\": \"{\\\"maxLength\\\":300}\",\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        },\n        {\n          \"label\": \"Reference image\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": false,\n          \"sortOrder\": 1,\n          \"options\": [\n            {\n              \"label\": \"참고 이미지\",\n              \"value\": \"reference\",\n              \"inputType\": \"IMAGE\",\n              \"price\": null,\n              \"settings\": \"{\\\"maxCount\\\":5}\",\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
@@ -996,7 +1139,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"sortOrder\": 0,\n      \"fields\": [\n        { \"label\": \"Menu\", \"fieldType\": \"TEXT\", \"required\": true, \"price\": 0, \"sortOrder\": 0 }\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"name\": \"Duplicate active form\",\n  \"groups\": [\n    {\n      \"category\": \"DESIGN\",\n      \"title\": \"디자인\",\n      \"description\": null,\n      \"sortOrder\": 0,\n      \"optionGroups\": [\n        {\n          \"label\": \"Menu\",\n          \"selectionType\": \"SINGLE\",\n          \"required\": true,\n          \"sortOrder\": 0,\n          \"options\": [\n            {\n              \"label\": \"메뉴명\",\n              \"value\": \"menu\",\n              \"inputType\": \"TEXT\",\n              \"price\": 0,\n              \"settings\": null,\n              \"active\": true,\n              \"sortOrder\": 0\n            }\n          ]\n        }\n      ]\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/order-forms"
           }
@@ -1220,7 +1363,94 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" }\n  ]\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": false,\n  \"cancellationRefundAgreed\": true,\n  \"formAnswers\": [\n    {\n      \"optionGroupId\": \"{{menuOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"menu\",\n          \"text\": \"Strawberry cake\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{sizeOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"size-10\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{letteringOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"lettering\",\n          \"text\": \"Happy birthday\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{cakeDesignOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"flower\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{messageOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"memo\",\n          \"text\": \"Less sweet, please\"\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
+          }
+        },
+        {
+          "name": "[negative] Public - draft rejects empty start reference assets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('empty start reference assets are rejected', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"cancellationRefundAgreed\": true,\n  \"formAnswers\": [\n    {\n      \"optionGroupId\": \"{{menuOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"menu\",\n          \"text\": \"Strawberry cake\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{sizeOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"size-10\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{letteringOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"lettering\",\n          \"text\": \"Happy birthday\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{cakeDesignOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"flower\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{messageOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"memo\",\n          \"text\": \"Less sweet, please\"\n        }\n      ]\n    }\n  ],\n  \"startReferenceAssets\": []\n}"
+            },
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
+          }
+        },
+        {
+          "name": "[negative] Public - draft rejects too many start reference assets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('too many start reference assets are rejected', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"cancellationRefundAgreed\": true,\n  \"formAnswers\": [\n    {\n      \"optionGroupId\": \"{{menuOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"menu\",\n          \"text\": \"Strawberry cake\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{sizeOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"size-10\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{letteringOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"lettering\",\n          \"text\": \"Happy birthday\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{cakeDesignOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"flower\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{messageOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"memo\",\n          \"text\": \"Less sweet, please\"\n        }\n      ]\n    }\n  ],\n  \"startReferenceAssets\": [\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 0\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 1\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 2\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 3\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 4\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 5\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
+          }
+        },
+        {
+          "name": "[negative] Public - draft rejects duplicate start reference asset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('duplicate start reference asset is rejected', function () { pm.expect(pm.response.code).to.eql(400); });",
+                  "pm.test('failure envelope', function () { pm.expect(pm.response.json().success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"cancellationRefundAgreed\": true,\n  \"formAnswers\": [\n    {\n      \"optionGroupId\": \"{{menuOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"menu\",\n          \"text\": \"Strawberry cake\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{sizeOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"size-10\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{letteringOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"lettering\",\n          \"text\": \"Happy birthday\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{cakeDesignOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"flower\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{messageOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"memo\",\n          \"text\": \"Less sweet, please\"\n        }\n      ]\n    }\n  ],\n  \"startReferenceAssets\": [\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 0\n    },\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 0\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }
@@ -1250,7 +1480,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"formAnswers\": [\n    { \"fieldId\": \"{{menuFieldId}}\", \"value\": \"Strawberry cake\" },\n    { \"fieldId\": \"{{sizeFieldId}}\", \"value\": \"size-10\" },\n    { \"fieldId\": \"{{letteringFieldId}}\", \"value\": { \"selectedValue\": \"lettering\", \"text\": \"Happy birthday\" } },\n    { \"fieldId\": \"{{messageFieldId}}\", \"value\": \"Less sweet, please\" },\n    { \"fieldId\": \"{{referenceImageFieldId}}\", \"value\": [\"{{galleryAssetId}}\"] }\n  ],\n  \"startReferenceAssets\": [\n    { \"assetId\": \"{{galleryAssetId}}\", \"source\": \"STORE_GALLERY\", \"sortOrder\": 0 }\n  ]\n}"
+              "raw": "{\n  \"orderFormTemplateId\": \"{{orderFormTemplateId}}\",\n  \"pickupDate\": \"{{pickupDate}}\",\n  \"pickupTime\": \"{{pickupTime}}\",\n  \"noticeAgreed\": true,\n  \"cancellationRefundAgreed\": true,\n  \"formAnswers\": [\n    {\n      \"optionGroupId\": \"{{menuOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"menu\",\n          \"text\": \"Strawberry cake\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{sizeOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"size-10\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{letteringOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"lettering\",\n          \"text\": \"Happy birthday\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{cakeDesignOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"flower\"\n        }\n      ]\n    },\n    {\n      \"optionGroupId\": \"{{messageOptionGroupId}}\",\n      \"value\": [\n        {\n          \"optionValue\": \"memo\",\n          \"text\": \"Less sweet, please\"\n        }\n      ]\n    }\n  ],\n  \"startReferenceAssets\": [\n    {\n      \"assetId\": \"{{galleryAssetId}}\",\n      \"source\": \"STORE_GALLERY\",\n      \"sortOrder\": 0\n    }\n  ]\n}"
             },
             "url": "{{baseUrl}}/stores/{{storeSlug}}/order-form-drafts"
           }
@@ -1346,7 +1576,23 @@
               }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('inquiry exposes start reference assets', function () {",
+                  "  pm.expect(data.startReferenceAssets).to.have.length(1);",
+                  "  pm.expect(data.startReferenceAssets[0].assetId).to.eql(pm.environment.get('galleryAssetId'));",
+                  "  pm.expect(data.startReferenceAssets[0].source).to.eql('STORE_GALLERY');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Seller - get inquiry detail",
@@ -1424,6 +1670,53 @@
               }
             ],
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/order-form-submissions/{{submissionId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "const answers = JSON.parse(data.answers);",
+                  "const selectedOptions = answers.flatMap(answer => answer.selectedOptions || []);",
+                  "pm.test('submission stores server option snapshots', function () {",
+                  "  pm.expect(selectedOptions.some(option => option.value === 'size-10' && option.price === 38000)).to.eql(true);",
+                  "  pm.expect(selectedOptions.some(option => option.value === 'lettering' && option.price === 3000)).to.eql(true);",
+                  "  pm.expect(selectedOptions.some(option => option.value === 'flower' && option.price === 5000)).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seller - get order confirmation preview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('confirmationBaseAmount', String(data.baseAmount));",
+                  "pm.test('preview returns latest submission base amount', function () {",
+                  "  pm.expect(data.orderFormSubmissionId).to.eql(pm.environment.get('submissionId'));",
+                  "  pm.expect(data.baseAmount).to.eql(46000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations/preview"
           }
         },
         {
@@ -1436,9 +1729,9 @@
                 "exec": [
                   "const data = pm.response.json().data;",
                   "pm.environment.set('confirmationId', data.confirmationId);",
-                  "pm.test('confirmation is sent', function () {",
+                  "pm.test('confirmation is sent with calculated amount', function () {",
                   "  pm.expect(data.status).to.eql('SENT');",
-                  "  pm.expect(data.amount).to.eql(39000);",
+                  "  pm.expect(data.amount).to.eql(47000);",
                   "});"
                 ]
               }
@@ -1458,7 +1751,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake\",\n  \"summaryText\": \"2 size strawberry cake with custom message\",\n  \"amount\": 39000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [\n    { \"label\": \"Candle\", \"value\": \"1 pack\", \"amount\": 1000 }\n  ],\n  \"sellerNote\": \"Local scenario confirmation\"\n}"
+              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake\",\n  \"summaryText\": \"Strawberry cake with lettering and flower decoration\",\n  \"amount\": 47000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [\n    {\n      \"label\": \"Candle\",\n      \"value\": \"1 pack\",\n      \"amount\": 1000\n    }\n  ],\n  \"sellerNote\": \"Local scenario confirmation\"\n}"
             },
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
           }
@@ -1490,6 +1783,35 @@
           }
         },
         {
+          "name": "Buyer - get payment CTA before viewed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('payment CTA requires confirmation view', function () {",
+                  "  pm.expect(data.canPay).to.eql(false);",
+                  "  pm.expect(data.status).to.eql('VIEW_REQUIRED');",
+                  "  pm.expect(data.reason).to.eql('ORDER_CONFIRMATION_NOT_VIEWED');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/payment-cta"
+          }
+        },
+        {
           "name": "Buyer - mark confirmation viewed",
           "request": {
             "method": "PATCH",
@@ -1500,6 +1822,50 @@
               }
             ],
             "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/viewed"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('confirmation view is recorded', function () {",
+                  "  pm.expect(data.status).to.eql('SENT');",
+                  "  pm.expect(data.buyerViewedAt).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buyer - get payment CTA after viewed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('payment CTA is payable after view', function () {",
+                  "  pm.expect(data.canPay).to.eql(true);",
+                  "  pm.expect(data.status).to.eql('PAYABLE');",
+                  "  pm.expect(data.amount).to.eql(47000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{buyerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/inquiries/{{inquiryId}}/confirmations/{{confirmationId}}/payment-cta"
           }
         },
         {
@@ -1534,7 +1900,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.environment.set('replacementConfirmationId', pm.response.json().data.confirmationId);"
+                  "const data = pm.response.json().data;",
+                  "pm.environment.set('replacementConfirmationId', data.confirmationId);",
+                  "pm.test('replacement confirmation is sent', function () {",
+                  "  pm.expect(data.status).to.eql('SENT');",
+                  "  pm.expect(data.amount).to.eql(46000);",
+                  "});"
                 ]
               }
             }
@@ -1553,7 +1924,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake revised\",\n  \"summaryText\": \"Revised pickup note\",\n  \"amount\": 38000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [],\n  \"sellerNote\": \"Replacement confirmation\"\n}"
+              "raw": "{\n  \"orderFormSubmissionId\": \"{{submissionId}}\",\n  \"confirmationTitle\": \"Strawberry cake revised\",\n  \"summaryText\": \"Revised pickup note\",\n  \"amount\": 46000,\n  \"pickupAt\": \"{{pickupAt}}\",\n  \"additionalItems\": [],\n  \"sellerNote\": \"Replacement confirmation\"\n}"
             },
             "url": "{{baseUrl}}/seller/inquiries/{{inquiryId}}/confirmations"
           }

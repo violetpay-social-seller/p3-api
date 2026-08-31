@@ -209,10 +209,11 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
     OrderFormResult created = orderFormService.create(
         new CreateOrderFormCommand(store.id(), "주문서", List.of(cakeDesignMultiSelect)));
 
+    StoreResult flavorStore = createStore();
     BaseException exception = assertThrows(
         BaseException.class,
         () -> orderFormService.create(
-            new CreateOrderFormCommand(store.id(), "잘못된 주문서", List.of(flavorMultiSelect))));
+            new CreateOrderFormCommand(flavorStore.id(), "잘못된 주문서", List.of(flavorMultiSelect))));
 
     assertEquals(
         SelectionType.MULTI, created.groups().get(0).optionGroups().get(0).selectionType());

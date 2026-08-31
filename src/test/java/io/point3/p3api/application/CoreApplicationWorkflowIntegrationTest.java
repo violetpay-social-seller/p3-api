@@ -274,6 +274,44 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("주문서 수정 draft는 기존 주문 시작 참조 이미지를 유지한다")
+  void consumesDraftWithoutStartReferenceAssetsAsUpdate() {
+    Fixture fixture = prepareFixtureWithoutInquiry("workflow-draft-update");
+    UUID galleryAssetId =
+        createVisibleGalleryAsset(fixture.store().id(), fixture.seller().getId());
+    OrderFormDraftResult firstDraft = createDraft(
+        fixture,
+        "바닐라 케이크",
+        List.of(new CreateOrderFormDraftCommand.ReferenceAsset(
+            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
+    OrderFormDraftConsumeResult firstConsumed = orderFormDraftConsumeService.consume(
+        new ConsumeOrderFormDraftCommand(firstDraft.draftKey(), fixture.buyer().getId()));
+
+    OrderFormDraftResult updateDraft = createDraft(fixture, "초코 케이크", null);
+    OrderFormDraftConsumeResult updated = orderFormDraftConsumeService.consume(
+        new ConsumeOrderFormDraftCommand(updateDraft.draftKey(), fixture.buyer().getId()));
+    InquiryChatDetail chatDetail = inquiryChatDetailQueryService.getBuyerDetail(updated.inquiry());
+    ChatTimelinePage timelinePage = chatTimelineQueryService.execute(
+        updated.inquiry().getId(), new ChatTimelineQuery(null, null, 10));
+
+    assertEquals(firstConsumed.inquiry().getId(), updated.inquiry().getId());
+    assertEquals(1, chatDetail.startReferenceAssets().size());
+    assertEquals(galleryAssetId, chatDetail.startReferenceAssets().get(0).assetId());
+    assertEquals(
+        2,
+        timelinePage.items().stream()
+            .filter(item -> item.type() == ChatTimelineItemType.ORDER_FORM_SUBMISSION)
+            .count());
+    assertEquals(
+        1,
+        notificationJpaRepository
+            .findAllByUserIdOrderByCreatedAtDesc(fixture.seller().getId())
+            .stream()
+            .filter(notification -> notification.getType() == NotificationType.ORDER_FORM_UPDATED)
+            .count());
+  }
+
+  @Test
   @DisplayName("주문서 draft는 픽업 가능 시간 외 요청을 저장하지 않는다")
   void rejectsDraftWithUnavailablePickupTime() {
     Fixture fixture = prepareFixtureWithoutInquiry("workflow-draft-pickup");
@@ -471,6 +509,29 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     return new Fixture(seller, buyer, store, form, null, null);
   }
 
+  private OrderFormDraftResult createDraft(
+      Fixture fixture,
+      String menuName,
+      List<CreateOrderFormDraftCommand.ReferenceAsset> startReferenceAssets) {
+    return orderFormDraftService.create(new CreateOrderFormDraftCommand(
+        fixture.store().id(),
+        fixture.form().id(),
+        LocalDate.parse("2026-09-01"),
+        LocalTime.parse("15:00"),
+        true,
+        draftAnswers(fixture.form(), menuName),
+        startReferenceAssets));
+  }
+
+  private List<CreateOrderFormDraftCommand.FormAnswer> draftAnswers(
+      OrderFormResult form, String menuName) {
+    return List.of(
+        new CreateOrderFormDraftCommand.FormAnswer(
+            form.optionGroups().get(0).id(), selections(selection("menu").put("text", menuName))),
+        new CreateOrderFormDraftCommand.FormAnswer(
+            form.optionGroups().get(1).id(), selections(selection("size-10"))));
+  }
+
   private void savePickupSettings(UUID storeId) {
     storeSettingService.update(new UpdateStoreSettingCommand(
         storeId,
@@ -498,7 +559,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 form.optionGroups().get(1).id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            LocalDate.parse("2030-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
   }
@@ -512,7 +573,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         title,
         "초코 시트, 딸기 토핑",
         41000,
-        Instant.parse("2026-08-30T04:30:00Z"),
+        Instant.parse("2030-08-30T04:30:00Z"),
         List.of(new SendOrderConfirmationCommand.AdditionalItem("토핑", "딸기", 3000L)),
         "픽업 10분 전에 연락 주세요."));
   }

@@ -1,0 +1,93 @@
+{
+  "family": "p3-api-dev",
+  "taskRoleArn": "arn:aws:iam::851563824752:role/p3-role-ecs-task-dev",
+  "executionRoleArn": "arn:aws:iam::851563824752:role/p3-role-ecs-task-execution-dev",
+  "networkMode": "bridge",
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "containerDefinitions": [
+    {
+      "name": "p3-api",
+      "image": "851563824752.dkr.ecr.ap-northeast-2.amazonaws.com/p3-ecr-api-dev:placeholder",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "ap-northeast-2"
+        },
+        {
+          "name": "POSTGRES_HOST",
+          "value": "p3-rds-dev.cv04kyy4s6bp.ap-northeast-2.rds.amazonaws.com"
+        },
+        {
+          "name": "POSTGRES_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "POSTGRES_DB",
+          "value": "p3"
+        },
+        {
+          "name": "POSTGRES_USER",
+          "value": "p3admin"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "p3-valkey-dev-001.p3-valkey-dev.kfa1ac.apn2.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "REDIS_SSL",
+          "value": "true"
+        },
+        {
+          "name": "COGNITO_ISSUER_URI",
+          "value": "https://cognito-idp.ap-northeast-2.amazonaws.com/ap-northeast-2_h04HbdnY8"
+        },
+        {
+          "name": "P3_CORS_ALLOWED_ORIGINS",
+          "value": "http://localhost:3000"
+        },
+        {
+          "name": "P3_WEBSOCKET_ALLOWED_ORIGINS",
+          "value": "http://localhost:3000"
+        },
+        {
+          "name": "P3_WEB_BASE_URL",
+          "value": "http://localhost:3000"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "POSTGRES_PASSWORD",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/POSTGRES_PASSWORD"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/p3-api-dev",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "p3-api"
+        }
+      }
+    }
+  ]
+}

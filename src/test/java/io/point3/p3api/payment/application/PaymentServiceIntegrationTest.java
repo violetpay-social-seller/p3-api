@@ -478,9 +478,13 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     Fixture fixture = prepareFixture("payment-session-failed");
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
     PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
     point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.PROCESSING);
 
     paymentCaptureUseCase.capture(CapturePaymentCommand.of(
@@ -489,7 +493,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     PaymentCaptureResult reconciled = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
         prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
     PaymentCtaResult paymentCta = paymentCtaQueryUseCase.getBuyerConfirmationCta(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
 
     assertEquals(PaymentAttemptStatus.FAILED, reconciled.status());
     assertEquals(PaymentCtaStatus.RETRY_AVAILABLE, paymentCta.status());
@@ -504,9 +510,13 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     Fixture fixture = prepareFixture("payment-session-error");
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
     PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
     point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.PROCESSING);
 
     paymentCaptureUseCase.capture(CapturePaymentCommand.of(
@@ -528,25 +538,36 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     Fixture fixture = prepareFixture("payment-concurrent-capture");
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
     PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
-        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
     point3PaymentPort.blockCapture();
     ExecutorService executorService = Executors.newFixedThreadPool(2);
 
     try {
-      Future<PaymentCaptureResult> first = executorService.submit(() -> paymentCaptureUseCase.capture(
-          CapturePaymentCommand.of(
-              prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new")));
+      Future<PaymentCaptureResult> first =
+          executorService.submit(() -> paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+              prepared.paymentAttemptId(),
+              fixture.buyer().getId(),
+              prepared.sessionId(),
+              "payer-new")));
       assertTrue(point3PaymentPort.awaitCaptureStarted());
-      Future<PaymentCaptureResult> second = executorService.submit(() -> paymentCaptureUseCase.capture(
-          CapturePaymentCommand.of(
-              prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new")));
+      Future<PaymentCaptureResult> second =
+          executorService.submit(() -> paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+              prepared.paymentAttemptId(),
+              fixture.buyer().getId(),
+              prepared.sessionId(),
+              "payer-new")));
 
       point3PaymentPort.releaseCapture();
       PaymentCaptureResult firstResult = first.get(5, TimeUnit.SECONDS);
       PaymentCaptureResult secondResult = second.get(5, TimeUnit.SECONDS);
-      Order order = orderJpaRepository.findByPaymentAttemptId(prepared.paymentAttemptId()).orElseThrow();
+      Order order =
+          orderJpaRepository.findByPaymentAttemptId(prepared.paymentAttemptId()).orElseThrow();
 
       assertEquals(PaymentAttemptStatus.SUCCEEDED, firstResult.status());
       assertEquals(PaymentAttemptStatus.SUCCEEDED, secondResult.status());
@@ -555,16 +576,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
       assertEquals(1, point3PaymentPort.captureCount());
       assertEquals(
           1,
-          orderJpaRepository.findAllByBuyerUserIdOrderByCreatedAtDesc(fixture.buyer().getId()).size());
-      assertEquals(
-          1,
-          paymentCompletedNotificationCount(fixture.buyer().getId()));
-      assertEquals(
-          1,
-          paymentCompletedNotificationCount(fixture.seller().getId()));
-      assertEquals(
-          1,
-          paymentCompletedTimelineCount(fixture.inquiry().getId(), order.getId()));
+          orderJpaRepository
+              .findAllByBuyerUserIdOrderByCreatedAtDesc(fixture.buyer().getId())
+              .size());
+      assertEquals(1, paymentCompletedNotificationCount(fixture.buyer().getId()));
+      assertEquals(1, paymentCompletedNotificationCount(fixture.seller().getId()));
+      assertEquals(1, paymentCompletedTimelineCount(fixture.inquiry().getId(), order.getId()));
     } finally {
       point3PaymentPort.releaseCapture();
       executorService.shutdownNow();
@@ -755,8 +772,10 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     private final AtomicBoolean failNextSessionLookup = new AtomicBoolean();
     private volatile CountDownLatch captureStarted;
     private volatile CountDownLatch captureRelease;
-    private volatile Point3CaptureResult.Status nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
-    private volatile Point3CaptureResult.Status nextSessionStatus = Point3CaptureResult.Status.PROCESSING;
+    private volatile Point3CaptureResult.Status nextCaptureStatus =
+        Point3CaptureResult.Status.CAPTURED;
+    private volatile Point3CaptureResult.Status nextSessionStatus =
+        Point3CaptureResult.Status.PROCESSING;
 
     @Override
     public Point3PaymentSession createSession(

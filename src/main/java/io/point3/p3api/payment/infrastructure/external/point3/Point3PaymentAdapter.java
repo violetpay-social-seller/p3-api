@@ -66,8 +66,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
   @Override
   public Point3CaptureResult getSession(String sessionId) {
-    HttpResponse<String> response = send(
-        get("/payment/v3/session/" + sessionId).GET().build(), "POINT3_SESSION_GET");
+    HttpResponse<String> response =
+        send(get("/payment/v3/session/" + sessionId).GET().build(), "POINT3_SESSION_GET");
 
     if (response.statusCode() != 200) {
       throw new Point3PaymentException(

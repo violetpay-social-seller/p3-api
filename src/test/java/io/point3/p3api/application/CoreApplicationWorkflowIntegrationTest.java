@@ -361,8 +361,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
     ChatTimelinePage timelinePage = chatTimelineQueryService.execute(
         fixture.inquiry().getId(), new ChatTimelineQuery(null, null, 10));
-    ChatTimelineItemResult revisionEvent = findTimelineItem(
-        timelinePage, ChatTimelineItemType.ORDER_CONFIRMATION_REVISION);
+    ChatTimelineItemResult revisionEvent =
+        findTimelineItem(timelinePage, ChatTimelineItemType.ORDER_CONFIRMATION_REVISION);
     assertEquals(first.orderConfirmation().id(), revisionEvent.referenceId());
     assertEquals(
         first.orderConfirmation().id(),

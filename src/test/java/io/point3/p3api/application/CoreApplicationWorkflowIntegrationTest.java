@@ -41,6 +41,7 @@ import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.application.result.OrderFormDraftConsumeResult;
 import io.point3.p3api.inquiry.application.result.OrderFormDraftResult;
 import io.point3.p3api.inquiry.application.submission.create.OrderFormSubmissionService;
+import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
@@ -213,6 +214,14 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertEquals(
         confirmation.orderConfirmation().id(), persistedConfirmationEvent.getReferenceId());
     assertEquals(fixture.submission().getId(), persistedSubmissionEvent.getReferenceId());
+    assertEquals(confirmation.orderConfirmation().id(), confirmationEvent.referenceId());
+    assertEquals(fixture.submission().getId(), submissionEvent.referenceId());
+    assertEquals(
+        confirmation.orderConfirmation().id(),
+        ChatTimelineItemResponse.from(confirmationEvent).referenceId());
+    assertEquals(
+        fixture.submission().getId(),
+        ChatTimelineItemResponse.from(submissionEvent).referenceId());
 
     inquiryListService.markBuyerRead(fixture.inquiry().getId(), fixture.buyer().getId());
     assertEquals(
@@ -349,6 +358,15 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         first.orderConfirmation().id(),
         fixture.buyer().getId());
     assertEquals(OrderConfirmationStatus.REVISION_REQUESTED, revisionRequested.getStatus());
+
+    ChatTimelinePage timelinePage = chatTimelineQueryService.execute(
+        fixture.inquiry().getId(), new ChatTimelineQuery(null, null, 10));
+    ChatTimelineItemResult revisionEvent = findTimelineItem(
+        timelinePage, ChatTimelineItemType.ORDER_CONFIRMATION_REVISION);
+    assertEquals(first.orderConfirmation().id(), revisionEvent.referenceId());
+    assertEquals(
+        first.orderConfirmation().id(),
+        ChatTimelineItemResponse.from(revisionEvent).referenceId());
 
     SendOrderConfirmationResult replacement = sendConfirmation(fixture, "수정 확인서");
 

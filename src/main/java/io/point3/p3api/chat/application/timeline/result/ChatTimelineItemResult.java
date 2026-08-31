@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public record ChatTimelineItemResult(
     UUID eventId,
+    UUID referenceId,
     ChatTimelineItemType type,
     UUID senderUserId,
     Instant createdAt,
@@ -31,6 +32,7 @@ public record ChatTimelineItemResult(
       List<ChatMessageAsset> chatMessageAssets) {
     return new ChatTimelineItemResult(
         chatTimelineItem.getId(),
+        chatTimelineItem.getReferenceId(),
         chatTimelineItem.getType(),
         chatTimelineItem.getSenderUserId(),
         chatTimelineItem.getCreatedAt(),

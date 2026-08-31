@@ -22,8 +22,10 @@ public enum UserRole {
   }
 
   public static UserRole of(String value) {
+    String normalized = value == null ? "" : value.trim();
     return Arrays.stream(values())
-        .filter(role -> role.value.equals(value))
+        .filter(role ->
+            role.value.equalsIgnoreCase(normalized) || role.name().equalsIgnoreCase(normalized))
         .findFirst()
         .orElseThrow(() -> new IllegalArgumentException("Invalid user role: " + value));
   }

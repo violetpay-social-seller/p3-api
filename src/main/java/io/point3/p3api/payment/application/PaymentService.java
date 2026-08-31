@@ -1,5 +1,6 @@
 package io.point3.p3api.payment.application;
 
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
@@ -62,6 +63,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private final StorePersistencePort storePersistencePort;
   private final OrderStartReferenceAssetService orderStartReferenceAssetService;
   private final NotificationCreateUseCase notificationCreateUseCase;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
   private final Point3PaymentPort point3PaymentPort;
   private final Point3Properties point3Properties;
   private final Clock clock;
@@ -107,6 +109,10 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     Optional<Order> existingOrder =
         orderPersistencePort.findByPaymentAttemptId(paymentAttempt.getId());
 
+    if (paymentAttempt.needsConfirmation()) {
+      return reconcilePayment(paymentAttempt, command.payerId());
+    }
+
     if (!paymentAttempt.isReady()) {
       return PaymentCaptureResult.of(
           paymentAttempt, existingOrder.map(Order::getId).orElse(null));
@@ -121,8 +127,19 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     Point3CaptureResult captureResult = requestCapture(paymentAttempt.getPoint3SessionId());
     validatePoint3Session(paymentAttempt, captureResult);
 
+    return applyCaptureResult(paymentAttempt, command.payerId(), captureResult);
+  }
+
+  private PaymentCaptureResult reconcilePayment(PaymentAttempt paymentAttempt, String payerId) {
+    Point3CaptureResult sessionResult = requestSession(paymentAttempt.getPoint3SessionId());
+    validatePoint3Session(paymentAttempt, sessionResult);
+    return applyCaptureResult(paymentAttempt, payerId, sessionResult);
+  }
+
+  private PaymentCaptureResult applyCaptureResult(
+      PaymentAttempt paymentAttempt, String payerId, Point3CaptureResult captureResult) {
     if (captureResult.status() == Point3CaptureResult.Status.CAPTURED) {
-      return completePayment(paymentAttempt, command.payerId());
+      return completePayment(paymentAttempt, payerId);
     }
 
     Instant completedAt = Instant.now(clock);
@@ -227,7 +244,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
 
   private PaymentAttempt getPaymentAttempt(UUID paymentAttemptId) {
     return paymentAttemptPersistencePort
-        .findById(paymentAttemptId)
+        .findByIdForUpdate(paymentAttemptId)
         .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
   }
 
@@ -246,6 +263,15 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private Point3CaptureResult requestCapture(String sessionId) {
     try {
       return point3PaymentPort.capture(sessionId);
+    } catch (Point3PaymentException e) {
+      return new Point3CaptureResult(
+          sessionId, Point3CaptureResult.Status.PROCESSING, e.getFailureCode());
+    }
+  }
+
+  private Point3CaptureResult requestSession(String sessionId) {
+    try {
+      return point3PaymentPort.getSession(sessionId);
     } catch (Point3PaymentException e) {
       return new Point3CaptureResult(
           sessionId, Point3CaptureResult.Status.PROCESSING, e.getFailureCode());
@@ -305,6 +331,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     orderStartReferenceAssetService.clear(inquiry.getId());
 
     notifyPaymentCompleted(inquiry, order);
+    chatTimelineItemPublisher.publishPaymentCompleted(
+        inquiry.getId(), paymentAttempt.getPayerUserId(), order.getId());
 
     return PaymentCaptureResult.of(paymentAttempt, order.getId());
   }

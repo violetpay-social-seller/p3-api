@@ -97,6 +97,11 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         }
 
         @Override
+        public Point3CaptureResult getSession(String sessionId) {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
         public Point3RefundResult refund(String sessionId, long amount, String reason, String key) {
           return new Point3RefundResult(true, null);
         }

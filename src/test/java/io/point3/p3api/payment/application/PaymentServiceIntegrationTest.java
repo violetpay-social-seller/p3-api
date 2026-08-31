@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import io.point3.p3api.chat.infrastructure.persistence.ChatTimelineItemJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.command.CreateOrderFormSubmissionCommand;
@@ -45,6 +47,7 @@ import io.point3.p3api.orderform.domain.type.OrderFormCategory;
 import io.point3.p3api.orderform.domain.type.SelectionType;
 import io.point3.p3api.payment.application.capture.CapturePaymentCommand;
 import io.point3.p3api.payment.application.capture.PaymentCaptureUseCase;
+import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
 import io.point3.p3api.payment.application.prepare.PaymentPrepareUseCase;
 import io.point3.p3api.payment.application.prepare.PreparePaymentCommand;
@@ -78,6 +81,14 @@ import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -86,6 +97,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @TestPropertySource(
     properties = {
@@ -150,6 +163,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private NotificationJpaRepository notificationJpaRepository;
+
+  @Autowired
+  private ChatTimelineItemJpaRepository chatTimelineItemJpaRepository;
 
   @Autowired
   private ObjectMapper objectMapper;
@@ -394,6 +410,14 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
             .stream()
             .filter(notification -> notification.getType() == NotificationType.PAYMENT_COMPLETED)
             .count());
+    assertEquals(
+        1,
+        chatTimelineItemJpaRepository.findAll().stream()
+            .filter(item -> item.getInquiryId().equals(fixture.inquiry().getId()))
+            .filter(item -> item.getType() == ChatTimelineItemType.PAYMENT_COMPLETED)
+            .filter(item -> item.getReferenceId().equals(order.getId()))
+            .filter(item -> item.getSenderUserId().equals(fixture.buyer().getId()))
+            .count());
     assertEquals(OrderConfirmationStatus.PAID, paidConfirmation.getStatus());
     assertEquals(InquiryStatus.PAID, fixture.inquiry().getStatus());
   }
@@ -422,8 +446,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("Point3 승인 결과가 처리 중이면 결과 확인 필요 상태로 저장하고 중복 승인을 막는다")
-  void storesNeedsConfirmation() {
+  @DisplayName("Point3 승인 결과가 처리 중이면 같은 세션 조회 결과로 결제를 완료한다")
+  void reconcilesNeedsConfirmation() {
     Fixture fixture = prepareFixture("payment-processing");
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
@@ -438,12 +462,127 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     PaymentCaptureResult result = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
         prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
-    PaymentCaptureResult duplicated = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+    point3PaymentPort.nextSessionStatus(Point3CaptureResult.Status.CAPTURED);
+    PaymentCaptureResult reconciled = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
         prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
 
     assertEquals(PaymentAttemptStatus.NEEDS_CONFIRMATION, result.status());
-    assertEquals(PaymentAttemptStatus.NEEDS_CONFIRMATION, duplicated.status());
+    assertEquals(PaymentAttemptStatus.SUCCEEDED, reconciled.status());
     assertEquals(1, point3PaymentPort.captureCount());
+    assertEquals(1, point3PaymentPort.sessionQueryCount());
+  }
+
+  @Test
+  @DisplayName("처리 중 결제의 세션 조회가 실패면 결제 실패로 확정하고 재결제를 허용한다")
+  void failsNeedsConfirmationWhenSessionFailed() {
+    Fixture fixture = prepareFixture("payment-session-failed");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+    PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+    point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.PROCESSING);
+
+    paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+        prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
+    point3PaymentPort.nextSessionStatus(Point3CaptureResult.Status.FAILED);
+    PaymentCaptureResult reconciled = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+        prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
+    PaymentCtaResult paymentCta = paymentCtaQueryUseCase.getBuyerConfirmationCta(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+
+    assertEquals(PaymentAttemptStatus.FAILED, reconciled.status());
+    assertEquals(PaymentCtaStatus.RETRY_AVAILABLE, paymentCta.status());
+    assertTrue(paymentCta.canPay());
+    assertEquals(1, point3PaymentPort.captureCount());
+    assertEquals(1, point3PaymentPort.sessionQueryCount());
+  }
+
+  @Test
+  @DisplayName("처리 중 결제의 세션 조회가 통신 오류면 결과 확인 상태를 유지한다")
+  void keepsNeedsConfirmationWhenSessionLookupFails() {
+    Fixture fixture = prepareFixture("payment-session-error");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+    PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+    point3PaymentPort.nextCaptureStatus(Point3CaptureResult.Status.PROCESSING);
+
+    paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+        prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
+    point3PaymentPort.failNextSessionLookup();
+    PaymentCaptureResult reconciled = paymentCaptureUseCase.capture(CapturePaymentCommand.of(
+        prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new"));
+
+    assertEquals(PaymentAttemptStatus.NEEDS_CONFIRMATION, reconciled.status());
+    assertEquals("POINT3_SESSION_GET_FAILED", reconciled.failureCode());
+    assertEquals(1, point3PaymentPort.captureCount());
+    assertEquals(1, point3PaymentPort.sessionQueryCount());
+  }
+
+  @Test
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  @DisplayName("동시 결제 승인은 주문과 완료 후처리를 한 번만 생성한다")
+  void preventsDuplicateCompletionFromConcurrentCaptures() throws Exception {
+    Fixture fixture = prepareFixture("payment-concurrent-capture");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId());
+    PaymentPreparationResult prepared = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(), confirmation.orderConfirmation().id(), fixture.buyer().getId()));
+    point3PaymentPort.blockCapture();
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+    try {
+      Future<PaymentCaptureResult> first = executorService.submit(() -> paymentCaptureUseCase.capture(
+          CapturePaymentCommand.of(
+              prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new")));
+      assertTrue(point3PaymentPort.awaitCaptureStarted());
+      Future<PaymentCaptureResult> second = executorService.submit(() -> paymentCaptureUseCase.capture(
+          CapturePaymentCommand.of(
+              prepared.paymentAttemptId(), fixture.buyer().getId(), prepared.sessionId(), "payer-new")));
+
+      point3PaymentPort.releaseCapture();
+      PaymentCaptureResult firstResult = first.get(5, TimeUnit.SECONDS);
+      PaymentCaptureResult secondResult = second.get(5, TimeUnit.SECONDS);
+      Order order = orderJpaRepository.findByPaymentAttemptId(prepared.paymentAttemptId()).orElseThrow();
+
+      assertEquals(PaymentAttemptStatus.SUCCEEDED, firstResult.status());
+      assertEquals(PaymentAttemptStatus.SUCCEEDED, secondResult.status());
+      assertEquals(order.getId(), firstResult.orderId());
+      assertEquals(order.getId(), secondResult.orderId());
+      assertEquals(1, point3PaymentPort.captureCount());
+      assertEquals(
+          1,
+          orderJpaRepository.findAllByBuyerUserIdOrderByCreatedAtDesc(fixture.buyer().getId()).size());
+      assertEquals(
+          1,
+          paymentCompletedNotificationCount(fixture.buyer().getId()));
+      assertEquals(
+          1,
+          paymentCompletedNotificationCount(fixture.seller().getId()));
+      assertEquals(
+          1,
+          paymentCompletedTimelineCount(fixture.inquiry().getId(), order.getId()));
+    } finally {
+      point3PaymentPort.releaseCapture();
+      executorService.shutdownNow();
+    }
+  }
+
+  private long paymentCompletedNotificationCount(UUID userId) {
+    return notificationJpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+        .filter(notification -> notification.getType() == NotificationType.PAYMENT_COMPLETED)
+        .count();
+  }
+
+  private long paymentCompletedTimelineCount(UUID inquiryId, UUID orderId) {
+    return chatTimelineItemJpaRepository.findAll().stream()
+        .filter(item -> item.getInquiryId().equals(inquiryId))
+        .filter(item -> item.getType() == ChatTimelineItemType.PAYMENT_COMPLETED)
+        .filter(item -> item.getReferenceId().equals(orderId))
+        .count();
   }
 
   private Fixture prepareFixture(String prefix) {
@@ -609,22 +748,38 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
   static class FakePoint3PaymentPort implements Point3PaymentPort {
 
-    private long lastAmount;
-    private int createCount;
-    private int captureCount;
-    private Point3CaptureResult.Status nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
+    private final AtomicLong lastAmount = new AtomicLong();
+    private final AtomicInteger createCount = new AtomicInteger();
+    private final AtomicInteger captureCount = new AtomicInteger();
+    private final AtomicInteger sessionQueryCount = new AtomicInteger();
+    private final AtomicBoolean failNextSessionLookup = new AtomicBoolean();
+    private volatile CountDownLatch captureStarted;
+    private volatile CountDownLatch captureRelease;
+    private volatile Point3CaptureResult.Status nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
+    private volatile Point3CaptureResult.Status nextSessionStatus = Point3CaptureResult.Status.PROCESSING;
 
     @Override
     public Point3PaymentSession createSession(
         long amount, String productName, String displayMerchantName) {
-      this.lastAmount = amount;
-      createCount++;
+      lastAmount.set(amount);
+      createCount.incrementAndGet();
       return new Point3PaymentSession("pymt_sess-" + UUID.randomUUID(), amount);
     }
 
     @Override
     public Point3CaptureResult capture(String sessionId) {
-      captureCount++;
+      captureCount.incrementAndGet();
+      CountDownLatch started = captureStarted;
+      CountDownLatch release = captureRelease;
+      if (started != null && release != null) {
+        started.countDown();
+        try {
+          release.await();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new Point3PaymentException("POINT3_CAPTURE_INTERRUPTED", e.getMessage());
+        }
+      }
       String failureCode =
           switch (nextCaptureStatus) {
             case CAPTURED -> null;
@@ -632,6 +787,18 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
             case PROCESSING -> "POINT3_PROCESSING";
           };
       return new Point3CaptureResult(sessionId, nextCaptureStatus, failureCode);
+    }
+
+    @Override
+    public Point3CaptureResult getSession(String sessionId) {
+      sessionQueryCount.incrementAndGet();
+      if (failNextSessionLookup.compareAndSet(true, false)) {
+        throw new Point3PaymentException("POINT3_SESSION_GET_FAILED", "session lookup failed");
+      }
+      String failureCode = nextSessionStatus == Point3CaptureResult.Status.CAPTURED
+          ? null
+          : "POINT3_SESSION_" + nextSessionStatus;
+      return new Point3CaptureResult(sessionId, nextSessionStatus, failureCode);
     }
 
     @Override
@@ -644,23 +811,55 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
       this.nextCaptureStatus = nextCaptureStatus;
     }
 
+    void nextSessionStatus(Point3CaptureResult.Status nextSessionStatus) {
+      this.nextSessionStatus = nextSessionStatus;
+    }
+
+    void failNextSessionLookup() {
+      failNextSessionLookup.set(true);
+    }
+
+    void blockCapture() {
+      captureStarted = new CountDownLatch(1);
+      captureRelease = new CountDownLatch(1);
+    }
+
+    boolean awaitCaptureStarted() throws InterruptedException {
+      return captureStarted.await(5, TimeUnit.SECONDS);
+    }
+
+    void releaseCapture() {
+      if (captureRelease != null) {
+        captureRelease.countDown();
+      }
+    }
+
     long lastAmount() {
-      return lastAmount;
+      return lastAmount.get();
     }
 
     int createCount() {
-      return createCount;
+      return createCount.get();
     }
 
     int captureCount() {
-      return captureCount;
+      return captureCount.get();
+    }
+
+    int sessionQueryCount() {
+      return sessionQueryCount.get();
     }
 
     void clear() {
-      lastAmount = 0;
-      createCount = 0;
-      captureCount = 0;
+      lastAmount.set(0);
+      createCount.set(0);
+      captureCount.set(0);
+      sessionQueryCount.set(0);
+      failNextSessionLookup.set(false);
+      captureStarted = null;
+      captureRelease = null;
       nextCaptureStatus = Point3CaptureResult.Status.CAPTURED;
+      nextSessionStatus = Point3CaptureResult.Status.PROCESSING;
     }
   }
 }

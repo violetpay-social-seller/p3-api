@@ -10,6 +10,8 @@ public interface PaymentAttemptPersistencePort {
 
   Optional<PaymentAttempt> findById(UUID paymentAttemptId);
 
+  Optional<PaymentAttempt> findByIdForUpdate(UUID paymentAttemptId);
+
   Optional<PaymentAttempt> findByPoint3SessionId(String point3SessionId);
 
   List<PaymentAttempt> findAllByConfirmationId(UUID confirmationId);

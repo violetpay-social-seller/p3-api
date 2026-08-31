@@ -26,6 +26,11 @@ public class PaymentAttemptPersistenceAdapter implements PaymentAttemptPersisten
   }
 
   @Override
+  public Optional<PaymentAttempt> findByIdForUpdate(UUID paymentAttemptId) {
+    return paymentAttemptJpaRepository.findByIdForUpdate(paymentAttemptId);
+  }
+
+  @Override
   public Optional<PaymentAttempt> findByPoint3SessionId(String point3SessionId) {
     return paymentAttemptJpaRepository.findByPoint3SessionId(point3SessionId);
   }

@@ -242,7 +242,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
 
   private PaymentAttempt getPaymentAttempt(UUID paymentAttemptId) {
     return paymentAttemptPersistencePort
-        .findById(paymentAttemptId)
+        .findByIdForUpdate(paymentAttemptId)
         .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
   }
 

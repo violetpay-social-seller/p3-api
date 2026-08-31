@@ -12,9 +12,9 @@ The collection covers these API flows:
 - current user profile query and update flows
 - seller onboarding creation and local-only approval
 - store, asset upload, representative image, gallery, and asset variant flows
-- order form success and main failure cases
-- draft creation, draft consume, inquiry list/detail/timeline/read flows
-- order confirmation send, viewed, revision request, replacement flows
+- order form option group success and main failure cases
+- draft creation, start reference asset validation, draft consume, inquiry list/detail/timeline/read flows
+- order confirmation preview, send, viewed, payment CTA, revision request, replacement flows
 - seller dashboard and revenue response contract flows
 
 Run the API with the local scenario profile:

@@ -21,6 +21,8 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
+import io.point3.p3api.order.application.query.OrderConfirmationPreview;
+import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
@@ -56,6 +58,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderConfirmationService orderConfirmationService;
+
+  @Autowired
+  private OrderConfirmationPreviewQueryService orderConfirmationPreviewQueryService;
 
   @Autowired
   private OrderFormSubmissionService submissionService;
@@ -190,6 +195,20 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             .filter(notification ->
                 notification.getType() == NotificationType.ORDER_CONFIRMATION_UPDATED)
             .count());
+  }
+
+  @Test
+  @DisplayName("주문확인서 미리보기는 최신 제출 주문서의 스냅샷 가격을 합산한다")
+  void previewsSubmissionSnapshotAmount() {
+    Fixture fixture = prepareFixture();
+
+    OrderConfirmationPreview preview = orderConfirmationPreviewQueryService.getPreview(
+        fixture.inquiry().getId(), fixture.store().id());
+
+    assertEquals(fixture.submission().getId(), preview.orderFormSubmissionId());
+    assertEquals("주문서", preview.confirmationTitle());
+    assertEquals(Instant.parse("2026-08-30T04:30:00Z"), preview.pickupAt());
+    assertEquals(38000, preview.baseAmount());
   }
 
   @Test

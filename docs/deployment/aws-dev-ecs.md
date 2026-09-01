@@ -23,6 +23,7 @@
 - ALB DNS: `p3-alb-dev-991901093.ap-northeast-2.elb.amazonaws.com`
 - Launch template: `lt-083bc41e8834652c8`
 - Launch template version: `3`
+- Current task definition: `p3-api-dev:4`
 
 ## GitHub Actions variables
 
@@ -55,10 +56,22 @@ NAT Gateway를 사용하지 않으므로 ECS container instance는 public subnet
 
 ECS task는 `bridge` 모드에서 `hostPort: 8080`으로 실행한다. ALB target group은 `instance` 타입을 사용한다.
 
+단일 `t3.small` EC2 instance에서 실행하므로 rolling deployment 중 태스크 2개가 동시에 배치되지 않도록 ECS service 배포 설정을 아래처럼 둔다.
+
+- `maximumPercent=100`
+- `minimumHealthyPercent=0`
+- `healthCheckGracePeriodSeconds=180`
+- `availabilityZoneRebalancing=DISABLED`
+
+앱 부팅에 약 90초가 걸리므로 ALB health check grace가 필요하다. Target group deregistration delay는 dev 배포 대기 시간을 줄이기 위해 30초로 설정한다.
+
 ## 현재 dev 상태
 
 - ASG desired capacity: `1`
 - ECS service desired count: `1`
+- ECS running task: `1`
+- ALB target health: `healthy`
+- ALB liveness response: `200 {"status":"UP"}`
 - RDS `p3-rds-dev`: running
 - RDS database: `p3`
 - Flyway: v1-v5 applied

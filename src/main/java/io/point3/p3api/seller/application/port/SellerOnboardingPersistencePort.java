@@ -16,7 +16,7 @@ public interface SellerOnboardingPersistencePort {
 
   Optional<SellerOnboarding> findByIdAndApplicantUserId(UUID onboardingId, UUID applicantUserId);
 
-  boolean existsById(UUID onboardingId);
+  Optional<SellerOnboarding> findById(UUID onboardingId);
 
   List<SellerOnboarding> findPendingOrderByCreatedAtAsc();
 

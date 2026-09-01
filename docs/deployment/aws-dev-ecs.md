@@ -50,18 +50,23 @@ Point3 운영 연동값을 dev ECS에서 활성화할 때는 SSM SecureString으
 NAT Gateway를 사용하지 않으므로 ECS container instance는 public subnet에서 outbound가 가능해야 한다.
 
 - ASG subnet: `subnet-090003f5128ce53ef`, `subnet-0f07842750a5a144e`
-- Launch template은 변경하지 않는다.
-- Public subnet 이동 후 EC2 public IP가 붙지 않으면 launch template network interface 설정 확인이 필요하다.
+- Launch template version 3은 version 2와 동일한 설정에서 `AssociatePublicIpAddress=true`만 반영한다.
+- ASG는 `$Latest`를 사용하므로 새 ECS container instance는 launch template version 3으로 생성된다.
 
 ECS task는 `bridge` 모드에서 `hostPort: 8080`으로 실행한다. ALB target group은 `instance` 타입을 사용한다.
 
-## 현재 차단 조건
+## 현재 dev 상태
 
-ASG를 public subnet으로 옮긴 뒤 생성된 EC2 instance에 public IP가 붙지 않았다. Launch template version 2의 network interface 설정이 public IP 자동 할당을 끄고 있었기 때문이다.
+- ASG desired capacity: `1`
+- ECS service desired count: `1`
+- RDS `p3-rds-dev`: running
+- RDS database: `p3`
+- Flyway: v1-v5 applied
 
-기존 version 2는 그대로 두고, 같은 launch template에 `AssociatePublicIpAddress=true`만 반영한 version 3을 만들었다. ASG는 `$Latest`를 사용하므로 새 instance부터 public IP가 붙는다.
+RDS master password는 2026-09-01에 재설정했고, 값은 SSM SecureString `/p3/dev/api/POSTGRES_PASSWORD`에 저장한다. 값은 문서나 GitHub에 기록하지 않는다.
 
-ECS service는 `desiredCount=0`으로 생성되어 있다. 실제 dev 배포 전 아래 조건을 먼저 해결한다.
+## 남은 운영 설정
 
-- `/p3/dev/api/POSTGRES_PASSWORD` SecureString 생성
-- 필요 시 RDS `p3-rds-dev` 시작
+- Cloudflare DNS에서 앞단 HTTPS를 구성하고 ALB HTTP 80으로 연결한다.
+- 실제 frontend origin이 정해지면 `P3_CORS_ALLOWED_ORIGINS`, `P3_WEBSOCKET_ALLOWED_ORIGINS`, `P3_WEB_BASE_URL` 값을 ECS task definition에 반영한다.
+- Point3 운영 연동을 활성화하려면 `P3_POINT3_CLIENT_ID`, `P3_POINT3_API_TOKEN` 값을 발급받아 SSM SecureString에 저장하고 task definition의 `secrets`에 연결한다.

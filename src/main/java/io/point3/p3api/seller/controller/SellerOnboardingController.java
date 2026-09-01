@@ -1,22 +1,26 @@
 package io.point3.p3api.seller.controller;
 
+import io.point3.p3api.auth.JwtCommandExtractor;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.seller.application.create.CreateSellerOnboardingCommand;
-import io.point3.p3api.seller.application.create.SellerOnboardingCreateUseCase;
 import io.point3.p3api.seller.application.query.SellerOnboardingCurrentQueryUseCase;
 import io.point3.p3api.seller.application.reapply.ReapplySellerOnboardingCommand;
 import io.point3.p3api.seller.application.reapply.SellerOnboardingReapplicationUseCase;
 import io.point3.p3api.seller.application.result.SellerOnboardingDetailResult;
 import io.point3.p3api.seller.application.result.SellerOnboardingResult;
+import io.point3.p3api.seller.application.submission.SellerOnboardingSubmissionUseCase;
+import io.point3.p3api.seller.application.submission.SubmitSellerOnboardingCommand;
 import io.point3.p3api.seller.controller.request.SellerOnboardingCreateRequest;
 import io.point3.p3api.seller.controller.response.SellerOnboardingCurrentResponse;
 import io.point3.p3api.seller.controller.response.SellerOnboardingResponse;
+import io.point3.p3api.user.domain.type.UserRole;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,9 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SellerOnboardingController {
 
-  private final SellerOnboardingCreateUseCase sellerOnboardingCreateUseCase;
+  private final SellerOnboardingSubmissionUseCase sellerOnboardingSubmissionUseCase;
   private final SellerOnboardingCurrentQueryUseCase sellerOnboardingCurrentQueryUseCase;
   private final SellerOnboardingReapplicationUseCase sellerOnboardingReapplicationUseCase;
+  private final JwtCommandExtractor jwtCommandExtractor;
 
   @GetMapping("/current")
   public ApiResponse<SellerOnboardingCurrentResponse> getCurrent(
@@ -45,13 +50,10 @@ public class SellerOnboardingController {
 
   @PostMapping
   public ApiResponse<SellerOnboardingResponse> create(
-      @Authenticated CurrentUser currentUser,
-      @Valid @RequestBody SellerOnboardingCreateRequest request) {
-    RoleGuard.requireSeller(currentUser);
-
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SellerOnboardingCreateRequest request) {
     SellerOnboardingResult result =
-        sellerOnboardingCreateUseCase.create(CreateSellerOnboardingCommand.from(
-            currentUser.userId(),
+        sellerOnboardingSubmissionUseCase.submit(SubmitSellerOnboardingCommand.of(
+            jwtCommandExtractor.extractRegistration(jwt, UserRole.SELLER, request.phoneNumber()),
             request.storeName(),
             request.phoneNumber(),
             request.address(),

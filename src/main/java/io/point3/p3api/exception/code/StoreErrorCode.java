@@ -28,6 +28,11 @@ public enum StoreErrorCode implements ErrorCode {
       "At least 3 active representative images are required",
       HttpStatus.BAD_REQUEST,
       "/errors/store/representative-image-minimum-required"),
+  GALLERY_IMAGE_REQUIRED(
+      "GALLERY_IMAGE_REQUIRED_400",
+      "At least one visible gallery image is required",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/gallery-image-required"),
   REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND(
       "REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND_404",
       "Representative image asset not found",

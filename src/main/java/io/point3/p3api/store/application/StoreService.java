@@ -2,6 +2,7 @@ package io.point3.p3api.store.application;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.gallery.application.port.GalleryItemPersistencePort;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
@@ -30,6 +31,7 @@ public class StoreService
 
   private final StorePersistencePort storePersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
+  private final GalleryItemPersistencePort galleryItemPersistencePort;
   private final StoreActivationValidator storeActivationValidator;
 
   @Override
@@ -131,6 +133,9 @@ public class StoreService
   }
 
   private void validateCanActive(Store store) {
+    if (galleryItemPersistencePort.findVisibleByStoreId(store.getId()).isEmpty()) {
+      throw new BaseException(StoreErrorCode.GALLERY_IMAGE_REQUIRED);
+    }
     validateRepresentativeImageReady(store.getId());
     storeActivationValidator.validate(store);
   }

@@ -10,11 +10,11 @@ class Point3PaymentAdapterTest {
 
   @ParameterizedTest
   @CsvSource({
-      "captured, CAPTURED",
-      "failed, FAILED",
-      "expired, FAILED",
-      "processing, PROCESSING",
-      "created, PROCESSING"
+    "captured, CAPTURED",
+    "failed, FAILED",
+    "expired, FAILED",
+    "processing, PROCESSING",
+    "created, PROCESSING"
   })
   void mapsPoint3SessionStatus(String point3Status, Point3CaptureResult.Status expectedStatus) {
     assertEquals(expectedStatus, Point3PaymentAdapter.toCaptureStatus(point3Status));

@@ -1,0 +1,15 @@
+.git
+.github
+.gradle
+.idea
+.vscode
+build
+out
+logs
+*.log
+.env
+.env.*
+!.env.example
+docker-compose.override.yml
+docs
+postman

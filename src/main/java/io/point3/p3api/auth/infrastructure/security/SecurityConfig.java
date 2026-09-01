@@ -44,7 +44,7 @@ public class SecurityConfig {
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**")
             .permitAll()
-            .requestMatchers("/error", "/actuator/health", "/ws")
+            .requestMatchers("/error", "/actuator/health", "/actuator/health/**", "/ws")
             .permitAll()
             .requestMatchers(HttpMethod.GET, "/stores/**")
             .permitAll()

@@ -7,6 +7,7 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
+import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
@@ -18,6 +19,7 @@ import io.point3.p3api.store.controller.request.StoreCreateRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
+import io.point3.p3api.store.controller.response.StoreManagementStatusResponse;
 import io.point3.p3api.store.controller.response.StoreResponse;
 import io.point3.p3api.store.controller.response.StoreSettingResponse;
 import io.point3.p3api.store.controller.response.StoreShareLinkResponse;
@@ -43,6 +45,7 @@ public class SellerStoreController {
   private final StoreQueryUseCase storeQueryUseCase;
   private final StoreUpdateUseCase storeUpdateUseCase;
   private final StoreDeleteUseCase storeDeleteUseCase;
+  private final StoreManagementStatusQueryUseCase storeManagementStatusQueryUseCase;
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;
   private final StoreSettingUpdateUseCase storeSettingUpdateUseCase;
   private final StoreWebProperties storeWebProperties;
@@ -58,6 +61,13 @@ public class SellerStoreController {
   public ApiResponse<StoreResponse> getMyStore(@CurrentStoreId UUID storeId) {
     StoreResult result = storeQueryUseCase.getStore(storeId);
     return ApiResponse.ok(StoreResponse.from(result));
+  }
+
+  @GetMapping("/management-status")
+  public ApiResponse<StoreManagementStatusResponse> getManagementStatus(
+      @CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(
+        StoreManagementStatusResponse.from(storeManagementStatusQueryUseCase.getStatus(storeId)));
   }
 
   @GetMapping("/settings")

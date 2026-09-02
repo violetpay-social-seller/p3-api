@@ -41,6 +41,7 @@ public class OrderConfirmationPreviewQueryService {
       for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
         baseAmount = Math.addExact(baseAmount, readSnapshotPrice(answer.path("price")));
         for (JsonNode option : answer.path("selectedOptions")) {
+          validateConfirmedPrice(option);
           baseAmount = Math.addExact(baseAmount, readSnapshotPrice(option.path("price")));
         }
       }
@@ -70,5 +71,12 @@ public class OrderConfirmationPreviewQueryService {
       throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
     return price.asLong();
+  }
+
+  private void validateConfirmedPrice(JsonNode option) {
+    JsonNode priceLabel = option.path("priceLabel");
+    if (priceLabel.isTextual() && !priceLabel.asText().isBlank()) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED);
+    }
   }
 }

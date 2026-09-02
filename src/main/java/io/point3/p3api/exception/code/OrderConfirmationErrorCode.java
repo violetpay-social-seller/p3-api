@@ -25,7 +25,12 @@ public enum OrderConfirmationErrorCode implements ErrorCode {
       "ORDER_CONFIRMATION_AMOUNT_INVALID_400",
       "Order confirmation amount is invalid",
       HttpStatus.BAD_REQUEST,
-      "/errors/order-confirmation/amount-invalid");
+      "/errors/order-confirmation/amount-invalid"),
+  ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED(
+      "ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED_400",
+      "Order confirmation amount requires seller confirmation",
+      HttpStatus.BAD_REQUEST,
+      "/errors/order-confirmation/amount-unconfirmed");
 
   private final String code;
   private final String title;

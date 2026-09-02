@@ -40,8 +40,8 @@ public record CreateOrderFormCommand(UUID storeId, String name, List<OptionGroup
           selectionType,
           required,
           sortOrder,
-          OrderFormCategory.DESIGN,
-          OrderFormCategory.DESIGN.getTitle(),
+          OrderFormCategory.SIZE,
+          OrderFormCategory.SIZE.getTitle(),
           null,
           0,
           List.of());

@@ -390,8 +390,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         selectionType,
         required,
         sortOrder,
-        OrderFormCategory.DESIGN,
-        OrderFormCategory.DESIGN.getTitle(),
+        OrderFormCategory.SIZE,
+        OrderFormCategory.SIZE.getTitle(),
         null,
         0,
         List.of(option));

@@ -32,7 +32,7 @@ class OrderFormDomainTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> OrderFormCategoryGroup.create(
-            UUID.randomUUID(), OrderFormCategory.DESIGN, "디자인", null, -1));
+            UUID.randomUUID(), OrderFormCategory.SIZE, "사이즈", null, -1));
     assertThrows(
         IllegalArgumentException.class,
         () ->

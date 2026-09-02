@@ -64,7 +64,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 1,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("메뉴명", "menu", OptionInputType.TEXT, 0L, null, 0))))));
 
@@ -86,7 +86,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("메뉴명", "menu", OptionInputType.TEXT, 0L, "\"not-object\"", 0))))));
 
@@ -109,7 +109,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("메뉴명", "menu", OptionInputType.TEXT, 0L, null, 0)),
             updateGroup(
@@ -117,7 +117,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 false,
                 1,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("요청사항", "memo", OptionInputType.TEXTAREA, null, null, 0)))));
     OrderFormResult inactive = orderFormService.inactive(store.id(), created.id());
@@ -143,7 +143,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("1호", "size-1", OptionInputType.SELECT, 10000L, null, 0)),
             createGroup(
@@ -171,8 +171,8 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 "요청사항", "memo", OptionInputType.TEXTAREA, null, "{\"placeholder\":\"입력\"}", 0)))));
 
     assertEquals(2, created.groups().size());
-    assertEquals(OrderFormCategory.DESIGN, created.groups().get(0).category());
-    assertEquals("디자인", created.groups().get(0).title());
+    assertEquals(OrderFormCategory.SIZE, created.groups().get(0).category());
+    assertEquals("사이즈", created.groups().get(0).title());
     assertEquals(
         "size-1", created.groups().get(0).optionGroups().get(0).options().get(0).value());
     assertEquals(
@@ -235,7 +235,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 false,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option(
                     "참고 이미지", "reference", OptionInputType.IMAGE, null, "{\"maxCount\":6}", 0))))));
@@ -249,8 +249,8 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
-                OrderFormCategory.DESIGN.getTitle(),
+                OrderFormCategory.SIZE,
+                OrderFormCategory.SIZE.getTitle(),
                 null,
                 0,
                 List.of())))));
@@ -274,7 +274,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 "기본 정보",
                 null,
                 0,
@@ -289,7 +289,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("메뉴명", "menu", OptionInputType.TEXT, null, null, 0))))));
     BaseException textareaPrice = assertThrows(
@@ -302,7 +302,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 false,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("요청사항", "memo", OptionInputType.TEXTAREA, 1000L, null, 0))))));
     BaseException tooManyOptions = assertThrows(
@@ -315,7 +315,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 true,
                 0,
-                OrderFormCategory.DESIGN,
+                OrderFormCategory.SIZE,
                 0,
                 option("1호", "size-1", OptionInputType.SELECT, 0L, null, 0),
                 option("2호", "size-2", OptionInputType.SELECT, 0L, null, 1),
@@ -363,7 +363,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
             SelectionType.SINGLE,
             true,
             0,
-            OrderFormCategory.DESIGN,
+            OrderFormCategory.SIZE,
             0,
             option("메뉴명", "menu", OptionInputType.TEXT, 0L, null, 0))));
   }

@@ -285,7 +285,7 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 "참고 이미지",
                 "reference",
                 OptionInputType.IMAGE,
-                null,
+                0L,
                 "{\"maxCount\":3,\"allowedContentTypes\":[\"image/jpeg\"],\"helperText\":\"이미지를 첨부하세요\",\"unknown\":true}",
                 1),
             option(
@@ -398,6 +398,85 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, tooManyOptions.getErrorCode());
   }
 
+  @Test
+  @DisplayName("가격 문구를 숫자 가격과 구분해 저장하고 수정할 수 있다")
+  void preservesPriceLabelOnCreateAndUpdate() {
+    StoreResult store = createStore();
+    OrderFormResult created = orderFormService.create(new CreateOrderFormCommand(
+        store.id(),
+        "주문서",
+        List.of(createGroup(
+            "케이크 크기",
+            SelectionType.SINGLE,
+            true,
+            0,
+            OrderFormCategory.SIZE,
+            0,
+            optionWithPriceLabel("맞춤 크기", "custom-size", OptionInputType.SELECT, " 문의필요 ", 0)))));
+
+    OrderFormResult updated = orderFormService.update(new UpdateOrderFormCommand(
+        store.id(),
+        created.id(),
+        "수정 주문서",
+        List.of(updateGroup(
+            "참고 이미지",
+            SelectionType.SINGLE,
+            false,
+            0,
+            OrderFormCategory.SIZE,
+            0,
+            optionWithPriceLabel("맞춤 이미지", "custom-image", OptionInputType.IMAGE, "가격 협의", 0)))));
+
+    assertEquals(
+        "문의필요", created.groups().get(0).optionGroups().get(0).options().get(0).priceLabel());
+    assertEquals(
+        null, created.groups().get(0).optionGroups().get(0).options().get(0).price());
+    assertEquals(
+        "가격 협의", updated.groups().get(0).optionGroups().get(0).options().get(0).priceLabel());
+    assertEquals(
+        null, updated.groups().get(0).optionGroups().get(0).options().get(0).price());
+  }
+
+  @Test
+  @DisplayName("옵션 가격 문구 정책을 벗어나면 주문서 정의를 거부한다")
+  void rejectsInvalidPriceLabelPolicy() {
+    StoreResult store = createStore();
+
+    BaseException bothPriceAndLabel = assertThrows(
+        BaseException.class,
+        () -> createWithOption(
+            store.id(),
+            optionWithPriceAndLabel(
+                "맞춤 크기", "custom-size", OptionInputType.SELECT, 1000L, "문의필요", 0)));
+    BaseException missingPriceAndLabel = assertThrows(
+        BaseException.class,
+        () -> createWithOption(
+            store.id(), option("맞춤 크기", "custom-size", OptionInputType.SELECT, null, null, 0)));
+    BaseException blankLabel = assertThrows(
+        BaseException.class,
+        () -> createWithOption(
+            store.id(),
+            optionWithPriceLabel("맞춤 크기", "custom-size", OptionInputType.SELECT, "   ", 0)));
+    BaseException tooLongLabel = assertThrows(
+        BaseException.class,
+        () -> createWithOption(
+            store.id(),
+            optionWithPriceLabel(
+                "맞춤 크기", "custom-size", OptionInputType.SELECT, "a".repeat(101), 0)));
+    BaseException textareaLabel = assertThrows(
+        BaseException.class,
+        () -> createWithOption(
+            store.id(), optionWithPriceLabel("요청사항", "memo", OptionInputType.TEXTAREA, "문의필요", 0)));
+
+    assertEquals(
+        OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, bothPriceAndLabel.getErrorCode());
+    assertEquals(
+        OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, missingPriceAndLabel.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, blankLabel.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, tooLongLabel.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, textareaLabel.getErrorCode());
+  }
+
   private StoreResult createStore() {
     User seller = userJpaRepository.saveAndFlush(User.create(
         UUID.randomUUID().toString(),
@@ -454,6 +533,14 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
                 0)))));
   }
 
+  private void createWithOption(UUID storeId, OrderFormOptionCommand option) {
+    orderFormService.create(new CreateOrderFormCommand(
+        storeId,
+        "주문서",
+        List.of(
+            createGroup("옵션", SelectionType.SINGLE, true, 0, OrderFormCategory.SIZE, 0, option))));
+  }
+
   private CreateOrderFormCommand.OptionGroup createGroup(
       String label,
       SelectionType selectionType,
@@ -501,6 +588,24 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
       Long price,
       String settings,
       int sortOrder) {
-    return new OrderFormOptionCommand(label, value, inputType, price, settings, true, sortOrder);
+    return new OrderFormOptionCommand(
+        label, value, inputType, price, null, settings, true, sortOrder);
+  }
+
+  private OrderFormOptionCommand optionWithPriceLabel(
+      String label, String value, OptionInputType inputType, String priceLabel, int sortOrder) {
+    return new OrderFormOptionCommand(
+        label, value, inputType, null, priceLabel, null, true, sortOrder);
+  }
+
+  private OrderFormOptionCommand optionWithPriceAndLabel(
+      String label,
+      String value,
+      OptionInputType inputType,
+      Long price,
+      String priceLabel,
+      int sortOrder) {
+    return new OrderFormOptionCommand(
+        label, value, inputType, price, priceLabel, null, true, sortOrder);
   }
 }

@@ -35,6 +35,7 @@ public class OrderFormService
     implements OrderFormCreateUseCase, OrderFormUpdateUseCase, OrderFormQueryUseCase {
   private static final int MAX_OPTIONS = 6;
   private static final int MAX_IMAGE_COUNT = 5;
+  private static final int MAX_PRICE_LABEL_LENGTH = 100;
 
   private final OrderFormPersistencePort orderFormPersistencePort;
   private final ObjectMapper objectMapper;
@@ -121,6 +122,7 @@ public class OrderFormService
         option.value(),
         option.inputType(),
         option.price(),
+        normalizePriceLabel(option.priceLabel()),
         normalizeSettings(option.inputType(), option.settings()),
         option.sortOrder());
     if (!option.active()) {
@@ -203,7 +205,7 @@ public class OrderFormService
           || option.inputType() == null) {
         throw invalid();
       }
-      validateOptionPrice(option.inputType(), option.price());
+      validateOptionPrice(option.inputType(), option.price(), option.priceLabel());
       normalizeSettings(option.inputType(), option.settings());
     }
   }
@@ -215,16 +217,30 @@ public class OrderFormService
     }
   }
 
-  private void validateOptionPrice(OptionInputType type, Long price) {
+  private void validateOptionPrice(OptionInputType type, Long price, String priceLabel) {
     boolean priced = type == OptionInputType.SELECT
         || type == OptionInputType.SELECT_WITH_TEXT
-        || type == OptionInputType.TEXT;
-    if (priced && (price == null || price < 0)) {
+        || type == OptionInputType.TEXT
+        || type == OptionInputType.IMAGE;
+    String normalizedPriceLabel = normalizePriceLabel(priceLabel);
+    if (priced
+        && ((price == null) == (normalizedPriceLabel == null) || (price != null && price < 0))) {
       throw invalid();
     }
-    if (!priced && price != null) {
+    if (!priced && (price != null || normalizedPriceLabel != null)) {
       throw invalid();
     }
+  }
+
+  private String normalizePriceLabel(String priceLabel) {
+    if (priceLabel == null) {
+      return null;
+    }
+    String normalized = priceLabel.trim();
+    if (normalized.isEmpty() || normalized.length() > MAX_PRICE_LABEL_LENGTH) {
+      throw invalid();
+    }
+    return normalized;
   }
 
   private String normalizeSettings(OptionInputType type, String settings) {

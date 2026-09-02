@@ -11,6 +11,7 @@ public record OrderFormOptionRequest(
     @NotBlank @Size(max = 100) String value,
     @NotNull OptionInputType inputType,
     @PositiveOrZero Long price,
+    @Size(max = 100) String priceLabel,
     String settings,
     boolean active,
     @PositiveOrZero int sortOrder) {}

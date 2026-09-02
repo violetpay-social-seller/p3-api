@@ -7,6 +7,7 @@ public record OrderFormOptionCommand(
     String value,
     OptionInputType inputType,
     Long price,
+    String priceLabel,
     String settings,
     boolean active,
     int sortOrder) {}

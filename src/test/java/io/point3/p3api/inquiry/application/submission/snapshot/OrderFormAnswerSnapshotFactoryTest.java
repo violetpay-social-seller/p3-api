@@ -1,6 +1,7 @@
 package io.point3.p3api.inquiry.application.submission.snapshot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -119,6 +120,37 @@ class OrderFormAnswerSnapshotFactoryTest {
         7000,
         answers.get(2).get("selectedOptions").get(0).get("price").asLong()
             + answers.get(2).get("selectedOptions").get(1).get("price").asLong());
+  }
+
+  @Test
+  @DisplayName("주문서 답변 스냅샷은 가격 문구를 숫자 가격과 구분해 저장한다")
+  void snapshotsPriceLabel() throws Exception {
+    UUID optionGroupId = UUID.randomUUID();
+    String snapshot = factory.create(
+        List.of(new OrderFormOptionGroupResult(
+            optionGroupId,
+            UUID.randomUUID(),
+            "맞춤 크기",
+            SelectionType.SINGLE,
+            true,
+            0,
+            List.of(new OrderFormOptionResult(
+                UUID.randomUUID(),
+                "맞춤 크기",
+                "custom-size",
+                OptionInputType.SELECT,
+                null,
+                "문의필요",
+                null,
+                true,
+                0)))),
+        List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
+            optionGroupId, selections(selection("custom-size")))));
+
+    JsonNode option =
+        objectMapper.readTree(snapshot).get(0).get("selectedOptions").get(0);
+    assertTrue(option.get("price").isNull());
+    assertEquals("문의필요", option.get("priceLabel").asText());
   }
 
   private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {

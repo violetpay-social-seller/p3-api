@@ -212,6 +212,37 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("문의 가격 옵션이 선택된 주문서는 자동 합계와 주문확인서 전송을 거절한다")
+  void rejectsAutomaticAmountForUnconfirmedPrice() {
+    Fixture fixture = prepareFixture(true);
+
+    BaseException previewException = assertThrows(
+        BaseException.class,
+        () -> orderConfirmationPreviewQueryService.getPreview(
+            fixture.inquiry().getId(), fixture.store().id()));
+    BaseException sendException = assertThrows(
+        BaseException.class,
+        () -> orderConfirmationService.send(new SendOrderConfirmationCommand(
+            fixture.inquiry().getId(),
+            fixture.store().id(),
+            fixture.seller().getId(),
+            fixture.submission().getId(),
+            "맞춤 케이크",
+            null,
+            0,
+            Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(),
+            null)));
+
+    assertEquals(
+        OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED,
+        previewException.getErrorCode());
+    assertEquals(
+        OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED,
+        sendException.getErrorCode());
+  }
+
+  @Test
   @DisplayName("다른 문의방의 제출 주문서를 사용한 주문확인서 전송은 거절한다")
   void rejectsOrderConfirmationForSubmissionFromAnotherInquiry() {
     Fixture fixture = prepareFixture();
@@ -240,6 +271,10 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private Fixture prepareFixture() {
+    return prepareFixture(false);
+  }
+
+  private Fixture prepareFixture(boolean usePriceLabel) {
     User seller = saveUser(UserRole.SELLER, "seller");
     User buyer = saveUser(UserRole.BUYER, "buyer");
     StoreResult store = storeService.create(new CreateStoreCommand(
@@ -259,7 +294,13 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         List.of(
             optionGroup("메뉴명", true, 0, option("메뉴명", "menu", OptionInputType.TEXT, 0L, 0)),
             optionGroup(
-                "사이즈", true, 1, option("10호", "size-10", OptionInputType.SELECT, 38000L, 0)))));
+                "사이즈",
+                true,
+                1,
+                usePriceLabel
+                    ? optionWithPriceLabel(
+                        "맞춤 크기", "size-custom", OptionInputType.SELECT, "가격 협의", 0)
+                    : option("10호", "size-10", OptionInputType.SELECT, 38000L, 0)))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
@@ -284,7 +325,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
                 form.optionGroups().get(0).id(),
                 selections(selection("menu").put("text", "초코 케이크"))),
             new CreateOrderFormSubmissionCommand.FormAnswer(
-                form.optionGroups().get(1).id(), selections(selection("size-10")))),
+                form.optionGroups().get(1).id(),
+                selections(
+                    selection(form.optionGroups().get(1).options().getFirst().value())))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
             LocalDate.parse("2030-08-30"), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
@@ -319,7 +362,13 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
 
   private OrderFormOptionCommand option(
       String label, String value, OptionInputType inputType, Long price, int sortOrder) {
-    return new OrderFormOptionCommand(label, value, inputType, price, null, true, sortOrder);
+    return new OrderFormOptionCommand(label, value, inputType, price, null, null, true, sortOrder);
+  }
+
+  private OrderFormOptionCommand optionWithPriceLabel(
+      String label, String value, OptionInputType inputType, String priceLabel, int sortOrder) {
+    return new OrderFormOptionCommand(
+        label, value, inputType, null, priceLabel, null, true, sortOrder);
   }
 
   private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {

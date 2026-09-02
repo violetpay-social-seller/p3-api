@@ -92,6 +92,7 @@ public class OrderFormAnswerSnapshotFactory {
         option.value(),
         option.inputType().name(),
         option.price(),
+        option.priceLabel(),
         option.settings(),
         text(selected),
         assetIds(selected));
@@ -128,6 +129,7 @@ public class OrderFormAnswerSnapshotFactory {
       String value,
       String inputType,
       Long price,
+      String priceLabel,
       String settings,
       String text,
       List<String> assetIds) {}

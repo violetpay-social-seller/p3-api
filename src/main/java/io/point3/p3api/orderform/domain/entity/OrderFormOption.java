@@ -49,6 +49,9 @@ public class OrderFormOption {
   @Column(name = "price")
   private Long price;
 
+  @Column(name = "price_label", length = 100)
+  private String priceLabel;
+
   @Column(name = "settings", columnDefinition = "jsonb")
   @JdbcTypeCode(SqlTypes.JSON)
   private String settings;
@@ -65,6 +68,7 @@ public class OrderFormOption {
       String value,
       OptionInputType inputType,
       Long price,
+      String priceLabel,
       String settings,
       int sortOrder) {
     this.optionGroupId = optionGroupId;
@@ -72,6 +76,7 @@ public class OrderFormOption {
     this.value = value;
     this.inputType = inputType;
     this.price = price;
+    this.priceLabel = priceLabel;
     this.settings = settings;
     this.sortOrder = sortOrder;
     this.active = true;
@@ -83,6 +88,7 @@ public class OrderFormOption {
       String value,
       OptionInputType inputType,
       Long price,
+      String priceLabel,
       String settings,
       int sortOrder) {
     Objects.requireNonNull(optionGroupId, "optionGroupId");
@@ -97,7 +103,19 @@ public class OrderFormOption {
       throw new IllegalArgumentException("sortOrder must be greater than or equal to 0");
     }
 
-    return new OrderFormOption(optionGroupId, label, value, inputType, price, settings, sortOrder);
+    return new OrderFormOption(
+        optionGroupId, label, value, inputType, price, priceLabel, settings, sortOrder);
+  }
+
+  public static OrderFormOption create(
+      UUID optionGroupId,
+      String label,
+      String value,
+      OptionInputType inputType,
+      Long price,
+      String settings,
+      int sortOrder) {
+    return create(optionGroupId, label, value, inputType, price, null, settings, sortOrder);
   }
 
   public void inactive() {

@@ -10,6 +10,7 @@ public record OrderFormOptionResponse(
     String value,
     OptionInputType inputType,
     Long price,
+    String priceLabel,
     String settings,
     boolean active,
     int sortOrder) {
@@ -21,6 +22,7 @@ public record OrderFormOptionResponse(
         result.value(),
         result.inputType(),
         result.price(),
+        result.priceLabel(),
         result.settings(),
         result.active(),
         result.sortOrder());

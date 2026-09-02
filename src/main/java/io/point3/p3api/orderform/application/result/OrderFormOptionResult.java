@@ -10,9 +10,22 @@ public record OrderFormOptionResult(
     String value,
     OptionInputType inputType,
     Long price,
+    String priceLabel,
     String settings,
     boolean active,
     int sortOrder) {
+
+  public OrderFormOptionResult(
+      UUID id,
+      String label,
+      String value,
+      OptionInputType inputType,
+      Long price,
+      String settings,
+      boolean active,
+      int sortOrder) {
+    this(id, label, value, inputType, price, null, settings, active, sortOrder);
+  }
 
   public static OrderFormOptionResult from(OrderFormOption option) {
     return new OrderFormOptionResult(
@@ -21,6 +34,7 @@ public record OrderFormOptionResult(
         option.getValue(),
         option.getInputType(),
         option.getPrice(),
+        option.getPriceLabel(),
         option.getSettings(),
         option.isActive(),
         option.getSortOrder());

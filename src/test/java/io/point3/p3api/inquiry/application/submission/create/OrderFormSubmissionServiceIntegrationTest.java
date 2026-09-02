@@ -329,7 +329,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
                 SelectionType.SINGLE,
                 false,
                 2,
-                option("참고 이미지", "reference", OptionInputType.IMAGE, null, null, 0)))));
+                option("참고 이미지", "reference", OptionInputType.IMAGE, 0L, null, 0)))));
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     UUID visibleGalleryAssetId = createVisibleGalleryAsset(store.id(), seller.getId());
@@ -404,7 +404,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
       Long price,
       String settings,
       int sortOrder) {
-    return new OrderFormOptionCommand(label, value, inputType, price, settings, true, sortOrder);
+    return new OrderFormOptionCommand(
+        label, value, inputType, price, null, settings, true, sortOrder);
   }
 
   private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {

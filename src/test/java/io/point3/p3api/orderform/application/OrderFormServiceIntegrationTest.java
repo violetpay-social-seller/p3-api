@@ -260,6 +260,71 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("옵션 유형별 설명 settings를 저장하고 조회 결과에 유지한다")
+  void preservesTypeSpecificDescriptionSettings() {
+    StoreResult store = createStore();
+
+    OrderFormResult created = orderFormService.create(new CreateOrderFormCommand(
+        store.id(),
+        "주문서",
+        List.of(createGroup(
+            "추가 요청",
+            SelectionType.SINGLE,
+            false,
+            0,
+            OrderFormCategory.SIZE,
+            0,
+            option(
+                "레터링",
+                "lettering",
+                OptionInputType.SELECT_WITH_TEXT,
+                3000L,
+                "{\"placeholder\":\"레터링 내용을 입력하세요\",\"helperText\":\"필기체 가능\",\"unknown\":true}",
+                0),
+            option(
+                "참고 이미지",
+                "reference",
+                OptionInputType.IMAGE,
+                null,
+                "{\"maxCount\":3,\"allowedContentTypes\":[\"image/jpeg\"],\"helperText\":\"이미지를 첨부하세요\",\"unknown\":true}",
+                1),
+            option(
+                "요청사항",
+                "memo",
+                OptionInputType.TEXTAREA,
+                null,
+                "{\"placeholder\":\"요청사항을 입력하세요\",\"helperText\":\"미작성 시 반영되지 않음\",\"maxLength\":500,\"unknown\":true}",
+                2)))));
+
+    List<String> settings = created.groups().get(0).optionGroups().get(0).options().stream()
+        .map(option -> option.settings())
+        .toList();
+
+    assertEquals("{\"placeholder\":\"레터링 내용을 입력하세요\",\"helperText\":\"필기체 가능\"}", settings.get(0));
+    assertEquals(
+        "{\"maxCount\":3,\"allowedContentTypes\":[\"image/jpeg\"],\"helperText\":\"이미지를 첨부하세요\"}",
+        settings.get(1));
+    assertEquals(
+        "{\"placeholder\":\"요청사항을 입력하세요\",\"helperText\":\"미작성 시 반영되지 않음\",\"maxLength\":500}",
+        settings.get(2));
+  }
+
+  @Test
+  @DisplayName("문자열이 아닌 helperText는 주문서 옵션 settings로 허용하지 않는다")
+  void rejectsNonTextHelperText() {
+    BaseException numberException =
+        assertThrows(BaseException.class, () -> createWithHelperText("1"));
+    BaseException arrayException =
+        assertThrows(BaseException.class, () -> createWithHelperText("[]"));
+    BaseException objectException =
+        assertThrows(BaseException.class, () -> createWithHelperText("{}"));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, numberException.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, arrayException.getErrorCode());
+    assertEquals(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID, objectException.getErrorCode());
+  }
+
+  @Test
   @DisplayName("고정 카테고리와 옵션 가격 정책을 벗어나면 주문서 정의를 거부한다")
   void rejectsInvalidCategoryAndPricePolicy() {
     StoreResult store = createStore();
@@ -366,6 +431,27 @@ class OrderFormServiceIntegrationTest extends IntegrationTestSupport {
             OrderFormCategory.SIZE,
             0,
             option("메뉴명", "menu", OptionInputType.TEXT, 0L, null, 0))));
+  }
+
+  private void createWithHelperText(String helperText) {
+    StoreResult store = createStore();
+    orderFormService.create(new CreateOrderFormCommand(
+        store.id(),
+        "주문서",
+        List.of(createGroup(
+            "요청사항",
+            SelectionType.SINGLE,
+            false,
+            0,
+            OrderFormCategory.SIZE,
+            0,
+            option(
+                "요청사항",
+                "memo",
+                OptionInputType.TEXTAREA,
+                null,
+                "{\"helperText\":" + helperText + "}",
+                0)))));
   }
 
   private CreateOrderFormCommand.OptionGroup createGroup(

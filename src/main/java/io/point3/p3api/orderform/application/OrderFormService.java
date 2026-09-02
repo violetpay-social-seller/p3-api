@@ -240,10 +240,18 @@ public class OrderFormService
       switch (type) {
         case TEXT, TEXTAREA -> {
           copyText(node, accepted, "placeholder");
+          copyText(node, accepted, "helperText");
           copyPositiveInteger(node, accepted, "maxLength");
         }
-        case IMAGE -> copyImageSettings(node, accepted);
-        case SELECT, SELECT_WITH_TEXT -> {}
+        case IMAGE -> {
+          copyImageSettings(node, accepted);
+          copyText(node, accepted, "helperText");
+        }
+        case SELECT_WITH_TEXT -> {
+          copyText(node, accepted, "placeholder");
+          copyText(node, accepted, "helperText");
+        }
+        case SELECT -> {}
       }
       return accepted.isEmpty() ? null : objectMapper.writeValueAsString(accepted);
     } catch (JsonProcessingException exception) {

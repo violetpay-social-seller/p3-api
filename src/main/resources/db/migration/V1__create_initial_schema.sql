@@ -175,7 +175,7 @@ CREATE TABLE order_form_category_groups (
     CONSTRAINT uk_order_form_category_groups_template_sort_order UNIQUE (template_id, sort_order),
     CONSTRAINT uk_order_form_category_groups_template_category UNIQUE (template_id, category),
     CONSTRAINT fk_order_form_category_groups_template_id FOREIGN KEY (template_id) REFERENCES order_form_templates (id) ON DELETE CASCADE,
-    CONSTRAINT ck_order_form_category_groups_category CHECK (category IN ('DESIGN', 'SHAPE', 'CAKE_FLAVOR', 'CAKE_DESIGN', 'PACKAGING', 'OTHER_REQUEST')),
+    CONSTRAINT ck_order_form_category_groups_category CHECK (category IN ('SIZE', 'SHAPE', 'CAKE_FLAVOR', 'CAKE_DESIGN', 'PACKAGING', 'OTHER_REQUEST')),
     CONSTRAINT ck_order_form_category_groups_sort_order CHECK (sort_order >= 0)
 );
 

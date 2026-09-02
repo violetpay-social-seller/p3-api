@@ -310,8 +310,8 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         SelectionType.SINGLE,
         required,
         sortOrder,
-        OrderFormCategory.DESIGN,
-        OrderFormCategory.DESIGN.getTitle(),
+        OrderFormCategory.SIZE,
+        OrderFormCategory.SIZE.getTitle(),
         null,
         0,
         List.of(option));

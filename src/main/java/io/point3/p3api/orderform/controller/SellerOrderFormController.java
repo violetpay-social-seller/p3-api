@@ -130,6 +130,7 @@ public class SellerOrderFormController {
             option.value(),
             option.inputType(),
             option.price(),
+            option.priceLabel(),
             option.settings(),
             option.active(),
             option.sortOrder()))

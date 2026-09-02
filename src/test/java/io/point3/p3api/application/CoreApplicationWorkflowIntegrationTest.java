@@ -636,7 +636,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
   private OrderFormOptionCommand option(
       String label, String value, OptionInputType inputType, Long price, int sortOrder) {
-    return new OrderFormOptionCommand(label, value, inputType, price, null, true, sortOrder);
+    return new OrderFormOptionCommand(label, value, inputType, price, null, null, true, sortOrder);
   }
 
   private com.fasterxml.jackson.databind.node.ObjectNode selection(String optionValue) {

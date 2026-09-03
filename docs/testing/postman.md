@@ -11,7 +11,7 @@ The collection covers these API flows:
 - seller/buyer registration with the provided test account variables
 - current user profile query and update flows
 - seller onboarding creation and local-only approval
-- store, asset upload, representative image, gallery, and asset variant flows
+- store, store notice, asset upload, representative image, gallery, and asset variant flows
 - order form option group success and main failure cases
 - draft creation, start reference asset validation, draft consume, inquiry list/detail/timeline/read flows
 - order confirmation preview, send, viewed, payment CTA, revision request, replacement flows

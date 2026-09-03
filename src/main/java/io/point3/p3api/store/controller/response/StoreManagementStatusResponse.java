@@ -11,6 +11,10 @@ public record StoreManagementStatusResponse(
     boolean canActivate,
     List<String> activationBlockedReasons) {
 
+  public StoreManagementStatusResponse {
+    activationBlockedReasons = List.copyOf(activationBlockedReasons);
+  }
+
   public static StoreManagementStatusResponse from(StoreManagementStatusResult result) {
     return new StoreManagementStatusResponse(
         result.storeName(),
@@ -19,6 +23,11 @@ public record StoreManagementStatusResponse(
         Items.from(result.items()),
         result.canActivate(),
         result.activationBlockedReasons());
+  }
+
+  @Override
+  public List<String> activationBlockedReasons() {
+    return List.copyOf(activationBlockedReasons);
   }
 
   public record Items(

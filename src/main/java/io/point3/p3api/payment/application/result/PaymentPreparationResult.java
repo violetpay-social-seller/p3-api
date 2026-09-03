@@ -8,6 +8,8 @@ public record PaymentPreparationResult(
     String sessionId,
     long amount,
     String payerId,
+    String clientId,
+    String orderName,
     String authnClientId,
     String authnState,
     String entryPath,

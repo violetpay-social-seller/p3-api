@@ -94,7 +94,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
         confirmation.getAmount(),
         expiresAt));
 
-    return buildPreparation(paymentAttempt, payer.getPayerId());
+    return buildPreparation(paymentAttempt, payer.getPayerId(), confirmation.getMenuName());
   }
 
   @Override
@@ -195,7 +195,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     }
   }
 
-  private PaymentPreparationResult buildPreparation(PaymentAttempt paymentAttempt, String payerId) {
+  private PaymentPreparationResult buildPreparation(
+      PaymentAttempt paymentAttempt, String payerId, String orderName) {
     String authnState = paymentAttempt.getId().toString();
     String entryPath = payerId == null ? "/regist" : "/login";
     String authenticationUrl =
@@ -206,6 +207,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
         paymentAttempt.getPoint3SessionId(),
         paymentAttempt.getAmount(),
         payerId,
+        point3Properties.clientId(),
+        orderName,
         point3Properties.clientId(),
         authnState,
         entryPath,

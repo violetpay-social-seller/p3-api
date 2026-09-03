@@ -89,6 +89,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -272,6 +273,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     assertEquals(41000, result.amount());
     assertEquals(41000, point3PaymentPort.lastAmount());
+    assertEquals("test-client", result.clientId());
+    assertEquals("주문서 payment-prepare", result.orderName());
+    assertEquals(result.orderName(), point3PaymentPort.lastProductName());
     assertEquals("/regist", result.entryPath());
     assertFalse(result.authenticationUrl().contains("payer_id="));
     assertEquals(PaymentAttemptStatus.READY, paymentAttempt.getStatus());
@@ -299,6 +303,8 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     assertEquals("/login", result.entryPath());
     assertEquals("payer-saved", result.payerId());
+    assertEquals("test-client", result.clientId());
+    assertEquals("주문서 payment-login", result.orderName());
     assertEquals("test-client", result.authnClientId());
     assertEquals("https://pay.point3.test", result.point3PaymentOrigin());
     assertEquals(
@@ -766,6 +772,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   static class FakePoint3PaymentPort implements Point3PaymentPort {
 
     private final AtomicLong lastAmount = new AtomicLong();
+    private final AtomicReference<String> lastProductName = new AtomicReference<>();
     private final AtomicInteger createCount = new AtomicInteger();
     private final AtomicInteger captureCount = new AtomicInteger();
     private final AtomicInteger sessionQueryCount = new AtomicInteger();
@@ -781,6 +788,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     public Point3PaymentSession createSession(
         long amount, String productName, String displayMerchantName) {
       lastAmount.set(amount);
+      lastProductName.set(productName);
       createCount.incrementAndGet();
       return new Point3PaymentSession("pymt_sess-" + UUID.randomUUID(), amount);
     }
@@ -857,6 +865,10 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
       return lastAmount.get();
     }
 
+    String lastProductName() {
+      return lastProductName.get();
+    }
+
     int createCount() {
       return createCount.get();
     }
@@ -871,6 +883,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
     void clear() {
       lastAmount.set(0);
+      lastProductName.set(null);
       createCount.set(0);
       captureCount.set(0);
       sessionQueryCount.set(0);

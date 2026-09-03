@@ -1,6 +1,6 @@
-package io.point3.p3api.store.notice.application.port;
+package io.point3.p3api.store.application.notice.port;
 
-import io.point3.p3api.store.notice.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.entity.StoreNotice;
 import java.util.List;
 import java.util.UUID;
 

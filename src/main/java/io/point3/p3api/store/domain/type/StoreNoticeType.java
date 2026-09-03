@@ -1,4 +1,4 @@
-package io.point3.p3api.store.notice.domain.type;
+package io.point3.p3api.store.domain.type;
 
 public enum StoreNoticeType {
   PICKUP_DELIVERY,

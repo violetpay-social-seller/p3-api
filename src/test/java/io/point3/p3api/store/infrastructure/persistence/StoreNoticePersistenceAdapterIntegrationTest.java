@@ -1,4 +1,4 @@
-package io.point3.p3api.store.notice.infrastructure.persistence;
+package io.point3.p3api.store.infrastructure.persistence;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
+import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
-import io.point3.p3api.store.notice.application.port.StoreNoticePersistencePort;
-import io.point3.p3api.store.notice.domain.entity.StoreNotice;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;

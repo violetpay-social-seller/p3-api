@@ -1,12 +1,12 @@
-package io.point3.p3api.store.notice.controller;
+package io.point3.p3api.store.controller;
 
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
-import io.point3.p3api.store.notice.application.query.StoreNoticeQueryUseCase;
-import io.point3.p3api.store.notice.application.result.StoreNoticeResult;
-import io.point3.p3api.store.notice.application.update.StoreNoticeUpdateUseCase;
-import io.point3.p3api.store.notice.controller.request.StoreNoticeUpdateRequest;
-import io.point3.p3api.store.notice.controller.response.StoreNoticeResponse;
+import io.point3.p3api.store.application.notice.query.StoreNoticeQueryUseCase;
+import io.point3.p3api.store.application.notice.result.StoreNoticeResult;
+import io.point3.p3api.store.application.notice.update.StoreNoticeUpdateUseCase;
+import io.point3.p3api.store.controller.request.StoreNoticeUpdateRequest;
+import io.point3.p3api.store.controller.response.StoreNoticeResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

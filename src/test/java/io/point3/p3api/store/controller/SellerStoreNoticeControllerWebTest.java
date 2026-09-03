@@ -1,4 +1,4 @@
-package io.point3.p3api.store.notice.controller;
+package io.point3.p3api.store.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -12,11 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
-import io.point3.p3api.store.notice.application.command.UpdateStoreNoticesCommand;
-import io.point3.p3api.store.notice.application.query.StoreNoticeQueryUseCase;
-import io.point3.p3api.store.notice.application.result.StoreNoticeResult;
-import io.point3.p3api.store.notice.application.update.StoreNoticeUpdateUseCase;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.application.notice.command.UpdateStoreNoticesCommand;
+import io.point3.p3api.store.application.notice.query.StoreNoticeQueryUseCase;
+import io.point3.p3api.store.application.notice.result.StoreNoticeResult;
+import io.point3.p3api.store.application.notice.update.StoreNoticeUpdateUseCase;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,16 +1,16 @@
-package io.point3.p3api.store.notice.application;
+package io.point3.p3api.store.application.notice;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.store.application.notice.command.UpdateStoreNoticesCommand;
+import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
+import io.point3.p3api.store.application.notice.query.StoreNoticeQueryUseCase;
+import io.point3.p3api.store.application.notice.result.StoreNoticeResult;
+import io.point3.p3api.store.application.notice.update.StoreNoticeUpdateUseCase;
 import io.point3.p3api.store.application.port.StorePersistencePort;
-import io.point3.p3api.store.notice.application.command.UpdateStoreNoticesCommand;
-import io.point3.p3api.store.notice.application.port.StoreNoticePersistencePort;
-import io.point3.p3api.store.notice.application.query.StoreNoticeQueryUseCase;
-import io.point3.p3api.store.notice.application.result.StoreNoticeResult;
-import io.point3.p3api.store.notice.application.update.StoreNoticeUpdateUseCase;
-import io.point3.p3api.store.notice.domain.entity.StoreNotice;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;

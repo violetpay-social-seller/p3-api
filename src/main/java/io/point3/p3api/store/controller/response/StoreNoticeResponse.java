@@ -1,7 +1,7 @@
-package io.point3.p3api.store.notice.controller.response;
+package io.point3.p3api.store.controller.response;
 
-import io.point3.p3api.store.notice.application.result.StoreNoticeResult;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.application.notice.result.StoreNoticeResult;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import java.util.List;
 
 public record StoreNoticeResponse(List<Notice> notices) {

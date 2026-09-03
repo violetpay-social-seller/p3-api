@@ -1,6 +1,6 @@
-package io.point3.p3api.store.notice.domain.entity;
+package io.point3.p3api.store.domain.entity;
 
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

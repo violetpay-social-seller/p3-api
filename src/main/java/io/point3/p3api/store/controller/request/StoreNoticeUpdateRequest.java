@@ -1,7 +1,7 @@
-package io.point3.p3api.store.notice.controller.request;
+package io.point3.p3api.store.controller.request;
 
-import io.point3.p3api.store.notice.application.command.UpdateStoreNoticesCommand;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.application.notice.command.UpdateStoreNoticesCommand;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

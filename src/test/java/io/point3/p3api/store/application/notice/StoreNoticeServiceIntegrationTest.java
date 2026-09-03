@@ -1,4 +1,4 @@
-package io.point3.p3api.store.notice.application;
+package io.point3.p3api.store.application.notice;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,10 +9,10 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
+import io.point3.p3api.store.application.notice.command.UpdateStoreNoticesCommand;
+import io.point3.p3api.store.application.notice.result.StoreNoticeResult;
 import io.point3.p3api.store.application.result.StoreResult;
-import io.point3.p3api.store.notice.application.command.UpdateStoreNoticesCommand;
-import io.point3.p3api.store.notice.application.result.StoreNoticeResult;
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;

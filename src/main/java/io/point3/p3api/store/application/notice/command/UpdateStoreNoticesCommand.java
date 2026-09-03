@@ -1,6 +1,6 @@
-package io.point3.p3api.store.notice.application.command;
+package io.point3.p3api.store.application.notice.command;
 
-import io.point3.p3api.store.notice.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
 import java.util.List;
 import java.util.UUID;
 

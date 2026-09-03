@@ -1181,6 +1181,66 @@
           }
         },
         {
+          "name": "Seller - save store notices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('five notices are saved', function () { pm.expect(data.notices).to.have.length(5); });",
+                  "pm.test('payment notice is saved', function () { pm.expect(data.notices[2].content).to.eql('결제 완료 후 주문이 확정됩니다.'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notices\": [\n    {\"type\": \"PICKUP_DELIVERY\", \"content\": \"픽업 시간 10분 전 도착해 주세요.\"},\n    {\"type\": \"DESIGN_PRODUCTION\", \"content\": \"제작은 결제 확인 후 시작됩니다.\"},\n    {\"type\": \"PAYMENT\", \"content\": \"결제 완료 후 주문이 확정됩니다.\"},\n    {\"type\": \"CAKE_CARE\", \"content\": \"수령 후 냉장 보관해 주세요.\"},\n    {\"type\": \"BUSINESS_HOURS\", \"content\": \"문의 가능 시간은 평일 10시부터 18시까지입니다.\"}\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/seller/notices"
+          }
+        },
+        {
+          "name": "Seller - get store notices",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "pm.test('five notices are returned', function () { pm.expect(data.notices).to.have.length(5); });",
+                  "pm.test('notice order is fixed', function () { pm.expect(data.notices[0].type).to.eql('PICKUP_DELIVERY'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{sellerAccessToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/seller/notices"
+          }
+        },
+        {
           "name": "Local - complete seller settlement account",
           "event": [
             {

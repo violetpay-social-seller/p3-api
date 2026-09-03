@@ -2,9 +2,9 @@ package io.point3.p3api.store.application.notice.result;
 
 import io.point3.p3api.store.domain.entity.StoreNotice;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 public record StoreNoticeResult(List<Notice> notices) {
 
@@ -18,13 +18,29 @@ public record StoreNoticeResult(List<Notice> notices) {
   }
 
   public static StoreNoticeResult from(List<StoreNotice> notices) {
-    Map<StoreNoticeType, StoreNotice> noticesByType = notices.stream()
-        .collect(java.util.stream.Collectors.toMap(StoreNotice::getType, Function.identity()));
+    Map<StoreNoticeType, List<StoreNotice>> noticesByType =
+        notices.stream().collect(java.util.stream.Collectors.groupingBy(StoreNotice::getType));
     return new StoreNoticeResult(List.of(StoreNoticeType.values()).stream()
         .map(type -> new Notice(
-            type, noticesByType.containsKey(type) ? noticesByType.get(type).getContent() : null))
+            type,
+            noticesByType.getOrDefault(type, List.of()).stream()
+                .sorted(Comparator.comparingInt(StoreNotice::getSortOrder))
+                .map(notice -> new Item(notice.getContent(), notice.getSortOrder()))
+                .toList()))
         .toList());
   }
 
-  public record Notice(StoreNoticeType type, String content) {}
+  public record Notice(StoreNoticeType type, List<Item> items) {
+
+    public Notice {
+      items = List.copyOf(items);
+    }
+
+    @Override
+    public List<Item> items() {
+      return List.copyOf(items);
+    }
+  }
+
+  public record Item(String content, int sortOrder) {}
 }

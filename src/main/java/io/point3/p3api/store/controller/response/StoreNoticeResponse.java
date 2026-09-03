@@ -17,9 +17,25 @@ public record StoreNoticeResponse(List<Notice> notices) {
 
   public static StoreNoticeResponse from(StoreNoticeResult result) {
     return new StoreNoticeResponse(result.notices().stream()
-        .map(notice -> new Notice(notice.type(), notice.content()))
+        .map(notice -> new Notice(
+            notice.type(),
+            notice.items().stream()
+                .map(item -> new Item(item.content(), item.sortOrder()))
+                .toList()))
         .toList());
   }
 
-  public record Notice(StoreNoticeType type, String content) {}
+  public record Notice(StoreNoticeType type, List<Item> items) {
+
+    public Notice {
+      items = List.copyOf(items);
+    }
+
+    @Override
+    public List<Item> items() {
+      return List.copyOf(items);
+    }
+  }
+
+  public record Item(String content, int sortOrder) {}
 }

@@ -40,8 +40,10 @@ public class StoreNoticeService implements StoreNoticeQueryUseCase, StoreNoticeU
     List<StoreNotice> saved = storeNoticePersistencePort.replaceAllByStoreId(
         command.storeId(),
         command.notices().stream()
-            .filter(notice -> notice.content() != null)
-            .map(notice -> StoreNotice.create(command.storeId(), notice.type(), notice.content()))
+            .flatMap(notice -> java.util.stream.IntStream.range(
+                    0, notice.items().size())
+                .mapToObj(index -> StoreNotice.create(
+                    command.storeId(), notice.type(), notice.items().get(index).content(), index)))
             .toList());
     return StoreNoticeResult.from(saved);
   }
@@ -58,8 +60,13 @@ public class StoreNoticeService implements StoreNoticeQueryUseCase, StoreNoticeU
       if (notice == null
           || notice.type() == null
           || !types.add(notice.type())
-          || (notice.content() != null && notice.content().isBlank())) {
+          || notice.items() == null) {
         throw invalid();
+      }
+      for (UpdateStoreNoticesCommand.Item item : notice.items()) {
+        if (item == null || item.content() == null || item.content().isBlank()) {
+          throw invalid();
+        }
       }
     }
     if (!types.equals(EnumSet.allOf(StoreNoticeType.class))) {

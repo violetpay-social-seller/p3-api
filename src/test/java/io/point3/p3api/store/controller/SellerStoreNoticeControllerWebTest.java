@@ -62,7 +62,8 @@ class SellerStoreNoticeControllerWebTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.notices[0].type").value("PICKUP_DELIVERY"))
-        .andExpect(jsonPath("$.data.notices[1].content").doesNotExist());
+        .andExpect(jsonPath("$.data.notices[0].items[0].content").value("픽업 안내"))
+        .andExpect(jsonPath("$.data.notices[1].items").isEmpty());
 
     verify(storeNoticeQueryUseCase).getNotices(storeId);
   }
@@ -76,17 +77,17 @@ class SellerStoreNoticeControllerWebTest {
         .perform(put("/seller/notices").contentType(MediaType.APPLICATION_JSON).content("""
                 {
                   "notices": [
-                    {"type":"PICKUP_DELIVERY","content":"픽업 안내"},
-                    {"type":"DESIGN_PRODUCTION","content":null},
-                    {"type":"PAYMENT","content":"결제 안내"},
-                    {"type":"CAKE_CARE","content":"보관 안내"},
-                    {"type":"BUSINESS_HOURS","content":"영업시간 안내"}
+                    {"type":"PICKUP_DELIVERY","items":[{"content":"픽업 안내"},{"content":"픽업 변경 안내"}]},
+                    {"type":"DESIGN_PRODUCTION","items":[]},
+                    {"type":"PAYMENT","items":[{"content":"결제 안내"}]},
+                    {"type":"CAKE_CARE","items":[{"content":"보관 안내"}]},
+                    {"type":"BUSINESS_HOURS","items":[{"content":"영업시간 안내"}]}
                   ]
                 }
                 """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
-        .andExpect(jsonPath("$.data.notices[2].content").value("결제 안내"));
+        .andExpect(jsonPath("$.data.notices[2].items[0].content").value("결제 안내"));
 
     ArgumentCaptor<UpdateStoreNoticesCommand> captor =
         ArgumentCaptor.forClass(UpdateStoreNoticesCommand.class);
@@ -94,15 +95,22 @@ class SellerStoreNoticeControllerWebTest {
     assertEquals(storeId, captor.getValue().storeId());
     assertEquals(
         StoreNoticeType.BUSINESS_HOURS, captor.getValue().notices().getLast().type());
+    assertEquals(2, captor.getValue().notices().getFirst().items().size());
   }
 
   private StoreNoticeResult result() {
     return new StoreNoticeResult(List.of(
-        new StoreNoticeResult.Notice(StoreNoticeType.PICKUP_DELIVERY, "픽업 안내"),
-        new StoreNoticeResult.Notice(StoreNoticeType.DESIGN_PRODUCTION, null),
-        new StoreNoticeResult.Notice(StoreNoticeType.PAYMENT, "결제 안내"),
-        new StoreNoticeResult.Notice(StoreNoticeType.CAKE_CARE, "보관 안내"),
-        new StoreNoticeResult.Notice(StoreNoticeType.BUSINESS_HOURS, "영업시간 안내")));
+        new StoreNoticeResult.Notice(
+            StoreNoticeType.PICKUP_DELIVERY,
+            List.of(
+                new StoreNoticeResult.Item("픽업 안내", 0), new StoreNoticeResult.Item("픽업 변경 안내", 1))),
+        new StoreNoticeResult.Notice(StoreNoticeType.DESIGN_PRODUCTION, List.of()),
+        new StoreNoticeResult.Notice(
+            StoreNoticeType.PAYMENT, List.of(new StoreNoticeResult.Item("결제 안내", 0))),
+        new StoreNoticeResult.Notice(
+            StoreNoticeType.CAKE_CARE, List.of(new StoreNoticeResult.Item("보관 안내", 0))),
+        new StoreNoticeResult.Notice(
+            StoreNoticeType.BUSINESS_HOURS, List.of(new StoreNoticeResult.Item("영업시간 안내", 0)))));
   }
 
   private class CurrentStoreIdArgumentResolver implements HandlerMethodArgumentResolver {

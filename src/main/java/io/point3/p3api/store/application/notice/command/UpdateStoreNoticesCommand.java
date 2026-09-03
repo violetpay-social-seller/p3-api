@@ -17,5 +17,19 @@ public record UpdateStoreNoticesCommand(UUID storeId, List<Notice> notices) {
     return notices == null ? null : List.copyOf(notices);
   }
 
-  public record Notice(StoreNoticeType type, String content) {}
+  public record Notice(StoreNoticeType type, List<Item> items) {
+
+    public Notice {
+      if (items != null) {
+        items = List.copyOf(items);
+      }
+    }
+
+    @Override
+    public List<Item> items() {
+      return items == null ? null : List.copyOf(items);
+    }
+  }
+
+  public record Item(String content) {}
 }

@@ -24,9 +24,26 @@ public record StoreNoticeUpdateRequest(
     return new UpdateStoreNoticesCommand(
         storeId,
         notices.stream()
-            .map(notice -> new UpdateStoreNoticesCommand.Notice(notice.type(), notice.content()))
+            .map(notice -> new UpdateStoreNoticesCommand.Notice(
+                notice.type(),
+                notice.items().stream()
+                    .map(item -> new UpdateStoreNoticesCommand.Item(item.content()))
+                    .toList()))
             .toList());
   }
 
-  public record Notice(@NotNull StoreNoticeType type, String content) {}
+  public record Notice(
+      @NotNull StoreNoticeType type, @NotNull @Valid List<Item> items) {
+
+    public Notice {
+      items = items == null ? null : List.copyOf(items);
+    }
+
+    @Override
+    public List<Item> items() {
+      return items == null ? null : List.copyOf(items);
+    }
+  }
+
+  public record Item(String content) {}
 }

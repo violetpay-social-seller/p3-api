@@ -28,14 +28,12 @@ public class StoreNoticePersistenceAdapter implements StoreNoticePersistencePort
   public boolean hasCompleteNotices(UUID storeId) {
     List<StoreNotice> notices =
         storeNoticeJpaRepository.findAllByStoreIdOrderByTypeAscSortOrderAsc(storeId);
-    if (notices.size() != StoreNoticeType.values().length) {
-      return false;
-    }
     EnumSet<StoreNoticeType> types = EnumSet.noneOf(StoreNoticeType.class);
     for (StoreNotice notice : notices) {
-      if (notice.getContent().isBlank() || !types.add(notice.getType())) {
+      if (notice.getContent().isBlank()) {
         return false;
       }
+      types.add(notice.getType());
     }
     return types.equals(EnumSet.allOf(StoreNoticeType.class));
   }

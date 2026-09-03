@@ -3,10 +3,10 @@ package io.point3.p3api.store.application;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
+import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreOperationSettingPersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
-import io.point3.p3api.store.domain.entity.StoreOperationSetting;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,14 +18,15 @@ public class StoreActivationValidator {
   private static final String SETTLEMENT_ACCOUNT_INPUT_COMPLETED = "INPUT_COMPLETED";
 
   private final OrderFormPersistencePort orderFormPersistencePort;
+  private final StoreNoticePersistencePort storeNoticePersistencePort;
   private final StoreOperationSettingPersistencePort storeOperationSettingPersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
 
   public void validate(Store store) {
     UUID storeId = store.getId();
     validateActiveOrderForm(storeId);
-    StoreOperationSetting setting = findOperationSetting(storeId);
-    validateOrderNotice(setting);
+    requireOperationSetting(storeId);
+    validateOrderNotice(storeId);
     validateEnabledPickupSetting(storeId);
     validateSettlementAccount(store);
   }
@@ -36,14 +37,14 @@ public class StoreActivationValidator {
     }
   }
 
-  private StoreOperationSetting findOperationSetting(UUID storeId) {
-    return storeOperationSettingPersistencePort
+  private void requireOperationSetting(UUID storeId) {
+    storeOperationSettingPersistencePort
         .findByStoreId(storeId)
         .orElseThrow(() -> new BaseException(StoreErrorCode.OPERATION_SETTING_REQUIRED));
   }
 
-  private void validateOrderNotice(StoreOperationSetting setting) {
-    if (setting.getPreOrderNotice() == null || setting.getPreOrderNotice().isBlank()) {
+  private void validateOrderNotice(UUID storeId) {
+    if (!storeNoticePersistencePort.hasCompleteNotices(storeId)) {
       throw new BaseException(StoreErrorCode.ORDER_NOTICE_REQUIRED);
     }
   }

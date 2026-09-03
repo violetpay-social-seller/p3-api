@@ -8,5 +8,7 @@ public interface StoreNoticePersistencePort {
 
   List<StoreNotice> findAllByStoreId(UUID storeId);
 
+  boolean hasCompleteNotices(UUID storeId);
+
   List<StoreNotice> replaceAllByStoreId(UUID storeId, List<StoreNotice> notices);
 }

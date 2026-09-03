@@ -2,6 +2,8 @@ package io.point3.p3api.store.infrastructure.persistence;
 
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.type.StoreNoticeType;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,22 @@ public class StoreNoticePersistenceAdapter implements StoreNoticePersistencePort
   @Transactional(readOnly = true)
   public List<StoreNotice> findAllByStoreId(UUID storeId) {
     return storeNoticeJpaRepository.findAllByStoreId(storeId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean hasCompleteNotices(UUID storeId) {
+    List<StoreNotice> notices = storeNoticeJpaRepository.findAllByStoreId(storeId);
+    if (notices.size() != StoreNoticeType.values().length) {
+      return false;
+    }
+    EnumSet<StoreNoticeType> types = EnumSet.noneOf(StoreNoticeType.class);
+    for (StoreNotice notice : notices) {
+      if (notice.getContent().isBlank() || !types.add(notice.getType())) {
+        return false;
+      }
+    }
+    return types.equals(EnumSet.allOf(StoreNoticeType.class));
   }
 
   @Override

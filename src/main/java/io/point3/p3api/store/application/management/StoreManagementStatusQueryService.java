@@ -5,9 +5,9 @@ import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.gallery.application.port.GalleryItemPersistencePort;
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
 import io.point3.p3api.store.application.management.result.StoreManagementStatusResult;
+import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
-import io.point3.p3api.store.application.setting.port.StoreOperationSettingPersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
 
   private final StorePersistencePort storePersistencePort;
   private final OrderFormPersistencePort orderFormPersistencePort;
-  private final StoreOperationSettingPersistencePort operationSettingPersistencePort;
+  private final StoreNoticePersistencePort storeNoticePersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
   private final GalleryItemPersistencePort galleryItemPersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
@@ -35,11 +35,7 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
         .findById(storeId)
         .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
     boolean orderForm = orderFormPersistencePort.existsActiveTemplateByStoreId(storeId);
-    boolean notice = operationSettingPersistencePort
-        .findByStoreId(storeId)
-        .map(setting ->
-            setting.getPreOrderNotice() != null && !setting.getPreOrderNotice().isBlank())
-        .orElse(false);
+    boolean notice = storeNoticePersistencePort.hasCompleteNotices(storeId);
     boolean galleryReady =
         !galleryItemPersistencePort.findVisibleByStoreId(storeId).isEmpty();
     boolean representativeReady =

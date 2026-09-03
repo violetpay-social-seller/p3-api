@@ -10,6 +10,15 @@ public record StoreManagementStatusResult(
     boolean canActivate,
     List<String> activationBlockedReasons) {
 
+  public StoreManagementStatusResult {
+    activationBlockedReasons = List.copyOf(activationBlockedReasons);
+  }
+
+  @Override
+  public List<String> activationBlockedReasons() {
+    return List.copyOf(activationBlockedReasons);
+  }
+
   public record Items(
       boolean storeInfo,
       boolean orderForm,

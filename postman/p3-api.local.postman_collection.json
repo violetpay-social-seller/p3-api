@@ -1190,7 +1190,8 @@
                 "exec": [
                   "const data = pm.response.json().data;",
                   "pm.test('five notices are saved', function () { pm.expect(data.notices).to.have.length(5); });",
-                  "pm.test('payment notice is saved', function () { pm.expect(data.notices[2].content).to.eql('결제 완료 후 주문이 확정됩니다.'); });"
+                  "pm.test('pickup notices preserve item order', function () { pm.expect(data.notices[0].items.map(item => item.content)).to.eql(['픽업 시간 10분 전 도착해 주세요.', '픽업 시간 변경은 이틀 전까지 알려 주세요.']); });",
+                  "pm.test('payment notice is saved', function () { pm.expect(data.notices[2].items[0].content).to.eql('결제 완료 후 주문이 확정됩니다.'); });"
                 ]
               }
             }
@@ -1209,7 +1210,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"notices\": [\n    {\"type\": \"PICKUP_DELIVERY\", \"content\": \"픽업 시간 10분 전 도착해 주세요.\"},\n    {\"type\": \"DESIGN_PRODUCTION\", \"content\": \"제작은 결제 확인 후 시작됩니다.\"},\n    {\"type\": \"PAYMENT\", \"content\": \"결제 완료 후 주문이 확정됩니다.\"},\n    {\"type\": \"CAKE_CARE\", \"content\": \"수령 후 냉장 보관해 주세요.\"},\n    {\"type\": \"BUSINESS_HOURS\", \"content\": \"문의 가능 시간은 평일 10시부터 18시까지입니다.\"}\n  ]\n}"
+              "raw": "{\n  \"notices\": [\n    {\n      \"type\": \"PICKUP_DELIVERY\",\n      \"items\": [\n        {\"content\": \"픽업 시간 10분 전 도착해 주세요.\"},\n        {\"content\": \"픽업 시간 변경은 이틀 전까지 알려 주세요.\"}\n      ]\n    },\n    {\"type\": \"DESIGN_PRODUCTION\", \"items\": [{\"content\": \"제작은 결제 확인 후 시작됩니다.\"}]},\n    {\"type\": \"PAYMENT\", \"items\": [{\"content\": \"결제 완료 후 주문이 확정됩니다.\"}]},\n    {\"type\": \"CAKE_CARE\", \"items\": [{\"content\": \"수령 후 냉장 보관해 주세요.\"}]},\n    {\"type\": \"BUSINESS_HOURS\", \"items\": [{\"content\": \"문의 가능 시간은 평일 10시부터 18시까지입니다.\"}]}\n  ]\n}"
             },
             "url": "{{baseUrl}}/seller/notices"
           }
@@ -1224,7 +1225,8 @@
                 "exec": [
                   "const data = pm.response.json().data;",
                   "pm.test('five notices are returned', function () { pm.expect(data.notices).to.have.length(5); });",
-                  "pm.test('notice order is fixed', function () { pm.expect(data.notices[0].type).to.eql('PICKUP_DELIVERY'); });"
+                  "pm.test('notice order is fixed', function () { pm.expect(data.notices[0].type).to.eql('PICKUP_DELIVERY'); });",
+                  "pm.test('multiple pickup notices are returned in order', function () { pm.expect(data.notices[0].items.map(item => item.sortOrder)).to.eql([0, 1]); });"
                 ]
               }
             }

@@ -36,14 +36,16 @@ class StoreNoticePersistenceAdapterIntegrationTest extends IntegrationTestSuppor
   private UserJpaRepository userJpaRepository;
 
   @Test
-  @DisplayName("같은 스토어에는 공지 타입을 하나만 저장할 수 있다")
-  void rejectsDuplicateNoticeTypeForStore() {
+  @DisplayName("같은 타입에는 순서별로 여러 공지를 저장할 수 있고 순서는 중복될 수 없다")
+  void savesMultipleNoticesByTypeAndRejectsDuplicateSortOrder() {
     StoreResult store = createStore();
     storeNoticeJpaRepository.save(
-        StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "결제 완료 후 주문이 확정됩니다."));
+        StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "결제 완료 후 주문이 확정됩니다.", 0));
+    storeNoticeJpaRepository.save(
+        StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "입금 확인 후 제작을 시작합니다.", 1));
     storeNoticeJpaRepository.flush();
     storeNoticeJpaRepository.save(
-        StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "중복 공지입니다."));
+        StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "중복 순서 공지입니다.", 1));
 
     assertThrows(DataIntegrityViolationException.class, storeNoticeJpaRepository::flush);
   }
@@ -55,12 +57,15 @@ class StoreNoticePersistenceAdapterIntegrationTest extends IntegrationTestSuppor
     storeNoticePersistencePort.replaceAllByStoreId(
         store.id(),
         List.of(
-            StoreNotice.create(store.id(), StoreNoticeType.PICKUP_DELIVERY, "픽업 시간 10분 전 도착해 주세요."),
-            StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "결제 완료 후 주문이 확정됩니다.")));
+            StoreNotice.create(
+                store.id(), StoreNoticeType.PICKUP_DELIVERY, "픽업 시간 10분 전 도착해 주세요.", 0),
+            StoreNotice.create(
+                store.id(), StoreNoticeType.PICKUP_DELIVERY, "예약 변경은 이틀 전까지 가능합니다.", 1),
+            StoreNotice.create(store.id(), StoreNoticeType.PAYMENT, "결제 완료 후 주문이 확정됩니다.", 0)));
 
     storeNoticePersistencePort.replaceAllByStoreId(
         store.id(),
-        List.of(StoreNotice.create(store.id(), StoreNoticeType.CAKE_CARE, "수령 후 냉장 보관해 주세요.")));
+        List.of(StoreNotice.create(store.id(), StoreNoticeType.CAKE_CARE, "수령 후 냉장 보관해 주세요.", 0)));
 
     List<StoreNotice> notices = storeNoticePersistencePort.findAllByStoreId(store.id());
 

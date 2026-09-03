@@ -20,13 +20,14 @@ public class StoreNoticePersistenceAdapter implements StoreNoticePersistencePort
   @Override
   @Transactional(readOnly = true)
   public List<StoreNotice> findAllByStoreId(UUID storeId) {
-    return storeNoticeJpaRepository.findAllByStoreId(storeId);
+    return storeNoticeJpaRepository.findAllByStoreIdOrderByTypeAscSortOrderAsc(storeId);
   }
 
   @Override
   @Transactional(readOnly = true)
   public boolean hasCompleteNotices(UUID storeId) {
-    List<StoreNotice> notices = storeNoticeJpaRepository.findAllByStoreId(storeId);
+    List<StoreNotice> notices =
+        storeNoticeJpaRepository.findAllByStoreIdOrderByTypeAscSortOrderAsc(storeId);
     if (notices.size() != StoreNoticeType.values().length) {
       return false;
     }

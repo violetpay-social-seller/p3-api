@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface StoreNoticeJpaRepository extends JpaRepository<StoreNotice, UUID> {
 
-  List<StoreNotice> findAllByStoreId(UUID storeId);
+  List<StoreNotice> findAllByStoreIdOrderByTypeAscSortOrderAsc(UUID storeId);
 
   void deleteAllByStoreId(UUID storeId);
 }

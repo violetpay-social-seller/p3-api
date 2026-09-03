@@ -24,8 +24,8 @@ import org.hibernate.annotations.UpdateTimestamp;
     name = "store_notices",
     uniqueConstraints =
         @UniqueConstraint(
-            name = "uk_store_notices_store_type",
-            columnNames = {"store_id", "type"}))
+            name = "uk_store_notices_store_type_sort_order",
+            columnNames = {"store_id", "type", "sort_order"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class StoreNotice {
@@ -44,6 +44,9 @@ public class StoreNotice {
   @Column(name = "content", nullable = false, columnDefinition = "text")
   private String content;
 
+  @Column(name = "sort_order", nullable = false)
+  private int sortOrder;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
@@ -52,17 +55,26 @@ public class StoreNotice {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private StoreNotice(UUID storeId, StoreNoticeType type, String content) {
+  private StoreNotice(UUID storeId, StoreNoticeType type, String content, int sortOrder) {
     this.storeId = storeId;
     this.type = type;
     this.content = content;
+    this.sortOrder = sortOrder;
   }
 
   public static StoreNotice create(UUID storeId, StoreNoticeType type, String content) {
+    return create(storeId, type, content, 0);
+  }
+
+  public static StoreNotice create(
+      UUID storeId, StoreNoticeType type, String content, int sortOrder) {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(type, "type");
     Objects.requireNonNull(content, "content");
+    if (sortOrder < 0) {
+      throw new IllegalArgumentException("sortOrder");
+    }
 
-    return new StoreNotice(storeId, type, content);
+    return new StoreNotice(storeId, type, content, sortOrder);
   }
 }

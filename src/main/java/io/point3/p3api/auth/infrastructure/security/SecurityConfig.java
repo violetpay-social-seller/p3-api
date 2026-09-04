@@ -28,6 +28,7 @@ public class SecurityConfig {
       SellerStoreProvider sellerStoreProvider,
       PublicStoreProvider publicStoreProvider,
       SellerOnboardingApprovalProvider sellerOnboardingApprovalProvider,
+      InternalAuthenticationFilter internalAuthenticationFilter,
       ObjectMapper objectMapper)
       throws Exception {
     SellerOnboardingApprovalFilter sellerOnboardingApprovalFilter =
@@ -53,6 +54,7 @@ public class SecurityConfig {
             .anyRequest()
             .authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+        .addFilterBefore(internalAuthenticationFilter, BearerTokenAuthenticationFilter.class)
         .addFilterAfter(sellerOnboardingApprovalFilter, BearerTokenAuthenticationFilter.class)
         .addFilterAfter(storeContextFilter, SellerOnboardingApprovalFilter.class)
         .addFilterAfter(publicStoreContextFilter, BearerTokenAuthenticationFilter.class)

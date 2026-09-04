@@ -1,5 +1,6 @@
 package io.point3.p3api.store.application;
 
+import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
@@ -29,6 +30,7 @@ public class StoreService
   private static final int MAX_SLUG_SUFFIX_ATTEMPTS = 100;
 
   private final StorePersistencePort storePersistencePort;
+  private final AssetPersistencePort assetPersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final StoreActivationValidator storeActivationValidator;
 
@@ -39,6 +41,7 @@ public class StoreService
     }
 
     Store store = Store.create(command.ownerUserId(), command.name(), generateSlug(command.name()));
+    validateProfileAsset(command.profileAssetId(), command.ownerUserId());
     store.updateProfileAsset(command.profileAssetId());
     store.updateBasicInfo(
         command.name(),
@@ -63,6 +66,7 @@ public class StoreService
   public StoreResult update(UpdateStoreCommand command) {
     Store store = findStore(command.storeId());
 
+    validateProfileAsset(command.profileAssetId(), store.getOwnerUserId());
     store.updateProfileAsset(command.profileAssetId());
     store.updateBasicInfo(
         command.name(),
@@ -138,6 +142,16 @@ public class StoreService
   private void validateRepresentativeImageReady(UUID storeId) {
     if (representativeImagePersistencePort.findActiveByStoreId(storeId).size() < 3) {
       throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED);
+    }
+  }
+
+  private void validateProfileAsset(UUID profileAssetId, UUID ownerUserId) {
+    if (profileAssetId == null) {
+      return;
+    }
+
+    if (assetPersistencePort.findByIdAndUploadedBy(profileAssetId, ownerUserId).isEmpty()) {
+      throw new BaseException(StoreErrorCode.PROFILE_ASSET_NOT_FOUND);
     }
   }
 }

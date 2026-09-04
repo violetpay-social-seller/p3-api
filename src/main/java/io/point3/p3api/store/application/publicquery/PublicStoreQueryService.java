@@ -1,9 +1,10 @@
 package io.point3.p3api.store.application.publicquery;
 
-import io.point3.p3api.asset.application.AssetDeliveryUrlResolver;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.domain.type.AssetStatus;
+import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
+import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
@@ -33,7 +34,7 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
   private final StorePersistencePort storePersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
-  private final AssetDeliveryUrlResolver assetDeliveryUrlResolver;
+  private final AssetVariantDeliveryService assetVariantDeliveryService;
 
   @Override
   public PublicStorePage getStores(PublicStoreListQuery query) {
@@ -67,17 +68,20 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
     List<StoreRepresentativeImage> representativeImages =
         representativeImagePersistencePort.findActiveByStoreId(store.getId());
     Map<UUID, Asset> assetsById = findAssets(store.getProfileAssetId(), representativeImages);
+    Map<UUID, AssetVariantDelivery> deliveryByAssetId =
+        assetVariantDeliveryService.resolveReadyDeliveries(
+            assetsById.keySet().stream().toList());
 
     Asset profileAsset = assetsById.get(store.getProfileAssetId());
     List<PublicRepresentativeImageResult> publicImages = representativeImages.stream()
-        .map(image -> toPublicImage(image, assetsById.get(image.getAssetId())))
+        .map(image -> toPublicImage(image, assetsById.get(image.getAssetId()), deliveryByAssetId))
         .filter(java.util.Objects::nonNull)
         .toList();
 
     return new PublicStoreResult(
         store.getId(),
         store.getProfileAssetId(),
-        deliveryUrl(profileAsset),
+        deliveryUrl(profileAsset, deliveryByAssetId),
         store.getName(),
         store.getSlug(),
         store.getDescription(),
@@ -105,19 +109,27 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
   }
 
   private PublicRepresentativeImageResult toPublicImage(
-      StoreRepresentativeImage image, Asset asset) {
+      StoreRepresentativeImage image,
+      Asset asset,
+      Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
     if (asset == null || asset.getStatus() == AssetStatus.DELETED) {
+      return null;
+    }
+    String deliveryUrl = deliveryUrl(asset, deliveryByAssetId);
+    if (deliveryUrl == null) {
       return null;
     }
     return new PublicRepresentativeImageResult(
-        image.getId(), image.getAssetId(), deliveryUrl(asset), image.getSortOrder());
+        image.getId(), image.getAssetId(), deliveryUrl, image.getSortOrder());
   }
 
-  private String deliveryUrl(Asset asset) {
+  private String deliveryUrl(Asset asset, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
     if (asset == null || asset.getStatus() == AssetStatus.DELETED) {
       return null;
     }
-    return assetDeliveryUrlResolver.resolve(asset.getObjectKey());
+    return deliveryByAssetId
+        .getOrDefault(asset.getId(), AssetVariantDelivery.empty())
+        .deliveryUrl();
   }
 
   private void validateCursor(PublicStoreListQuery query) {

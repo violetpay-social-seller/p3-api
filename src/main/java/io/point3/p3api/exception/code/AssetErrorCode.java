@@ -22,7 +22,12 @@ public enum AssetErrorCode implements ErrorCode {
       "ASSET_VARIANT_ALREADY_EXISTS_409",
       "Asset variant already exists",
       HttpStatus.CONFLICT,
-      "/errors/asset/variant-already-exists");
+      "/errors/asset/variant-already-exists"),
+  ASSET_VARIANT_NOT_READY(
+      "ASSET_VARIANT_NOT_READY_400",
+      "Asset variant is not ready",
+      HttpStatus.BAD_REQUEST,
+      "/errors/asset/variant-not-ready");
 
   private final String code;
   private final String title;

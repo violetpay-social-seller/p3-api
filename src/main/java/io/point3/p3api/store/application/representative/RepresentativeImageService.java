@@ -2,6 +2,7 @@ package io.point3.p3api.store.application.representative;
 
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.store.application.port.StorePersistencePort;
@@ -35,12 +36,14 @@ public class RepresentativeImageService
 
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
+  private final AssetVariantDeliveryService assetVariantDeliveryService;
   private final StorePersistencePort storePersistencePort;
 
   @Override
   public RepresentativeImageResult create(CreateRepresentativeImageCommand command) {
     validateImageLimit(command.storeId());
     validateAssetOwnership(command.storeId(), command.assetId());
+    assetVariantDeliveryService.validateReadyDelivery(command.assetId());
     StoreRepresentativeImage image =
         StoreRepresentativeImage.create(command.storeId(), command.assetId(), command.sortOrder());
     return RepresentativeImageResult.from(representativeImagePersistencePort.save(image));
@@ -120,6 +123,7 @@ public class RepresentativeImageService
   private void changeStatus(
       Store store, StoreRepresentativeImage image, StoreRepresentativeImageStatus status) {
     if (status == StoreRepresentativeImageStatus.ACTIVE) {
+      assetVariantDeliveryService.validateReadyDelivery(image.getAssetId());
       image.show();
       return;
     }

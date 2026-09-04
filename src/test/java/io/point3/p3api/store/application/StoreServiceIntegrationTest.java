@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
@@ -18,12 +22,13 @@ import io.point3.p3api.store.application.representative.command.UpdateRepresenta
 import io.point3.p3api.store.application.representative.result.RepresentativeImageResult;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
+import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
 import io.point3.p3api.store.domain.entity.StoreOperationSetting;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
-import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
+import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
@@ -59,6 +64,9 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   private AssetJpaRepository assetJpaRepository;
 
   @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
+
+  @Autowired
   private OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
 
   @Autowired
@@ -81,6 +89,51 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         () -> storeService.create(createStoreCommand(seller.getId(), "다른 베이커리")));
 
     assertEquals(StoreErrorCode.STORE_ALREADY_EXISTS, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("스토어 생성은 프로필 Asset 소유권을 검증한다")
+  void rejectsProfileAssetOwnedByAnotherUserOnCreate() {
+    User seller = saveSeller();
+    User anotherSeller = saveSeller();
+    Asset profileAsset = saveAsset(anotherSeller.getId(), 0);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> storeService.create(
+            createStoreCommand(seller.getId(), "P3 베이커리", profileAsset.getId())));
+
+    assertEquals(StoreErrorCode.PROFILE_ASSET_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("스토어 수정은 프로필 Asset 소유권을 검증한다")
+  void rejectsProfileAssetOwnedByAnotherUserOnUpdate() {
+    User seller = saveSeller();
+    User anotherSeller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+    Asset profileAsset = saveAsset(anotherSeller.getId(), 0);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> storeService.update(updateStoreCommand(store.id(), profileAsset.getId())));
+
+    assertEquals(StoreErrorCode.PROFILE_ASSET_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("processed variant가 없으면 대표 이미지를 생성할 수 없다")
+  void rejectsRepresentativeImageWithoutProcessedVariant() {
+    User seller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+    Asset asset = saveAsset(seller.getId(), 0);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> representativeImageService.create(
+            new CreateRepresentativeImageCommand(store.id(), asset.getId(), 0)));
+
+    assertEquals(AssetErrorCode.ASSET_VARIANT_NOT_READY, exception.getErrorCode());
   }
 
   @Test
@@ -165,10 +218,29 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private CreateStoreCommand createStoreCommand(UUID ownerUserId, String name) {
+    return createStoreCommand(ownerUserId, name, null);
+  }
+
+  private CreateStoreCommand createStoreCommand(
+      UUID ownerUserId, String name, UUID profileAssetId) {
     return new CreateStoreCommand(
         ownerUserId,
         name,
-        null,
+        profileAssetId,
+        "주문제작 케이크 스토어",
+        "010-1234-5678",
+        true,
+        "{\"instagram\":\"https://instagram.com/p3bakery\"}",
+        "{\"mon\":\"10:00-18:00\"}",
+        "{\"leadTimeDays\":3}",
+        "서울특별시 중구");
+  }
+
+  private UpdateStoreCommand updateStoreCommand(UUID storeId, UUID profileAssetId) {
+    return new UpdateStoreCommand(
+        storeId,
+        "P3 베이커리",
+        profileAssetId,
         "주문제작 케이크 스토어",
         "010-1234-5678",
         true,
@@ -180,16 +252,32 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   private RepresentativeImageResult createRepresentativeImage(
       UUID storeId, UUID uploadedBy, int sortOrder) {
-    Asset asset = assetJpaRepository.saveAndFlush(Asset.create(
+    Asset asset = saveAsset(uploadedBy, sortOrder);
+    saveVariant(asset, sortOrder);
+
+    return representativeImageService.create(
+        new CreateRepresentativeImageCommand(storeId, asset.getId(), sortOrder));
+  }
+
+  private Asset saveAsset(UUID uploadedBy, int sortOrder) {
+    return assetJpaRepository.saveAndFlush(Asset.create(
         UUID.randomUUID(),
         uploadedBy,
         "cake-" + sortOrder + ".png",
         "image/png",
         1024,
         "original/" + UUID.randomUUID() + "/cake-" + sortOrder + ".png"));
+  }
 
-    return representativeImageService.create(
-        new CreateRepresentativeImageCommand(storeId, asset.getId(), sortOrder));
+  private void saveVariant(Asset asset, int sortOrder) {
+    assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset,
+        AssetVariantType.MEDIUM,
+        "processed/" + UUID.randomUUID() + "/cake-" + sortOrder + ".webp",
+        "image/webp",
+        640,
+        640,
+        512));
   }
 
   private void prepareForActivation(UUID storeId) {

@@ -1,12 +1,9 @@
 package io.point3.p3api.gallery.application;
 
-import io.point3.p3api.asset.application.AssetDeliveryUrlResolver;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
-import io.point3.p3api.assetvariant.application.port.AssetVariantPersistencePort;
-import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
-import io.point3.p3api.assetvariant.domain.type.AssetVariantStatus;
-import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
+import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.GalleryErrorCode;
 import io.point3.p3api.gallery.application.command.CreateGalleryItemCommand;
@@ -21,11 +18,9 @@ import io.point3.p3api.gallery.domain.entity.StoreGalleryItem;
 import io.point3.p3api.gallery.domain.type.StoreGalleryItemStatus;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +36,7 @@ public class GalleryItemService
 
   private final GalleryItemPersistencePort galleryItemPersistencePort;
   private final AssetPersistencePort assetPersistencePort;
-  private final AssetVariantPersistencePort assetVariantPersistencePort;
-  private final AssetDeliveryUrlResolver assetDeliveryUrlResolver;
+  private final AssetVariantDeliveryService assetVariantDeliveryService;
   private final StorePersistencePort storePersistencePort;
 
   @Override
@@ -129,15 +123,11 @@ public class GalleryItemService
 
     List<UUID> assetIds =
         items.stream().map(StoreGalleryItem::getAssetId).distinct().toList();
-    Map<UUID, List<AssetVariant>> variantsByAssetId =
-        assetVariantPersistencePort.findAllByAssetIds(assetIds).stream()
-            .collect(Collectors.groupingBy(variant -> variant.getAsset().getId()));
+    Map<UUID, AssetVariantDelivery> deliveryByAssetId =
+        assetVariantDeliveryService.resolveReadyDeliveries(assetIds);
 
     return items.stream()
-        .map(item -> GalleryItemResult.from(
-            item,
-            resolveDeliveryUrl(item.getAssetId(), variantsByAssetId),
-            resolveVariants(item.getAssetId(), variantsByAssetId)))
+        .map(item -> toResult(item, deliveryByAssetId.get(item.getAssetId())))
         .toList();
   }
 
@@ -145,36 +135,15 @@ public class GalleryItemService
     return toResults(List.of(item)).getFirst();
   }
 
-  private String resolveDeliveryUrl(UUID assetId, Map<UUID, List<AssetVariant>> variantsByAssetId) {
-    return variantsByAssetId.getOrDefault(assetId, List.of()).stream()
-        .filter(variant -> variant.getStatus() == AssetVariantStatus.READY)
-        .min(Comparator.comparingInt(this::variantPriority))
-        .map(AssetVariant::getObjectKey)
-        .map(assetDeliveryUrlResolver::resolve)
-        .orElse(null);
-  }
-
-  private List<GalleryItemResult.Variant> resolveVariants(
-      UUID assetId, Map<UUID, List<AssetVariant>> variantsByAssetId) {
-    return variantsByAssetId.getOrDefault(assetId, List.of()).stream()
-        .filter(variant -> variant.getStatus() == AssetVariantStatus.READY)
-        .sorted(Comparator.comparingInt(AssetVariant::getWidth))
-        .map(variant -> new GalleryItemResult.Variant(
-            variant.getType().name(),
-            assetDeliveryUrlResolver.resolve(variant.getObjectKey()),
-            variant.getWidth(),
-            variant.getHeight()))
-        .toList();
-  }
-
-  private int variantPriority(AssetVariant variant) {
-    if (variant.getType() == AssetVariantType.MEDIUM) {
-      return 0;
-    }
-    if (variant.getType() == AssetVariantType.LARGE) {
-      return 1;
-    }
-    return 2;
+  private GalleryItemResult toResult(StoreGalleryItem item, AssetVariantDelivery delivery) {
+    AssetVariantDelivery safeDelivery = delivery == null ? AssetVariantDelivery.empty() : delivery;
+    return GalleryItemResult.from(
+        item,
+        safeDelivery.deliveryUrl(),
+        safeDelivery.variants().stream()
+            .map(variant -> new GalleryItemResult.Variant(
+                variant.type(), variant.deliveryUrl(), variant.width(), variant.height()))
+            .toList());
   }
 
   private void changeFeatured(StoreGalleryItem item, boolean featured) {
@@ -195,8 +164,6 @@ public class GalleryItemService
   }
 
   private void validateReadyVariant(UUID assetId) {
-    if (!assetVariantPersistencePort.existsByAssetIdAndStatus(assetId, AssetVariantStatus.READY)) {
-      throw new BaseException(GalleryErrorCode.GALLERY_ASSET_VARIANT_NOT_READY);
-    }
+    assetVariantDeliveryService.validateReadyDelivery(assetId);
   }
 }

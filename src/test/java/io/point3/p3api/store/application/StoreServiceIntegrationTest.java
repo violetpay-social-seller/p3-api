@@ -6,7 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
@@ -58,6 +62,9 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
 
   @Autowired
   private OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
@@ -112,6 +119,21 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         () -> storeService.update(updateStoreCommand(store.id(), profileAsset.getId())));
 
     assertEquals(StoreErrorCode.PROFILE_ASSET_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("processed variant가 없으면 대표 이미지를 생성할 수 없다")
+  void rejectsRepresentativeImageWithoutProcessedVariant() {
+    User seller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+    Asset asset = saveAsset(seller.getId(), 0);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> representativeImageService.create(
+            new CreateRepresentativeImageCommand(store.id(), asset.getId(), 0)));
+
+    assertEquals(AssetErrorCode.ASSET_VARIANT_NOT_READY, exception.getErrorCode());
   }
 
   @Test
@@ -231,6 +253,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   private RepresentativeImageResult createRepresentativeImage(
       UUID storeId, UUID uploadedBy, int sortOrder) {
     Asset asset = saveAsset(uploadedBy, sortOrder);
+    saveVariant(asset, sortOrder);
 
     return representativeImageService.create(
         new CreateRepresentativeImageCommand(storeId, asset.getId(), sortOrder));
@@ -244,6 +267,17 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         "image/png",
         1024,
         "original/" + UUID.randomUUID() + "/cake-" + sortOrder + ".png"));
+  }
+
+  private void saveVariant(Asset asset, int sortOrder) {
+    assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset,
+        AssetVariantType.MEDIUM,
+        "processed/" + UUID.randomUUID() + "/cake-" + sortOrder + ".webp",
+        "image/webp",
+        640,
+        640,
+        512));
   }
 
   private void prepareForActivation(UUID storeId) {

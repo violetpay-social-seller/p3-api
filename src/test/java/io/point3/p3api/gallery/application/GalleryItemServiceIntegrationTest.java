@@ -11,6 +11,7 @@ import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
 import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
 import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.GalleryErrorCode;
 import io.point3.p3api.gallery.application.command.CreateGalleryItemCommand;
 import io.point3.p3api.gallery.application.command.UpdateGalleryItemCommand;
@@ -110,7 +111,7 @@ class GalleryItemServiceIntegrationTest extends IntegrationTestSupport {
         () -> galleryItemService.update(new UpdateGalleryItemCommand(
             store.id(), created.id(), 0, false, StoreGalleryItemStatus.VISIBLE)));
 
-    assertEquals(GalleryErrorCode.GALLERY_ASSET_VARIANT_NOT_READY, exception.getErrorCode());
+    assertEquals(AssetErrorCode.ASSET_VARIANT_NOT_READY, exception.getErrorCode());
   }
 
   private User saveSeller() {

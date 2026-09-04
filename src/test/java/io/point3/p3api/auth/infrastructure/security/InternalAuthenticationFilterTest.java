@@ -54,4 +54,20 @@ class InternalAuthenticationFilterTest {
     assertEquals(401, response.getStatus());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
   }
+
+  @Test
+  @DisplayName("internal 경로는 기존 Lambda 헤더도 shared token으로 허용한다")
+  void authenticatesLegacyInternalHeader() throws ServletException, IOException {
+    InternalAuthenticationFilter filter =
+        new InternalAuthenticationFilter(new ObjectMapper(), "secret");
+    MockHttpServletRequest request =
+        new MockHttpServletRequest("POST", "/internal/assets/id/variants");
+    request.addHeader("X-Internal-Api-Key", "secret");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilter(request, response, new MockFilterChain());
+
+    assertEquals(200, response.getStatus());
+    assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+  }
 }

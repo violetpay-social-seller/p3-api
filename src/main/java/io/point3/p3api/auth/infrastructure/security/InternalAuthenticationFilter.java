@@ -26,6 +26,7 @@ public class InternalAuthenticationFilter extends OncePerRequestFilter {
 
   private static final String INTERNAL_PATH_PREFIX = "/internal/";
   private static final String INTERNAL_TOKEN_HEADER = "X-P3-Internal-Token";
+  private static final String LEGACY_INTERNAL_TOKEN_HEADER = "X-Internal-Api-Key";
 
   private final ObjectWriter responseWriter;
   private final String internalToken;
@@ -45,7 +46,8 @@ public class InternalAuthenticationFilter extends OncePerRequestFilter {
       return;
     }
 
-    if (!matches(request.getHeader(INTERNAL_TOKEN_HEADER))) {
+    if (!matches(request.getHeader(INTERNAL_TOKEN_HEADER))
+        && !matches(request.getHeader(LEGACY_INTERNAL_TOKEN_HEADER))) {
       SecurityContextHolder.clearContext();
       writeUnauthorized(request, response);
       return;

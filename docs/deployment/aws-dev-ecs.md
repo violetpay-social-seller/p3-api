@@ -40,6 +40,7 @@
 실제 비밀값은 GitHub Secrets가 아니라 AWS SSM Parameter Store에 둔다.
 
 - `/p3/dev/api/POSTGRES_PASSWORD`
+- `/p3/dev/api/P3_INTERNAL_AUTH_TOKEN`
 
 Point3 운영 연동값을 dev ECS에서 활성화할 때는 SSM SecureString으로 추가한 뒤 task definition의 `secrets`에 연결한다.
 
@@ -83,3 +84,10 @@ RDS master password는 2026-09-01에 재설정했고, 값은 SSM SecureString `/
 - Cloudflare DNS에서 앞단 HTTPS를 구성하고 ALB HTTP 80으로 연결한다.
 - 실제 frontend origin이 정해지면 `P3_CORS_ALLOWED_ORIGINS`, `P3_WEBSOCKET_ALLOWED_ORIGINS`, `P3_WEB_BASE_URL` 값을 ECS task definition에 반영한다.
 - Point3 운영 연동을 활성화하려면 `P3_POINT3_CLIENT_ID`, `P3_POINT3_API_TOKEN` 값을 발급받아 SSM SecureString에 저장하고 task definition의 `secrets`에 연결한다.
+
+## 이미지 callback 설정
+
+Lambda `p3-lambda-image-dev`는 processed 이미지 생성 후 API callback으로 `asset_variants`를 등록한다.
+
+- `API_BASE_URL=https://api.wihada.com`
+- `INTERNAL_API_KEY`: SSM SecureString `/p3/dev/api/P3_INTERNAL_AUTH_TOKEN`과 같은 값

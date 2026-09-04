@@ -2,6 +2,7 @@ package io.point3.p3api.assetvariant.infrastructure.persistence;
 
 import io.point3.p3api.assetvariant.application.port.AssetVariantPersistencePort;
 import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantStatus;
 import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
 import java.util.List;
 import java.util.UUID;
@@ -34,5 +35,10 @@ public class AssetVariantPersistenceAdapter implements AssetVariantPersistencePo
   @Override
   public boolean existsByAssetIdAndType(UUID assetId, AssetVariantType type) {
     return assetVariantJpaRepository.existsByAsset_IdAndType(assetId, type);
+  }
+
+  @Override
+  public boolean existsByAssetIdAndStatus(UUID assetId, AssetVariantStatus status) {
+    return assetVariantJpaRepository.existsByAsset_IdAndStatus(assetId, status);
   }
 }

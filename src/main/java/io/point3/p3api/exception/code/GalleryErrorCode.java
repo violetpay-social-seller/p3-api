@@ -15,7 +15,12 @@ public enum GalleryErrorCode implements ErrorCode {
       "GALLERY_ASSET_NOT_FOUND_404",
       "Gallery asset not found",
       HttpStatus.NOT_FOUND,
-      "/errors/gallery/asset-not-found");
+      "/errors/gallery/asset-not-found"),
+  GALLERY_ASSET_VARIANT_NOT_READY(
+      "GALLERY_ASSET_VARIANT_NOT_READY_400",
+      "Gallery asset variant is not ready",
+      HttpStatus.BAD_REQUEST,
+      "/errors/gallery/asset-variant-not-ready");
 
   private final String code;
   private final String title;

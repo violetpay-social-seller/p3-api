@@ -71,7 +71,9 @@ public class GalleryItemService
   @Override
   @Transactional(readOnly = true)
   public List<GalleryItemResult> getVisibleItems(UUID storeId) {
-    return toResults(galleryItemPersistencePort.findVisibleByStoreId(storeId));
+    return toResults(galleryItemPersistencePort.findVisibleByStoreId(storeId)).stream()
+        .filter(GalleryItemResult::hasDeliveryUrl)
+        .toList();
   }
 
   @Override
@@ -81,7 +83,11 @@ public class GalleryItemService
     if (item.getStatus() != StoreGalleryItemStatus.VISIBLE) {
       throw new BaseException(GalleryErrorCode.GALLERY_ITEM_NOT_FOUND);
     }
-    return toResult(item);
+    GalleryItemResult result = toResult(item);
+    if (!result.hasDeliveryUrl()) {
+      throw new BaseException(GalleryErrorCode.GALLERY_ITEM_NOT_FOUND);
+    }
+    return result;
   }
 
   @Override
@@ -181,9 +187,16 @@ public class GalleryItemService
 
   private void changeStatus(StoreGalleryItem item, StoreGalleryItemStatus status) {
     if (status == StoreGalleryItemStatus.VISIBLE) {
+      validateReadyVariant(item.getAssetId());
       item.show();
       return;
     }
     item.hide();
+  }
+
+  private void validateReadyVariant(UUID assetId) {
+    if (!assetVariantPersistencePort.existsByAssetIdAndStatus(assetId, AssetVariantStatus.READY)) {
+      throw new BaseException(GalleryErrorCode.GALLERY_ASSET_VARIANT_NOT_READY);
+    }
   }
 }

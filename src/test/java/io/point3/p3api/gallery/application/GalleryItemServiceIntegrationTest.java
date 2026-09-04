@@ -1,7 +1,7 @@
 package io.point3.p3api.gallery.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.point3.p3api.IntegrationTestSupport;
@@ -10,10 +10,14 @@ import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
 import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
 import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
+import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.GalleryErrorCode;
 import io.point3.p3api.gallery.application.command.CreateGalleryItemCommand;
 import io.point3.p3api.gallery.application.command.UpdateGalleryItemCommand;
 import io.point3.p3api.gallery.application.result.GalleryItemResult;
+import io.point3.p3api.gallery.domain.entity.StoreGalleryItem;
 import io.point3.p3api.gallery.domain.type.StoreGalleryItemStatus;
+import io.point3.p3api.gallery.infrastructure.persistence.GalleryItemJpaRepository;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -46,6 +50,9 @@ class GalleryItemServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private AssetVariantJpaRepository assetVariantJpaRepository;
 
+  @Autowired
+  private GalleryItemJpaRepository galleryItemJpaRepository;
+
   @Test
   @DisplayName("갤러리 조회는 processed medium variant delivery URL을 우선 응답한다")
   void getsGalleryItemWithProcessedDeliveryUrl() {
@@ -71,20 +78,39 @@ class GalleryItemServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("processed variant가 없으면 delivery URL을 응답하지 않는다")
-  void doesNotExposeOriginalDeliveryUrl() {
+  @DisplayName("processed variant가 없으면 공개 갤러리 응답에서 제외한다")
+  void hidesVisibleGalleryItemWithoutProcessedVariant() {
+    User seller = saveSeller();
+    StoreResult store = createStore(seller.getId());
+    Asset asset = saveAsset(seller.getId(), "assets/original/cake.png");
+    StoreGalleryItem visibleItem = StoreGalleryItem.create(store.id(), asset.getId(), 0);
+    visibleItem.show();
+    galleryItemJpaRepository.saveAndFlush(visibleItem);
+
+    List<GalleryItemResult> results = galleryItemService.getVisibleItems(store.id());
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> galleryItemService.getVisibleItem(store.id(), visibleItem.getId()));
+
+    assertTrue(results.isEmpty());
+    assertEquals(GalleryErrorCode.GALLERY_ITEM_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("processed variant가 없으면 갤러리 항목을 공개 상태로 변경할 수 없다")
+  void cannotShowGalleryItemWithoutProcessedVariant() {
     User seller = saveSeller();
     StoreResult store = createStore(seller.getId());
     Asset asset = saveAsset(seller.getId(), "assets/original/cake.png");
     GalleryItemResult created = galleryItemService.create(
         new CreateGalleryItemCommand(store.id(), asset.getId(), 0, false));
-    galleryItemService.update(new UpdateGalleryItemCommand(
-        store.id(), created.id(), 0, false, StoreGalleryItemStatus.VISIBLE));
 
-    GalleryItemResult result = galleryItemService.getVisibleItems(store.id()).getFirst();
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> galleryItemService.update(new UpdateGalleryItemCommand(
+            store.id(), created.id(), 0, false, StoreGalleryItemStatus.VISIBLE)));
 
-    assertNull(result.deliveryUrl());
-    assertTrue(result.variants().isEmpty());
+    assertEquals(GalleryErrorCode.GALLERY_ASSET_VARIANT_NOT_READY, exception.getErrorCode());
   }
 
   private User saveSeller() {

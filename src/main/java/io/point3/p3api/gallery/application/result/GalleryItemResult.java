@@ -22,6 +22,10 @@ public record GalleryItemResult(
     variants = List.copyOf(variants);
   }
 
+  public boolean hasDeliveryUrl() {
+    return deliveryUrl != null && !deliveryUrl.isBlank();
+  }
+
   public static GalleryItemResult from(
       StoreGalleryItem item, String deliveryUrl, List<Variant> variants) {
     return new GalleryItemResult(

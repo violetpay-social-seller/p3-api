@@ -1,6 +1,8 @@
 package io.point3.p3api.gallery.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
@@ -61,11 +63,16 @@ class GalleryItemServiceIntegrationTest extends IntegrationTestSupport {
     GalleryItemResult result = galleryItemService.getVisibleItems(store.id()).getFirst();
 
     assertEquals("https://assets.example.test/assets/card/cake_640.webp", result.deliveryUrl());
+    assertEquals(2, result.variants().size());
+    assertEquals("THUMBNAIL", result.variants().get(0).type());
+    assertEquals(320, result.variants().get(0).width());
+    assertEquals("MEDIUM", result.variants().get(1).type());
+    assertEquals(640, result.variants().get(1).width());
   }
 
   @Test
-  @DisplayName("processed variant가 없으면 원본 asset delivery URL을 응답한다")
-  void fallsBackToOriginalDeliveryUrl() {
+  @DisplayName("processed variant가 없으면 delivery URL을 응답하지 않는다")
+  void doesNotExposeOriginalDeliveryUrl() {
     User seller = saveSeller();
     StoreResult store = createStore(seller.getId());
     Asset asset = saveAsset(seller.getId(), "assets/original/cake.png");
@@ -76,7 +83,8 @@ class GalleryItemServiceIntegrationTest extends IntegrationTestSupport {
 
     GalleryItemResult result = galleryItemService.getVisibleItems(store.id()).getFirst();
 
-    assertEquals("https://assets.example.test/assets/original/cake.png", result.deliveryUrl());
+    assertNull(result.deliveryUrl());
+    assertTrue(result.variants().isEmpty());
   }
 
   private User saveSeller() {

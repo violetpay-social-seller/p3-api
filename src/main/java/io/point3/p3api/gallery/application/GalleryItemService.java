@@ -24,9 +24,7 @@ import io.point3.p3api.store.domain.entity.Store;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -125,15 +123,15 @@ public class GalleryItemService
 
     List<UUID> assetIds =
         items.stream().map(StoreGalleryItem::getAssetId).distinct().toList();
-    Map<UUID, Asset> assetsById = assetPersistencePort.findAllById(assetIds).stream()
-        .collect(Collectors.toMap(Asset::getId, Function.identity()));
     Map<UUID, List<AssetVariant>> variantsByAssetId =
         assetVariantPersistencePort.findAllByAssetIds(assetIds).stream()
             .collect(Collectors.groupingBy(variant -> variant.getAsset().getId()));
 
     return items.stream()
         .map(item -> GalleryItemResult.from(
-            item, resolveDeliveryUrl(item.getAssetId(), assetsById, variantsByAssetId)))
+            item,
+            resolveDeliveryUrl(item.getAssetId(), variantsByAssetId),
+            resolveVariants(item.getAssetId(), variantsByAssetId)))
         .toList();
   }
 
@@ -141,15 +139,26 @@ public class GalleryItemService
     return toResults(List.of(item)).getFirst();
   }
 
-  private String resolveDeliveryUrl(
-      UUID assetId, Map<UUID, Asset> assetsById, Map<UUID, List<AssetVariant>> variantsByAssetId) {
+  private String resolveDeliveryUrl(UUID assetId, Map<UUID, List<AssetVariant>> variantsByAssetId) {
     return variantsByAssetId.getOrDefault(assetId, List.of()).stream()
         .filter(variant -> variant.getStatus() == AssetVariantStatus.READY)
         .min(Comparator.comparingInt(this::variantPriority))
         .map(AssetVariant::getObjectKey)
         .map(assetDeliveryUrlResolver::resolve)
-        .filter(Objects::nonNull)
-        .orElseGet(() -> resolveOriginalUrl(assetsById.get(assetId)));
+        .orElse(null);
+  }
+
+  private List<GalleryItemResult.Variant> resolveVariants(
+      UUID assetId, Map<UUID, List<AssetVariant>> variantsByAssetId) {
+    return variantsByAssetId.getOrDefault(assetId, List.of()).stream()
+        .filter(variant -> variant.getStatus() == AssetVariantStatus.READY)
+        .sorted(Comparator.comparingInt(AssetVariant::getWidth))
+        .map(variant -> new GalleryItemResult.Variant(
+            variant.getType().name(),
+            assetDeliveryUrlResolver.resolve(variant.getObjectKey()),
+            variant.getWidth(),
+            variant.getHeight()))
+        .toList();
   }
 
   private int variantPriority(AssetVariant variant) {
@@ -160,13 +169,6 @@ public class GalleryItemService
       return 1;
     }
     return 2;
-  }
-
-  private String resolveOriginalUrl(Asset asset) {
-    if (asset == null) {
-      return null;
-    }
-    return assetDeliveryUrlResolver.resolve(asset.getObjectKey());
   }
 
   private void changeFeatured(StoreGalleryItem item, boolean featured) {

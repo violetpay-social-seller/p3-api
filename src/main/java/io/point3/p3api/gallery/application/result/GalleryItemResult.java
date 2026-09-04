@@ -3,6 +3,7 @@ package io.point3.p3api.gallery.application.result;
 import io.point3.p3api.gallery.domain.entity.StoreGalleryItem;
 import io.point3.p3api.gallery.domain.type.StoreGalleryItemStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record GalleryItemResult(
@@ -14,9 +15,15 @@ public record GalleryItemResult(
     boolean featured,
     StoreGalleryItemStatus status,
     Instant createdAt,
-    Instant updatedAt) {
+    Instant updatedAt,
+    List<Variant> variants) {
 
-  public static GalleryItemResult from(StoreGalleryItem item, String deliveryUrl) {
+  public GalleryItemResult {
+    variants = List.copyOf(variants);
+  }
+
+  public static GalleryItemResult from(
+      StoreGalleryItem item, String deliveryUrl, List<Variant> variants) {
     return new GalleryItemResult(
         item.getId(),
         item.getStoreId(),
@@ -26,6 +33,14 @@ public record GalleryItemResult(
         item.isFeatured(),
         item.getStatus(),
         item.getCreatedAt(),
-        item.getUpdatedAt());
+        item.getUpdatedAt(),
+        variants);
   }
+
+  @Override
+  public List<Variant> variants() {
+    return List.copyOf(variants);
+  }
+
+  public record Variant(String type, String deliveryUrl, int width, int height) {}
 }

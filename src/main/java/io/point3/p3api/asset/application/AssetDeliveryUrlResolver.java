@@ -9,7 +9,7 @@ public class AssetDeliveryUrlResolver {
   private final String deliveryBaseUrl;
 
   public AssetDeliveryUrlResolver(@Value("${p3.asset.delivery.base-url:}") String deliveryBaseUrl) {
-    this.deliveryBaseUrl = deliveryBaseUrl;
+    this.deliveryBaseUrl = normalize(deliveryBaseUrl);
   }
 
   public String resolve(String objectKey) {
@@ -17,5 +17,12 @@ public class AssetDeliveryUrlResolver {
       return null;
     }
     return deliveryBaseUrl + "/" + objectKey;
+  }
+
+  private String normalize(String baseUrl) {
+    if (baseUrl == null || baseUrl.isBlank()) {
+      return null;
+    }
+    return baseUrl.replaceAll("/+$", "");
   }
 }

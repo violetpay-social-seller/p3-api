@@ -27,6 +27,11 @@ public class AssetVariantPersistenceAdapter implements AssetVariantPersistencePo
   }
 
   @Override
+  public List<AssetVariant> findAllByAssetIds(List<UUID> assetIds) {
+    return assetVariantJpaRepository.findAllByAsset_IdInOrderByWidthAsc(assetIds);
+  }
+
+  @Override
   public boolean existsByAssetIdAndType(UUID assetId, AssetVariantType type) {
     return assetVariantJpaRepository.existsByAsset_IdAndType(assetId, type);
   }

@@ -41,8 +41,8 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
     boolean storeInfo = hasText(store.getAddress())
         && hasText(store.getBusinessHours())
         && hasText(store.getCancellationRefundPolicy());
-    List<String> reasons = blockedReasons(
-        orderForm, notice, representativeReady, settlementAccount, storeId);
+    List<String> reasons =
+        blockedReasons(orderForm, notice, representativeReady, settlementAccount, storeId);
     int completedCount = (storeInfo ? 1 : 0)
         + (orderForm ? 1 : 0)
         + (notice ? 1 : 0)

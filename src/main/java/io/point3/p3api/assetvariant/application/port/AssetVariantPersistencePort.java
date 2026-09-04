@@ -11,5 +11,7 @@ public interface AssetVariantPersistencePort {
 
   List<AssetVariant> findAllByAssetId(UUID assetId);
 
+  List<AssetVariant> findAllByAssetIds(List<UUID> assetIds);
+
   boolean existsByAssetIdAndType(UUID assetId, AssetVariantType type);
 }

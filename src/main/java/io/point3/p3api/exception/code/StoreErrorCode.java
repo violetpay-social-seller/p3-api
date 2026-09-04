@@ -38,6 +38,11 @@ public enum StoreErrorCode implements ErrorCode {
       "Representative image asset not found",
       HttpStatus.NOT_FOUND,
       "/errors/store/representative-image-asset-not-found"),
+  PROFILE_ASSET_NOT_FOUND(
+      "PROFILE_ASSET_NOT_FOUND_404",
+      "Profile asset not found",
+      HttpStatus.NOT_FOUND,
+      "/errors/store/profile-asset-not-found"),
   ACTIVE_ORDER_FORM_REQUIRED(
       "ACTIVE_ORDER_FORM_REQUIRED_400",
       "At least one active order form is required",

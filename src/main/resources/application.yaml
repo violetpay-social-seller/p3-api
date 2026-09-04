@@ -46,6 +46,10 @@ p3:
   web:
     base-url: ${P3_WEB_BASE_URL:http://localhost:3000}
 
+  internal:
+    auth:
+      token: ${P3_INTERNAL_AUTH_TOKEN:}
+
   asset:
     storage:
       original-asset-bucket: p3-s3-original-dev

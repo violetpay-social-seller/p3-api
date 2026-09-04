@@ -9,5 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface AssetVariantJpaRepository extends JpaRepository<AssetVariant, UUID> {
   List<AssetVariant> findAllByAsset_IdOrderByWidthAsc(UUID assetId);
 
+  List<AssetVariant> findAllByAsset_IdInOrderByWidthAsc(List<UUID> assetIds);
+
   boolean existsByAsset_IdAndType(UUID assetId, AssetVariantType type);
 }

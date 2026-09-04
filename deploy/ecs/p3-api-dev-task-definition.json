@@ -72,12 +72,20 @@
         {
           "name": "P3_WEB_BASE_URL",
           "value": "https://wihada.com"
+        },
+        {
+          "name": "P3_DELIVERY_BASE_URL",
+          "value": "https://d4omkcg1gc1ie.cloudfront.net"
         }
       ],
       "secrets": [
         {
           "name": "POSTGRES_PASSWORD",
           "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/POSTGRES_PASSWORD"
+        },
+        {
+          "name": "P3_INTERNAL_AUTH_TOKEN",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_INTERNAL_AUTH_TOKEN"
         }
       ],
       "logConfiguration": {

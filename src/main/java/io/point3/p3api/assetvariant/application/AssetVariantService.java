@@ -1,5 +1,6 @@
 package io.point3.p3api.assetvariant.application;
 
+import io.point3.p3api.asset.application.AssetDeliveryUrlResolver;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.assetvariant.application.port.AssetVariantPersistencePort;
@@ -12,7 +13,6 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +22,15 @@ public class AssetVariantService implements AssetVariantRegisterUseCase, AssetVa
 
   private final AssetPersistencePort assetPersistencePort;
   private final AssetVariantPersistencePort assetVariantPersistencePort;
-  private final String deliveryBaseUrl;
+  private final AssetDeliveryUrlResolver assetDeliveryUrlResolver;
 
   public AssetVariantService(
       AssetPersistencePort assetPersistencePort,
       AssetVariantPersistencePort assetVariantPersistencePort,
-      @Value("${p3.asset.delivery.base-url:}") String deliveryBaseUrl) {
+      AssetDeliveryUrlResolver assetDeliveryUrlResolver) {
     this.assetPersistencePort = assetPersistencePort;
     this.assetVariantPersistencePort = assetVariantPersistencePort;
-    this.deliveryBaseUrl = deliveryBaseUrl;
+    this.assetDeliveryUrlResolver = assetDeliveryUrlResolver;
   }
 
   @Override
@@ -53,7 +53,7 @@ public class AssetVariantService implements AssetVariantRegisterUseCase, AssetVa
 
     List<AssetVariant> registeredVariants = assetVariantPersistencePort.saveAll(variants);
     return RegisteredAssetVariants.from(
-        command.assetId(), registeredVariants, this::resolveDeliveryUrl);
+        command.assetId(), registeredVariants, assetDeliveryUrlResolver::resolve);
   }
 
   @Override
@@ -63,7 +63,9 @@ public class AssetVariantService implements AssetVariantRegisterUseCase, AssetVa
       throw new BaseException(CommonErrorCode.INVALID_ID);
     }
     return RegisteredAssetVariants.from(
-        assetId, assetVariantPersistencePort.findAllByAssetId(assetId), this::resolveDeliveryUrl);
+        assetId,
+        assetVariantPersistencePort.findAllByAssetId(assetId),
+        assetDeliveryUrlResolver::resolve);
   }
 
   private void validateNotRegistered(RegisterAssetVariantsCommand command) {
@@ -73,12 +75,5 @@ public class AssetVariantService implements AssetVariantRegisterUseCase, AssetVa
     if (exists) {
       throw new BaseException(AssetErrorCode.ASSET_VARIANT_ALREADY_EXISTS);
     }
-  }
-
-  private String resolveDeliveryUrl(String objectKey) {
-    if (deliveryBaseUrl == null || deliveryBaseUrl.isBlank()) {
-      return null;
-    }
-    return deliveryBaseUrl + "/" + objectKey;
   }
 }

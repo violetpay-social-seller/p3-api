@@ -1,5 +1,7 @@
 package io.point3.p3api.auth.controller;
 
+import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.user.domain.type.UserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -13,6 +15,10 @@ public record CompleteRegistrationRequest(
         message = "phoneNumber must be a valid Korean mobile phone number")
     String phoneNumber) {
   public UserRole toRole() {
-    return UserRole.signUpRoleOf(role);
+    try {
+      return UserRole.signUpRoleOf(role);
+    } catch (IllegalArgumentException exception) {
+      throw new BaseException(CommonErrorCode.INVALID_INPUT, exception.getMessage());
+    }
   }
 }

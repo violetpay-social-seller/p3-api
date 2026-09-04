@@ -2,7 +2,6 @@ package io.point3.p3api.store.application.management;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
-import io.point3.p3api.gallery.application.port.GalleryItemPersistencePort;
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
 import io.point3.p3api.store.application.management.result.StoreManagementStatusResult;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
@@ -26,7 +25,6 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
   private final OrderFormPersistencePort orderFormPersistencePort;
   private final StoreNoticePersistencePort storeNoticePersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
-  private final GalleryItemPersistencePort galleryItemPersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
 
   @Override
@@ -36,17 +34,15 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
         .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
     boolean orderForm = orderFormPersistencePort.existsActiveTemplateByStoreId(storeId);
     boolean notice = storeNoticePersistencePort.hasCompleteNotices(storeId);
-    boolean galleryReady =
-        !galleryItemPersistencePort.findVisibleByStoreId(storeId).isEmpty();
     boolean representativeReady =
         representativeImagePersistencePort.findActiveByStoreId(storeId).size() >= 3;
-    boolean photoRegistration = galleryReady && representativeReady;
+    boolean photoRegistration = representativeReady;
     boolean settlementAccount = "INPUT_COMPLETED".equals(store.getSettlementAccountStatus());
     boolean storeInfo = hasText(store.getAddress())
         && hasText(store.getBusinessHours())
         && hasText(store.getCancellationRefundPolicy());
     List<String> reasons = blockedReasons(
-        orderForm, notice, galleryReady, representativeReady, settlementAccount, storeId);
+        orderForm, notice, representativeReady, settlementAccount, storeId);
     int completedCount = (storeInfo ? 1 : 0)
         + (orderForm ? 1 : 0)
         + (notice ? 1 : 0)
@@ -69,7 +65,6 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
   private List<String> blockedReasons(
       boolean orderForm,
       boolean notice,
-      boolean galleryReady,
       boolean representativeReady,
       boolean settlementAccount,
       UUID storeId) {
@@ -83,9 +78,6 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
     if (weeklyPickupSettingPersistencePort.findAllByStoreId(storeId).stream()
         .noneMatch(setting -> setting.isEnabled())) {
       reasons.add("ENABLED_PICKUP_SETTING_REQUIRED");
-    }
-    if (!galleryReady) {
-      reasons.add("GALLERY_IMAGE_REQUIRED");
     }
     if (!representativeReady) {
       reasons.add("REPRESENTATIVE_IMAGES_REQUIRED");

@@ -4,11 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
+import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
@@ -29,10 +33,16 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
   private StoreNoticePersistencePort storeNoticePersistencePort;
 
   @Autowired
+  private RepresentativeImagePersistencePort representativeImagePersistencePort;
+
+  @Autowired
   private StoreService storeService;
 
   @Autowired
   private UserJpaRepository userJpaRepository;
+
+  @Autowired
+  private AssetJpaRepository assetJpaRepository;
 
   @Test
   @DisplayName("5개 공지가 모두 비공백일 때만 스토어 관리 공지 항목을 완료로 판단한다")
@@ -64,6 +74,28 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
 
     assertFalse(blankNotice);
     assertTrue(completedNotice);
+  }
+
+  @Test
+  @DisplayName("갤러리 이미지가 없어도 대표사진 3장 이상이면 사진 등록을 완료로 판단한다")
+  void completesPhotoRegistrationWithoutGalleryImage() {
+    StoreResult store = createStore();
+    for (int sortOrder = 0; sortOrder < 3; sortOrder++) {
+      Asset asset = assetJpaRepository.saveAndFlush(Asset.create(
+          UUID.randomUUID(),
+          store.ownerUserId(),
+          "representative-" + sortOrder + ".png",
+          "image/png",
+          1024,
+          "representative/" + UUID.randomUUID() + ".png"));
+      representativeImagePersistencePort.save(
+          StoreRepresentativeImage.create(store.id(), asset.getId(), sortOrder));
+    }
+
+    var status = storeManagementStatusQueryService.getStatus(store.id());
+
+    assertTrue(status.items().photoRegistration());
+    assertFalse(status.activationBlockedReasons().contains("GALLERY_IMAGE_REQUIRED"));
   }
 
   private StoreNotice notice(UUID storeId, StoreNoticeType type, String content) {

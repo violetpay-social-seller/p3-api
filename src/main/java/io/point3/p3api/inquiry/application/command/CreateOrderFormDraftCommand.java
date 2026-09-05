@@ -2,7 +2,6 @@ package io.point3.p3api.inquiry.application.command;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,7 +16,8 @@ public record CreateOrderFormDraftCommand(
     boolean noticeAgreed,
     boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
-    List<ReferenceAsset> startReferenceAssets) {
+    ReferenceAsset startReferenceAsset,
+    boolean startReferenceAssetProvided) {
 
   public CreateOrderFormDraftCommand(
       UUID storeId,
@@ -26,7 +26,8 @@ public record CreateOrderFormDraftCommand(
       LocalTime pickupTime,
       boolean noticeAgreed,
       List<FormAnswer> formAnswers,
-      List<ReferenceAsset> startReferenceAssets) {
+      ReferenceAsset startReferenceAsset,
+      boolean startReferenceAssetProvided) {
     this(
         storeId,
         orderFormTemplateId,
@@ -35,12 +36,12 @@ public record CreateOrderFormDraftCommand(
         noticeAgreed,
         false,
         formAnswers,
-        startReferenceAssets);
+        startReferenceAsset,
+        startReferenceAssetProvided);
   }
 
   public CreateOrderFormDraftCommand {
     formAnswers = List.copyOf(formAnswers);
-    startReferenceAssets = startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -48,19 +49,8 @@ public record CreateOrderFormDraftCommand(
     return List.copyOf(formAnswers);
   }
 
-  @Override
-  public List<ReferenceAsset> startReferenceAssets() {
-    return startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
-  }
-
-  public boolean hasStartReferenceAssets() {
-    return startReferenceAssets != null;
-  }
-
   public record FormAnswer(UUID optionGroupId, JsonNode value) {}
 
   public record ReferenceAsset(
-      @NotNull UUID assetId,
-      @NotNull OrderFormReferenceAssetSource source,
-      @Min(0) int sortOrder) {}
+      @NotNull UUID assetId, @NotNull OrderFormReferenceAssetSource source) {}
 }

@@ -65,19 +65,16 @@ public class OrderFormDraftService implements OrderFormDraftCreateUseCase {
 
   private static List<CreateOrderFormSubmissionCommand.ReferenceAsset>
       toSubmissionStartReferenceAssets(CreateOrderFormDraftCommand command) {
-    return command.startReferenceAssets().stream()
-        .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
-            asset.assetId(), asset.source(), asset.sortOrder()))
-        .toList();
+    if (command.startReferenceAsset() == null) {
+      return List.of();
+    }
+    return List.of(new CreateOrderFormSubmissionCommand.ReferenceAsset(
+        command.startReferenceAsset().assetId(), command.startReferenceAsset().source(), 0));
   }
 
   private void validateStartReferenceAssets(CreateOrderFormDraftCommand command) {
-    if (!command.hasStartReferenceAssets()) {
+    if (!command.startReferenceAssetProvided() || command.startReferenceAsset() == null) {
       return;
-    }
-
-    if (command.startReferenceAssets().isEmpty()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
     }
 
     orderFormReferenceAssetValidator.validate(

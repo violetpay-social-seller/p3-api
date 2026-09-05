@@ -65,11 +65,11 @@ public class OrderFormDraftController {
             .map(answer -> new CreateOrderFormDraftCommand.FormAnswer(
                 answer.optionGroupId(), objectMapper.valueToTree(answer.value())))
             .toList(),
-        request.startReferenceAssets() == null
+        request.startReferenceAsset() == null
             ? null
-            : request.startReferenceAssets().stream()
-                .map(asset -> new CreateOrderFormDraftCommand.ReferenceAsset(
-                    asset.assetId(), asset.source(), asset.sortOrder()))
-                .toList());
+            : new CreateOrderFormDraftCommand.ReferenceAsset(
+                request.startReferenceAsset().assetId(),
+                request.startReferenceAsset().source()),
+        request.startReferenceAssetProvided());
   }
 }

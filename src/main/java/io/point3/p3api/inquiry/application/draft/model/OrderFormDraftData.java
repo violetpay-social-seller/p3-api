@@ -19,7 +19,8 @@ public record OrderFormDraftData(
     boolean noticeAgreed,
     boolean cancellationRefundAgreed,
     List<FormAnswer> formAnswers,
-    List<ReferenceAsset> startReferenceAssets) {
+    ReferenceAsset startReferenceAsset,
+    boolean startReferenceAssetProvided) {
 
   public OrderFormDraftData(
       UUID storeId,
@@ -28,7 +29,8 @@ public record OrderFormDraftData(
       LocalTime pickupTime,
       boolean noticeAgreed,
       List<FormAnswer> formAnswers,
-      List<ReferenceAsset> startReferenceAssets) {
+      ReferenceAsset startReferenceAsset,
+      boolean startReferenceAssetProvided) {
     this(
         storeId,
         orderFormTemplateId,
@@ -37,12 +39,12 @@ public record OrderFormDraftData(
         noticeAgreed,
         false,
         formAnswers,
-        startReferenceAssets);
+        startReferenceAsset,
+        startReferenceAssetProvided);
   }
 
   public OrderFormDraftData {
     formAnswers = List.copyOf(formAnswers);
-    startReferenceAssets = startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
   }
 
   @Override
@@ -50,18 +52,9 @@ public record OrderFormDraftData(
     return List.copyOf(formAnswers);
   }
 
-  @Override
-  public List<ReferenceAsset> startReferenceAssets() {
-    return startReferenceAssets == null ? null : List.copyOf(startReferenceAssets);
-  }
-
-  public boolean hasStartReferenceAssets() {
-    return startReferenceAssets != null;
-  }
-
   public record FormAnswer(UUID optionGroupId, JsonNode value) {}
 
-  public record ReferenceAsset(UUID assetId, OrderFormReferenceAssetSource source, int sortOrder) {}
+  public record ReferenceAsset(UUID assetId, OrderFormReferenceAssetSource source) {}
 
   public static OrderFormDraftData from(CreateOrderFormDraftCommand command) {
     return new OrderFormDraftData(
@@ -74,11 +67,11 @@ public record OrderFormDraftData(
         command.formAnswers().stream()
             .map(answer -> new FormAnswer(answer.optionGroupId(), answer.value()))
             .toList(),
-        command.hasStartReferenceAssets()
-            ? command.startReferenceAssets().stream()
-                .map(
-                    asset -> new ReferenceAsset(asset.assetId(), asset.source(), asset.sortOrder()))
-                .toList()
-            : null);
+        command.startReferenceAsset() == null
+            ? null
+            : new ReferenceAsset(
+                command.startReferenceAsset().assetId(),
+                command.startReferenceAsset().source()),
+        command.startReferenceAssetProvided());
   }
 }

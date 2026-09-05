@@ -358,8 +358,9 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     orderStartReferenceAssetService.replaceIfPresent(
         fixture.inquiry().getId(),
         fixture.buyer().getId(),
-        List.of(new OrderFormDraftData.ReferenceAsset(
-            startReferenceAsset.getId(), OrderFormReferenceAssetSource.USER_UPLOAD, 0)));
+        new OrderFormDraftData.ReferenceAsset(
+            startReferenceAsset.getId(), OrderFormReferenceAssetSource.USER_UPLOAD),
+        true);
     SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
     orderConfirmationStateService.markBuyerViewed(
         fixture.inquiry().getId(),

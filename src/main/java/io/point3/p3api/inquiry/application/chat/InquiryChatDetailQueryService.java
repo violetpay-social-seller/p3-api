@@ -32,7 +32,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(owner.getId(), owner.getName()),
-        orderStartReferenceAssetService.findAllByInquiryId(inquiry.getId()),
+        orderStartReferenceAssetService.findByInquiryId(inquiry.getId()),
         inquiry.getBuyerLastReadAt(),
         inquiry.getSellerLastReadAt());
   }
@@ -46,7 +46,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
         inquiry,
         store,
         new InquiryChatDetail.Participant(buyer.getId(), buyer.getName()),
-        orderStartReferenceAssetService.findAllByInquiryId(inquiry.getId()),
+        orderStartReferenceAssetService.findByInquiryId(inquiry.getId()),
         inquiry.getSellerLastReadAt(),
         inquiry.getBuyerLastReadAt());
   }

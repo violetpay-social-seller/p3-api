@@ -89,6 +89,23 @@ class SendChatMessageServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("타임라인 응답은 오래된 이벤트부터 최신 이벤트 순서로 내려온다")
+  void returnsTimelineItemsInChronologicalOrder() {
+    Fixture fixture = prepareFixture("chat-timeline-order");
+
+    sendChatMessageService.execute(SendChatMessageCommand.of(
+        fixture.inquiry().getId(), fixture.buyer().getId(), "첫 번째 메시지", null));
+    sendChatMessageService.execute(SendChatMessageCommand.of(
+        fixture.inquiry().getId(), fixture.seller().getId(), "두 번째 메시지", null));
+
+    ChatTimelinePage page = chatTimelineQueryService.execute(
+        fixture.inquiry().getId(), new ChatTimelineQuery(null, null, 10));
+
+    assertEquals("첫 번째 메시지", page.items().get(0).content());
+    assertEquals("두 번째 메시지", page.items().get(1).content());
+  }
+
+  @Test
   @DisplayName("다른 사용자가 업로드한 Asset은 채팅 메시지에 첨부할 수 없다")
   void rejectsOtherUserAsset() {
     Fixture fixture = prepareFixture("chat-other-asset");

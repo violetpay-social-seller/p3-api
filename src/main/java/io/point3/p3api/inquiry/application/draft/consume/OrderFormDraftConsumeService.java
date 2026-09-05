@@ -51,7 +51,10 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
 
     validateStartReferenceAssets(draft, command.buyerUserId());
     orderStartReferenceAssetService.replaceIfPresent(
-        inquiry.getId(), command.buyerUserId(), draft.startReferenceAssets());
+        inquiry.getId(),
+        command.buyerUserId(),
+        draft.startReferenceAsset(),
+        draft.startReferenceAssetProvided());
 
     // 사전 제출 데이터를 주문서제출 커맨드와 매핑하여 주문서 생성
     OrderFormSubmission submission = orderFormSubmissionCreateUseCase.create(
@@ -86,24 +89,21 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(
             draft.cancellationRefundAgreed()),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets(),
-        !draft.hasStartReferenceAssets());
+        !draft.startReferenceAssetProvided());
   }
 
   private static List<CreateOrderFormSubmissionCommand.ReferenceAsset> toSubmissionReferenceAssets(
       OrderFormDraftData draft) {
-    return draft.startReferenceAssets().stream()
-        .map(asset -> new CreateOrderFormSubmissionCommand.ReferenceAsset(
-            asset.assetId(), asset.source(), asset.sortOrder()))
-        .toList();
+    if (draft.startReferenceAsset() == null) {
+      return List.of();
+    }
+    return List.of(new CreateOrderFormSubmissionCommand.ReferenceAsset(
+        draft.startReferenceAsset().assetId(), draft.startReferenceAsset().source(), 0));
   }
 
   private void validateStartReferenceAssets(OrderFormDraftData draft, UUID buyerUserId) {
-    if (!draft.hasStartReferenceAssets()) {
+    if (!draft.startReferenceAssetProvided() || draft.startReferenceAsset() == null) {
       return;
-    }
-
-    if (draft.startReferenceAssets().isEmpty()) {
-      throw new BaseException(OrderFormErrorCode.ORDER_FORM_FIELD_VALUE_INVALID);
     }
 
     orderFormReferenceAssetValidator.validate(

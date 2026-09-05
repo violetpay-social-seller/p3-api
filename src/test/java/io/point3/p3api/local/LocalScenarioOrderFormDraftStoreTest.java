@@ -45,7 +45,7 @@ class LocalScenarioOrderFormDraftStoreTest {
         LocalTime.of(14, 30),
         true,
         List.of(new OrderFormDraftData.FormAnswer(optionGroupId, TextNode.valueOf("cake"))),
-        List.of(new OrderFormDraftData.ReferenceAsset(
-            assetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
+        new OrderFormDraftData.ReferenceAsset(assetId, OrderFormReferenceAssetSource.STORE_GALLERY),
+        true);
   }
 }

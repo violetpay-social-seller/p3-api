@@ -13,6 +13,7 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,10 +53,12 @@ public class ChatTimelineQueryService implements ChatTimelineQueryUseCase {
             chatMessages.get(chatTimelineItem.getReferenceId()),
             chatMessageAssets.getOrDefault(chatTimelineItem.getReferenceId(), List.of())))
         .toList();
+    List<ChatTimelineItemResult> chronologicalItems = new ArrayList<>(items);
+    Collections.reverse(chronologicalItems);
 
     ChatTimelineItem lastItem = hasNext ? pageItems.getLast() : null;
     return new ChatTimelinePage(
-        items,
+        chronologicalItems,
         hasNext,
         lastItem == null ? null : lastItem.getCreatedAt(),
         lastItem == null ? null : lastItem.getId());

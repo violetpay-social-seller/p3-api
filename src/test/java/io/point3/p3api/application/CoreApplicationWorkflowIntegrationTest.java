@@ -11,6 +11,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQuery;
 import io.point3.p3api.chat.application.timeline.query.ChatTimelineQueryService;
@@ -96,7 +99,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.test.context.TestPropertySource;
 
+@TestPropertySource(properties = "p3.asset.delivery.base-url=https://assets.example.test")
 class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
@@ -155,6 +160,9 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
 
   @Autowired
   private GalleryItemJpaRepository galleryItemJpaRepository;
@@ -241,7 +249,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     CreateOrderFormDraftCommand draftCommand = new CreateOrderFormDraftCommand(
         fixture.store().id(),
         fixture.form().id(),
-        LocalDate.parse("2026-09-01"),
+        LocalDate.parse("2030-08-30"),
         LocalTime.parse("15:00"),
         true,
         List.of(
@@ -250,8 +258,9 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
                 selections(selection("menu").put("text", "바닐라 케이크"))),
             new CreateOrderFormDraftCommand.FormAnswer(
                 fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
-        List.of(new CreateOrderFormDraftCommand.ReferenceAsset(
-            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
+        new CreateOrderFormDraftCommand.ReferenceAsset(
+            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY),
+        true);
 
     OrderFormDraftResult draft = orderFormDraftService.create(draftCommand);
     OrderFormDraftData storedDraft =
@@ -269,7 +278,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertEquals(fixture.store().id(), storedDraft.storeId());
     assertEquals(
         "바닐라 케이크", storedDraft.formAnswers().get(0).value().get(0).get("text").asText());
-    assertEquals(galleryAssetId, storedDraft.startReferenceAssets().get(0).assetId());
+    assertEquals(galleryAssetId, storedDraft.startReferenceAsset().assetId());
     assertFalse(draftStorePort.findByDraftKey(draft.draftKey()).isPresent());
     assertEquals(InquiryStatus.WAITING, consumed.inquiry().getStatus());
     assertEquals(fixture.buyer().getId(), consumed.submission().getSubmittedBy());
@@ -278,8 +287,10 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertEquals(consumed.submission().getId(), persistedSubmissionEvent.getReferenceId());
 
     InquiryChatDetail chatDetail = inquiryChatDetailQueryService.getBuyerDetail(consumed.inquiry());
-    assertEquals(1, chatDetail.startReferenceAssets().size());
-    assertEquals(galleryAssetId, chatDetail.startReferenceAssets().get(0).assetId());
+    assertEquals(galleryAssetId, chatDetail.startReferenceAsset().assetId());
+    assertEquals(
+        "https://assets.example.test/processed/" + galleryAssetId + "/start-reference_640.webp",
+        chatDetail.startReferenceAsset().deliveryUrl());
   }
 
   @Test
@@ -291,12 +302,13 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     OrderFormDraftResult firstDraft = createDraft(
         fixture,
         "바닐라 케이크",
-        List.of(new CreateOrderFormDraftCommand.ReferenceAsset(
-            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)));
+        new CreateOrderFormDraftCommand.ReferenceAsset(
+            galleryAssetId, OrderFormReferenceAssetSource.STORE_GALLERY),
+        true);
     OrderFormDraftConsumeResult firstConsumed = orderFormDraftConsumeService.consume(
         new ConsumeOrderFormDraftCommand(firstDraft.draftKey(), fixture.buyer().getId()));
 
-    OrderFormDraftResult updateDraft = createDraft(fixture, "초코 케이크", null);
+    OrderFormDraftResult updateDraft = createDraft(fixture, "초코 케이크", null, false);
     OrderFormDraftConsumeResult updated = orderFormDraftConsumeService.consume(
         new ConsumeOrderFormDraftCommand(updateDraft.draftKey(), fixture.buyer().getId()));
     InquiryChatDetail chatDetail = inquiryChatDetailQueryService.getBuyerDetail(updated.inquiry());
@@ -304,8 +316,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         updated.inquiry().getId(), new ChatTimelineQuery(null, null, 10));
 
     assertEquals(firstConsumed.inquiry().getId(), updated.inquiry().getId());
-    assertEquals(1, chatDetail.startReferenceAssets().size());
-    assertEquals(galleryAssetId, chatDetail.startReferenceAssets().get(0).assetId());
+    assertEquals(galleryAssetId, chatDetail.startReferenceAsset().assetId());
     assertEquals(
         2,
         timelinePage.items().stream()
@@ -330,7 +341,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         () -> orderFormDraftService.create(new CreateOrderFormDraftCommand(
             fixture.store().id(),
             fixture.form().id(),
-            LocalDate.parse("2026-09-01"),
+            LocalDate.parse("2030-08-30"),
             LocalTime.parse("09:30"),
             true,
             List.of(
@@ -339,7 +350,8 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
                     selections(selection("menu").put("text", "바닐라 케이크"))),
                 new CreateOrderFormDraftCommand.FormAnswer(
                     fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
-            List.of())));
+            null,
+            false)));
 
     assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
   }
@@ -530,15 +542,17 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   private OrderFormDraftResult createDraft(
       Fixture fixture,
       String menuName,
-      List<CreateOrderFormDraftCommand.ReferenceAsset> startReferenceAssets) {
+      CreateOrderFormDraftCommand.ReferenceAsset startReferenceAsset,
+      boolean startReferenceAssetProvided) {
     return orderFormDraftService.create(new CreateOrderFormDraftCommand(
         fixture.store().id(),
         fixture.form().id(),
-        LocalDate.parse("2026-09-01"),
+        LocalDate.parse("2030-08-30"),
         LocalTime.parse("15:00"),
         true,
         draftAnswers(fixture.form(), menuName),
-        startReferenceAssets));
+        startReferenceAsset,
+        startReferenceAssetProvided));
   }
 
   private List<CreateOrderFormDraftCommand.FormAnswer> draftAnswers(
@@ -614,6 +628,14 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
         "image/png",
         1024,
         "original/" + UUID.randomUUID() + "/start-reference.png"));
+    assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset,
+        AssetVariantType.MEDIUM,
+        "processed/" + asset.getId() + "/start-reference_640.webp",
+        "image/webp",
+        640,
+        640,
+        512));
     StoreGalleryItem galleryItem = StoreGalleryItem.create(storeId, asset.getId(), 0);
     galleryItem.show();
     galleryItemJpaRepository.saveAndFlush(galleryItem);

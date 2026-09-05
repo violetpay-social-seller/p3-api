@@ -3,6 +3,7 @@ package io.point3.p3api.store.application.representative;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
+import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.store.application.port.StorePersistencePort;
@@ -18,6 +19,7 @@ import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
 import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -46,29 +48,25 @@ public class RepresentativeImageService
     assetVariantDeliveryService.validateReadyDelivery(command.assetId());
     StoreRepresentativeImage image =
         StoreRepresentativeImage.create(command.storeId(), command.assetId(), command.sortOrder());
-    return RepresentativeImageResult.from(representativeImagePersistencePort.save(image));
+    return toResult(representativeImagePersistencePort.save(image));
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<RepresentativeImageResult> getSellerImages(UUID storeId) {
-    return representativeImagePersistencePort.findAllByStoreId(storeId).stream()
-        .map(RepresentativeImageResult::from)
-        .toList();
+    return toResults(representativeImagePersistencePort.findAllByStoreId(storeId));
   }
 
   @Override
   @Transactional(readOnly = true)
   public RepresentativeImageResult getSellerImage(UUID storeId, UUID imageId) {
-    return RepresentativeImageResult.from(findImage(storeId, imageId));
+    return toResult(findImage(storeId, imageId));
   }
 
   @Override
   @Transactional(readOnly = true)
   public List<RepresentativeImageResult> getActiveImages(UUID storeId) {
-    return representativeImagePersistencePort.findActiveByStoreId(storeId).stream()
-        .map(RepresentativeImageResult::from)
-        .toList();
+    return toResults(representativeImagePersistencePort.findActiveByStoreId(storeId));
   }
 
   @Override
@@ -78,7 +76,7 @@ public class RepresentativeImageService
 
     image.changeSortOrder(command.sortOrder());
     changeStatus(store, image, command.status());
-    return RepresentativeImageResult.from(image);
+    return toResult(image);
   }
 
   @Override
@@ -118,6 +116,37 @@ public class RepresentativeImageService
     if (!store.getOwnerUserId().equals(asset.getUploadedBy())) {
       throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_ASSET_NOT_FOUND);
     }
+  }
+
+  private List<RepresentativeImageResult> toResults(List<StoreRepresentativeImage> images) {
+    if (images.isEmpty()) {
+      return List.of();
+    }
+
+    List<UUID> assetIds =
+        images.stream().map(StoreRepresentativeImage::getAssetId).distinct().toList();
+    Map<UUID, AssetVariantDelivery> deliveryByAssetId =
+        assetVariantDeliveryService.resolveReadyDeliveries(assetIds);
+
+    return images.stream()
+        .map(image -> toResult(image, deliveryByAssetId.get(image.getAssetId())))
+        .toList();
+  }
+
+  private RepresentativeImageResult toResult(StoreRepresentativeImage image) {
+    return toResults(List.of(image)).getFirst();
+  }
+
+  private RepresentativeImageResult toResult(
+      StoreRepresentativeImage image, AssetVariantDelivery delivery) {
+    AssetVariantDelivery safeDelivery = delivery == null ? AssetVariantDelivery.empty() : delivery;
+    return RepresentativeImageResult.from(
+        image,
+        safeDelivery.deliveryUrl(),
+        safeDelivery.variants().stream()
+            .map(variant -> new RepresentativeImageResult.Variant(
+                variant.type(), variant.deliveryUrl(), variant.width(), variant.height()))
+            .toList());
   }
 
   private void changeStatus(

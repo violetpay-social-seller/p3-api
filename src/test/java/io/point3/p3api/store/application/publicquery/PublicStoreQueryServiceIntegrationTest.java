@@ -76,6 +76,12 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(
         "https://assets.example.test/processed/ready_640.webp",
         result.representativeImages().getFirst().deliveryUrl());
+    assertEquals(1, result.representativeImages().getFirst().variants().size());
+    assertEquals(
+        "MEDIUM", result.representativeImages().getFirst().variants().getFirst().type());
+    assertEquals(
+        "https://assets.example.test/processed/ready_640.webp",
+        result.representativeImages().getFirst().variants().getFirst().deliveryUrl());
   }
 
   private User saveSeller() {

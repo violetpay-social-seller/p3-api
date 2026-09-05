@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -40,6 +41,23 @@ public class GlobalExceptionHandler {
 
     log.warn(
         "Validation exception. code={} ,title={} ,status={} ,type={}",
+        errorCode.getCode(),
+        errorCode.getTitle(),
+        errorCode.getStatus(),
+        errorCode.getType());
+
+    return ResponseEntity.status(errorCode.getStatus())
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleUnreadableMessageException(
+      HttpMessageNotReadableException e, HttpServletRequest request) {
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT;
+    String instance = request.getRequestURI();
+
+    log.warn(
+        "Unreadable message exception. code={} ,title={} ,status={} ,type={}",
         errorCode.getCode(),
         errorCode.getTitle(),
         errorCode.getStatus(),

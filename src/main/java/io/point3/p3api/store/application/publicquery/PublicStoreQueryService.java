@@ -81,7 +81,7 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
     return new PublicStoreResult(
         store.getId(),
         store.getProfileAssetId(),
-        deliveryUrl(profileAsset, deliveryByAssetId),
+        delivery(profileAsset, deliveryByAssetId).deliveryUrl(),
         store.getName(),
         store.getSlug(),
         store.getDescription(),
@@ -115,21 +115,27 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
     if (asset == null || asset.getStatus() == AssetStatus.DELETED) {
       return null;
     }
-    String deliveryUrl = deliveryUrl(asset, deliveryByAssetId);
-    if (deliveryUrl == null) {
+    AssetVariantDelivery delivery = delivery(asset, deliveryByAssetId);
+    if (!delivery.isReady()) {
       return null;
     }
     return new PublicRepresentativeImageResult(
-        image.getId(), image.getAssetId(), deliveryUrl, image.getSortOrder());
+        image.getId(),
+        image.getAssetId(),
+        delivery.deliveryUrl(),
+        image.getSortOrder(),
+        delivery.variants().stream()
+            .map(variant -> new PublicRepresentativeImageResult.Variant(
+                variant.type(), variant.deliveryUrl(), variant.width(), variant.height()))
+            .toList());
   }
 
-  private String deliveryUrl(Asset asset, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
+  private AssetVariantDelivery delivery(
+      Asset asset, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
     if (asset == null || asset.getStatus() == AssetStatus.DELETED) {
-      return null;
+      return AssetVariantDelivery.empty();
     }
-    return deliveryByAssetId
-        .getOrDefault(asset.getId(), AssetVariantDelivery.empty())
-        .deliveryUrl();
+    return deliveryByAssetId.getOrDefault(asset.getId(), AssetVariantDelivery.empty());
   }
 
   private void validateCursor(PublicStoreListQuery query) {

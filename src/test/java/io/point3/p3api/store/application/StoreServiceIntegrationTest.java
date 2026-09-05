@@ -45,7 +45,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 
+@TestPropertySource(properties = "p3.asset.delivery.base-url=https://assets.example.test")
 class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
@@ -134,6 +136,24 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
             new CreateRepresentativeImageCommand(store.id(), asset.getId(), 0)));
 
     assertEquals(AssetErrorCode.ASSET_VARIANT_NOT_READY, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("대표 이미지 응답은 processed variant delivery URL을 포함한다")
+  void createsRepresentativeImageWithDeliveryUrl() {
+    User seller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+    Asset asset = saveAsset(seller.getId(), 0);
+    AssetVariant variant = saveVariant(asset, 0);
+
+    RepresentativeImageResult result = representativeImageService.create(
+        new CreateRepresentativeImageCommand(store.id(), asset.getId(), 0));
+
+    String deliveryUrl = "https://assets.example.test/" + variant.getObjectKey();
+    assertEquals(1, result.variants().size());
+    assertEquals(deliveryUrl, result.deliveryUrl());
+    assertEquals("MEDIUM", result.variants().getFirst().type());
+    assertEquals(deliveryUrl, result.variants().getFirst().deliveryUrl());
   }
 
   @Test
@@ -269,8 +289,8 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         "original/" + UUID.randomUUID() + "/cake-" + sortOrder + ".png"));
   }
 
-  private void saveVariant(Asset asset, int sortOrder) {
-    assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+  private AssetVariant saveVariant(Asset asset, int sortOrder) {
+    return assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
         asset,
         AssetVariantType.MEDIUM,
         "processed/" + UUID.randomUUID() + "/cake-" + sortOrder + ".webp",

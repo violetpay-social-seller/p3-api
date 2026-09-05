@@ -1,6 +1,6 @@
 package io.point3.p3api.order.controller.response;
 
-import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmissionResult;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -18,17 +18,17 @@ public record OrderFormSubmissionResponse(
     boolean cancellationRefundAgreed,
     Instant submittedAt) {
 
-  public static OrderFormSubmissionResponse from(OrderFormSubmission submission) {
+  public static OrderFormSubmissionResponse from(OrderFormSubmissionResult submission) {
     return new OrderFormSubmissionResponse(
-        submission.getId(),
-        submission.getInquiryId(),
-        submission.getTemplateId(),
-        submission.getSubmittedBy(),
-        submission.getPickupDate(),
-        submission.getPickupTime(),
-        submission.getAnswers(),
-        submission.getReferenceAssets(),
-        submission.isCancellationRefundAgreed(),
-        submission.getSubmittedAt());
+        submission.id(),
+        submission.inquiryId(),
+        submission.templateId(),
+        submission.submittedBy(),
+        submission.pickupDate(),
+        submission.pickupTime(),
+        submission.answers(),
+        submission.referenceAssets(),
+        submission.cancellationRefundAgreed(),
+        submission.submittedAt());
   }
 }

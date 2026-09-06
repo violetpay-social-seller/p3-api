@@ -1,6 +1,7 @@
 package io.point3.p3api.store.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
@@ -26,6 +27,8 @@ import io.point3.p3api.store.application.representative.command.UpdateRepresenta
 import io.point3.p3api.store.application.representative.result.RepresentativeImageResult;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
+import io.point3.p3api.store.application.update.CompleteAccountRegistrationCommand;
+import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
@@ -102,6 +105,37 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         () -> storeService.create(createStoreCommand(seller.getId(), "다른 베이커리")));
 
     assertEquals(StoreErrorCode.STORE_ALREADY_EXISTS, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("매장 소개 전용 수정은 다른 스토어 기본 정보를 유지한다")
+  void updatesStoreDescriptionOnly() {
+    User seller = saveSeller();
+    StoreResult created = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+
+    StoreResult updated = storeService.updateDescription(
+        new UpdateStoreDescriptionCommand(created.id(), "새로운 매장 소개"));
+    Store persisted = storeJpaRepository.findById(created.id()).orElseThrow();
+
+    assertEquals("새로운 매장 소개", updated.description());
+    assertEquals("새로운 매장 소개", persisted.getDescription());
+    assertEquals(created.name(), persisted.getName());
+    assertEquals(created.address(), persisted.getAddress());
+  }
+
+  @Test
+  @DisplayName("계좌 등록 완료 처리는 스토어의 계좌 등록 상태와 완료 시각을 갱신한다")
+  void completesAccountRegistration() {
+    User seller = saveSeller();
+    StoreResult created = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+
+    StoreResult updated = storeService.completeAccountRegistration(
+        new CompleteAccountRegistrationCommand(created.id()));
+    Store persisted = storeJpaRepository.findById(created.id()).orElseThrow();
+
+    assertEquals("INPUT_COMPLETED", updated.settlementAccountStatus());
+    assertEquals("INPUT_COMPLETED", persisted.getSettlementAccountStatus());
+    assertNotNull(persisted.getSettlementAccountRegisteredAt());
   }
 
   @Test

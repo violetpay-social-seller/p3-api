@@ -41,7 +41,8 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
     boolean enabledPickupSetting = weeklyPickupSettingPersistencePort
         .findAllByStoreId(storeId).stream()
         .anyMatch(setting -> setting.isEnabled());
-    boolean storeInfo = hasText(store.getAddress())
+    boolean storeInfo = hasText(store.getDescription())
+        && hasText(store.getAddress())
         && hasText(store.getCancellationRefundPolicy())
         && enabledPickupSetting;
     List<String> reasons =

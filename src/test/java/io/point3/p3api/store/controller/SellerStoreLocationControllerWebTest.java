@@ -6,20 +6,25 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
-import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
 import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
+import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.location.command.SearchStoreLocationCommand;
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
 import io.point3.p3api.store.application.location.result.StoreLocationResult;
 import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
+import io.point3.p3api.store.application.refundpolicy.command.UpdateStoreRefundPolicyCommand;
+import io.point3.p3api.store.application.refundpolicy.query.StoreRefundPolicyQueryUseCase;
+import io.point3.p3api.store.application.refundpolicy.result.StoreRefundPolicyResult;
+import io.point3.p3api.store.application.refundpolicy.update.StoreRefundPolicyUpdateUseCase;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
@@ -40,6 +45,10 @@ class SellerStoreLocationControllerWebTest {
 
   private final StoreLocationSearchUseCase storeLocationSearchUseCase =
       mock(StoreLocationSearchUseCase.class);
+  private final StoreRefundPolicyQueryUseCase storeRefundPolicyQueryUseCase =
+      mock(StoreRefundPolicyQueryUseCase.class);
+  private final StoreRefundPolicyUpdateUseCase storeRefundPolicyUpdateUseCase =
+      mock(StoreRefundPolicyUpdateUseCase.class);
 
   private MockMvc mockMvc;
 
@@ -55,6 +64,8 @@ class SellerStoreLocationControllerWebTest {
         mock(StoreManagementStatusQueryUseCase.class),
         mock(StoreSettingQueryUseCase.class),
         mock(StoreSettingUpdateUseCase.class),
+        storeRefundPolicyQueryUseCase,
+        storeRefundPolicyUpdateUseCase,
         storeLocationSearchUseCase,
         new StoreWebProperties("https://p3.example.test"));
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
@@ -104,6 +115,56 @@ class SellerStoreLocationControllerWebTest {
         .andExpect(status().isBadRequest());
     mockMvc
         .perform(get("/seller/store/locations/search").param("query", "a".repeat(101)))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void getsRefundPolicy() throws Exception {
+    when(storeRefundPolicyQueryUseCase.getRefundPolicy(any()))
+        .thenReturn(new StoreRefundPolicyResult(List.of(
+            new StoreRefundPolicyResult.Rule(7, 100), new StoreRefundPolicyResult.Rule(5, 80))));
+
+    mockMvc
+        .perform(get("/seller/store/refund-policy"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.rules[0].daysBeforePickup").value(7))
+        .andExpect(jsonPath("$.data.rules[1].refundRate").value(80));
+  }
+
+  @Test
+  void updatesRefundPolicy() throws Exception {
+    when(storeRefundPolicyUpdateUseCase.updateRefundPolicy(any()))
+        .thenReturn(new StoreRefundPolicyResult(List.of(
+            new StoreRefundPolicyResult.Rule(7, 100), new StoreRefundPolicyResult.Rule(5, 80))));
+
+    mockMvc
+        .perform(
+            put("/seller/store/refund-policy").contentType("application/json").content("""
+                {"rules":[
+                  {"daysBeforePickup":7,"refundRate":100},
+                  {"daysBeforePickup":5,"refundRate":80}
+                ]}
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.rules[0].refundRate").value(100));
+
+    ArgumentCaptor<UpdateStoreRefundPolicyCommand> captor =
+        ArgumentCaptor.forClass(UpdateStoreRefundPolicyCommand.class);
+    verify(storeRefundPolicyUpdateUseCase).updateRefundPolicy(captor.capture());
+    assertEquals(
+        List.of(
+            new UpdateStoreRefundPolicyCommand.Rule(7, 100),
+            new UpdateStoreRefundPolicyCommand.Rule(5, 80)),
+        captor.getValue().rules());
+  }
+
+  @Test
+  void rejectsEmptyRefundPolicyRules() throws Exception {
+    mockMvc
+        .perform(put("/seller/store/refund-policy")
+            .contentType("application/json")
+            .content("{\"rules\":[]}"))
         .andExpect(status().isBadRequest());
   }
 

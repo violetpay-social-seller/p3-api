@@ -128,6 +128,10 @@ public class Store {
     this.businessHours = businessHours;
   }
 
+  public void updateCancellationRefundPolicy(String cancellationRefundPolicy) {
+    this.cancellationRefundPolicy = cancellationRefundPolicy;
+  }
+
   public void markSettlementAccountInputCompleted(Instant registeredAt) {
     Objects.requireNonNull(registeredAt, "registeredAt");
     this.settlementAccountStatus = "INPUT_COMPLETED";

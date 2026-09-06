@@ -1,5 +1,6 @@
 package io.point3.p3api.order.application.port;
 
+import io.point3.p3api.order.application.query.order.SellerOrderListQuery;
 import io.point3.p3api.order.application.result.OrderPickupDateCount;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
@@ -24,6 +25,9 @@ public interface OrderPersistencePort {
   List<Order> findAllByBuyerUserId(UUID buyerUserId);
 
   List<Order> findAllByStoreId(UUID storeId);
+
+  List<Order> findSellerOrders(
+      SellerOrderListQuery query, Instant startInclusive, Instant endExclusive);
 
   List<OrderPickupDateCount> countByStoreIdAndPickupAtBetween(
       UUID storeId, Instant fromInclusive, Instant toExclusive, Set<OrderStatus> statuses);

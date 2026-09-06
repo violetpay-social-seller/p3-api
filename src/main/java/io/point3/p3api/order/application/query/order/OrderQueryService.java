@@ -1,6 +1,7 @@
 package io.point3.p3api.order.application.query.order;
 
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
@@ -13,6 +14,8 @@ import io.point3.p3api.payment.application.result.PaymentAttemptResult;
 import io.point3.p3api.payment.application.result.RefundResult;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class OrderQueryService implements OrderQueryUseCase {
+  private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
+
   private final OrderPersistencePort orderPersistencePort;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
@@ -44,7 +49,16 @@ public class OrderQueryService implements OrderQueryUseCase {
 
   @Override
   public List<OrderResult> getSellerOrders(UUID storeId) {
-    return orderPersistencePort.findAllByStoreId(storeId).stream()
+    return getSellerOrders(SellerOrderListQuery.of(storeId, null, null, null, null));
+  }
+
+  @Override
+  public List<OrderResult> getSellerOrders(SellerOrderListQuery query) {
+    validateDateRange(query.startDate(), query.endDate());
+    Instant startInclusive = startInclusive(query.startDate());
+    Instant endExclusive = endExclusive(query.endDate());
+
+    return orderPersistencePort.findSellerOrders(query, startInclusive, endExclusive).stream()
         .map(OrderResult::from)
         .toList();
   }
@@ -69,5 +83,25 @@ public class OrderQueryService implements OrderQueryUseCase {
         .toList();
 
     return OrderDetailResult.of(OrderResult.from(order), paymentAttempt, refunds);
+  }
+
+  private void validateDateRange(LocalDate startDate, LocalDate endDate) {
+    if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+      throw new BaseException(CommonErrorCode.INVALID_INPUT, "startDate must not be after endDate");
+    }
+  }
+
+  private Instant startInclusive(LocalDate startDate) {
+    if (startDate == null) {
+      return null;
+    }
+    return startDate.atStartOfDay(KOREA_ZONE_ID).toInstant();
+  }
+
+  private Instant endExclusive(LocalDate endDate) {
+    if (endDate == null) {
+      return null;
+    }
+    return endDate.plusDays(1).atStartOfDay(KOREA_ZONE_ID).toInstant();
   }
 }

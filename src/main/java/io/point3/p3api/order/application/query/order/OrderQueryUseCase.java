@@ -12,5 +12,7 @@ public interface OrderQueryUseCase {
 
   List<OrderResult> getSellerOrders(UUID storeId);
 
+  List<OrderResult> getSellerOrders(SellerOrderListQuery query);
+
   OrderDetailResult getSellerOrder(UUID orderId, UUID storeId);
 }

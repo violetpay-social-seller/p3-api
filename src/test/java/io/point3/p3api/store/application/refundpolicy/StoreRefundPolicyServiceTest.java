@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.point3.p3api.exception.BaseException;
@@ -24,7 +25,8 @@ class StoreRefundPolicyServiceTest {
   private final StoreRefundPolicyPersistencePort refundPolicyPersistencePort =
       mock(StoreRefundPolicyPersistencePort.class);
   private final StoreRefundPolicyService service =
-      new StoreRefundPolicyService(storePersistencePort, refundPolicyPersistencePort);
+      new StoreRefundPolicyService(
+          storePersistencePort, refundPolicyPersistencePort, new StoreRefundPolicyTextFormatter());
 
   @Test
   void replacesPoliciesInRequestOrder() {
@@ -34,8 +36,8 @@ class StoreRefundPolicyServiceTest {
         List.of(
             new UpdateStoreRefundPolicyCommand.Rule(7, 100),
             new UpdateStoreRefundPolicyCommand.Rule(5, 80)));
-    when(storePersistencePort.findById(storeId))
-        .thenReturn(Optional.of(Store.create(UUID.randomUUID(), "스토어", "store")));
+    Store store = Store.create(UUID.randomUUID(), "스토어", "store");
+    when(storePersistencePort.findById(storeId)).thenReturn(Optional.of(store));
     when(refundPolicyPersistencePort.replaceAllByStoreId(eq(storeId), any()))
         .thenAnswer(invocation -> invocation.getArgument(1));
 
@@ -44,6 +46,10 @@ class StoreRefundPolicyServiceTest {
     assertEquals(
         List.of(new StoreRefundPolicyResult.Rule(7, 100), new StoreRefundPolicyResult.Rule(5, 80)),
         result.rules());
+    assertEquals(
+        "픽업일 7일 전까지 100% 환불, 픽업일 5일 전까지 80% 환불",
+        store.getCancellationRefundPolicy());
+    verify(storePersistencePort).save(store);
   }
 
   @Test

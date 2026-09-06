@@ -10,14 +10,20 @@ import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
+import io.point3.p3api.store.application.refundpolicy.command.UpdateStoreRefundPolicyCommand;
+import io.point3.p3api.store.application.refundpolicy.update.StoreRefundPolicyUpdateUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.domain.entity.StoreNotice;
 import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
+import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +43,12 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
 
   @Autowired
   private StoreService storeService;
+
+  @Autowired
+  private StoreRefundPolicyUpdateUseCase storeRefundPolicyUpdateUseCase;
+
+  @Autowired
+  private StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
 
   @Autowired
   private UserJpaRepository userJpaRepository;
@@ -96,6 +108,29 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
 
     assertTrue(status.items().photoRegistration());
     assertFalse(status.activationBlockedReasons().contains("GALLERY_IMAGE_REQUIRED"));
+  }
+
+  @Test
+  @DisplayName("환불정책 저장 뒤 주소와 활성 픽업 설정이 있으면 스토어 정보를 완료로 판단한다")
+  void completesStoreInfoAfterSavingRefundPolicy() {
+    StoreResult store = createStore();
+    weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
+        store.id(),
+        DayOfWeek.MONDAY,
+        LocalTime.of(10, 0),
+        LocalTime.of(18, 0),
+        null,
+        true)));
+
+    assertFalse(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
+
+    storeRefundPolicyUpdateUseCase.updateRefundPolicy(new UpdateStoreRefundPolicyCommand(
+        store.id(),
+        List.of(
+            new UpdateStoreRefundPolicyCommand.Rule(7, 100),
+            new UpdateStoreRefundPolicyCommand.Rule(5, 80))));
+
+    assertTrue(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
   }
 
   private StoreNotice notice(UUID storeId, StoreNoticeType type, String content) {

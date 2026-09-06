@@ -25,6 +25,7 @@ public class StoreRefundPolicyService
 
   private final StorePersistencePort storePersistencePort;
   private final StoreRefundPolicyPersistencePort storeRefundPolicyPersistencePort;
+  private final StoreRefundPolicyTextFormatter refundPolicyTextFormatter;
 
   @Override
   @Transactional(readOnly = true)
@@ -40,7 +41,7 @@ public class StoreRefundPolicyService
   @Override
   public StoreRefundPolicyResult updateRefundPolicy(UpdateStoreRefundPolicyCommand command) {
     validate(command);
-    requireStore(command.storeId());
+    Store store = requireStore(command.storeId());
     List<StoreRefundPolicy> policies = java.util.stream.IntStream.range(
             0, command.rules().size())
         .mapToObj(index -> {
@@ -51,6 +52,8 @@ public class StoreRefundPolicyService
         .toList();
     List<StoreRefundPolicy> saved =
         storeRefundPolicyPersistencePort.replaceAllByStoreId(command.storeId(), policies);
+    store.updateCancellationRefundPolicy(refundPolicyTextFormatter.format(command.rules()));
+    storePersistencePort.save(store);
     return new StoreRefundPolicyResult(saved.stream()
         .map(policy ->
             new StoreRefundPolicyResult.Rule(policy.getDaysBeforePickup(), policy.getRefundRate()))

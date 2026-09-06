@@ -1,21 +1,29 @@
 package io.point3.p3api.inquiry.application.list;
 
+import io.point3.p3api.chat.application.port.ChatMessagePort;
 import io.point3.p3api.chat.application.port.ChatTimelineItemPort;
+import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ChatErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.chat.InquiryChatDetailQueryUseCase;
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
+import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,7 +36,9 @@ public class InquiryListService implements InquiryListUseCase {
   private final InquiryPersistencePort inquiryPersistencePort;
   private final InquiryChatAccessService inquiryChatAccessService;
   private final InquiryChatDetailQueryUseCase inquiryChatDetailQueryUseCase;
+  private final ChatMessagePort chatMessagePort;
   private final ChatTimelineItemPort chatTimelineItemPort;
+  private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final Clock clock;
 
   @Override
@@ -60,9 +70,17 @@ public class InquiryListService implements InquiryListUseCase {
   @Transactional(readOnly = true)
   public List<InquiryListItem> getSellerInquiries(
       UUID storeId, UUID sellerUserId, InquiryStatus status, boolean unreadOnly) {
-    return inquiryPersistencePort.findAllByStoreId(storeId).stream()
+    List<Inquiry> inquiries = inquiryPersistencePort.findAllByStoreId(storeId).stream()
         .filter(inquiry -> isSellerListTarget(inquiry, status))
-        .map(inquiry -> toSellerItem(inquiry, sellerUserId))
+        .toList();
+    Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId =
+        latestEventByInquiryId(inquiries);
+    Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId =
+        latestSubmissionByInquiryId(inquiries);
+
+    return inquiries.stream()
+        .map(inquiry -> toSellerItem(
+            inquiry, sellerUserId, latestEventByInquiryId, latestSubmissionByInquiryId))
         .filter(item -> !unreadOnly || item.unreadCount() > 0)
         .sorted(byLatestEvent())
         .toList();
@@ -124,10 +142,21 @@ public class InquiryListService implements InquiryListUseCase {
         inquiry, buyerUserId, inquiry.getBuyerLastReadAt(), detail, inquiry.statusForBuyer());
   }
 
-  private InquiryListItem toSellerItem(Inquiry inquiry, UUID sellerUserId) {
+  private InquiryListItem toSellerItem(
+      Inquiry inquiry,
+      UUID sellerUserId,
+      Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId,
+      Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId) {
     InquiryChatDetail detail = inquiryChatDetailQueryUseCase.getSellerDetail(inquiry);
+    InquiryListItem.LatestEvent latestEvent = latestEventByInquiryId.get(inquiry.getId());
     return toItem(
-        inquiry, sellerUserId, inquiry.getSellerLastReadAt(), detail, inquiry.statusForSeller());
+        inquiry,
+        sellerUserId,
+        inquiry.getSellerLastReadAt(),
+        detail,
+        inquiry.statusForSeller(),
+        latestEvent,
+        latestSubmissionByInquiryId.get(inquiry.getId()));
   }
 
   private InquiryListItem toItem(
@@ -139,6 +168,94 @@ public class InquiryListService implements InquiryListUseCase {
     Instant latestEventAt = chatTimelineItemPort.findLatestCreatedAt(inquiry.getId());
     long unreadCount = chatTimelineItemPort.countUnread(inquiry.getId(), readerUserId, readAt);
     return InquiryListItem.from(inquiry, detail, status, unreadCount, latestEventAt);
+  }
+
+  private InquiryListItem toItem(
+      Inquiry inquiry,
+      UUID readerUserId,
+      Instant readAt,
+      InquiryChatDetail detail,
+      InquiryStatus status,
+      InquiryListItem.LatestEvent latestEvent,
+      InquiryListItem.LatestOrderFormSubmission latestOrderFormSubmission) {
+    long unreadCount = chatTimelineItemPort.countUnread(inquiry.getId(), readerUserId, readAt);
+    Instant latestEventAt = latestEvent == null ? null : latestEvent.createdAt();
+    return InquiryListItem.from(
+        inquiry,
+        detail,
+        status,
+        unreadCount,
+        latestEventAt,
+        latestEvent,
+        latestOrderFormSubmission);
+  }
+
+  private Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId(List<Inquiry> inquiries) {
+    List<ChatTimelineItem> latestItems =
+        chatTimelineItemPort.findLatestByInquiryIds(inquiryIds(inquiries));
+    Map<UUID, String> messageContentById = messageContentById(latestItems);
+
+    return latestItems.stream()
+        .collect(Collectors.toMap(
+            ChatTimelineItem::getInquiryId,
+            item -> latestEvent(item, messageContentById),
+            this::latestEvent));
+  }
+
+  private Map<UUID, String> messageContentById(List<ChatTimelineItem> latestItems) {
+    List<UUID> messageIds = latestItems.stream()
+        .filter(item -> item.getType() == ChatTimelineItemType.MESSAGE)
+        .map(ChatTimelineItem::getReferenceId)
+        .distinct()
+        .toList();
+
+    Map<UUID, String> messageContentById = new HashMap<>();
+    chatMessagePort
+        .findAllById(messageIds)
+        .forEach(message -> messageContentById.put(message.getId(), message.getContent()));
+    return messageContentById;
+  }
+
+  private InquiryListItem.LatestEvent latestEvent(
+      ChatTimelineItem item, Map<UUID, String> messageContentById) {
+    return new InquiryListItem.LatestEvent(
+        item.getId(),
+        item.getReferenceId(),
+        item.getType(),
+        item.getSenderUserId(),
+        messageContentById.get(item.getReferenceId()),
+        item.getCreatedAt());
+  }
+
+  private InquiryListItem.LatestEvent latestEvent(
+      InquiryListItem.LatestEvent first, InquiryListItem.LatestEvent second) {
+    if (first.createdAt().equals(second.createdAt())) {
+      return first.eventId().compareTo(second.eventId()) >= 0 ? first : second;
+    }
+    return first.createdAt().isAfter(second.createdAt()) ? first : second;
+  }
+
+  private Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId(
+      List<Inquiry> inquiries) {
+    return orderFormSubmissionPersistencePort.findLatestByInquiryIds(inquiryIds(inquiries)).stream()
+        .collect(Collectors.toMap(
+            OrderFormSubmission::getInquiryId,
+            submission -> new InquiryListItem.LatestOrderFormSubmission(
+                submission.getId(), submission.getSubmittedAt()),
+            this::latestSubmission));
+  }
+
+  private InquiryListItem.LatestOrderFormSubmission latestSubmission(
+      InquiryListItem.LatestOrderFormSubmission first,
+      InquiryListItem.LatestOrderFormSubmission second) {
+    if (first.submittedAt().equals(second.submittedAt())) {
+      return first.submissionId().compareTo(second.submissionId()) >= 0 ? first : second;
+    }
+    return first.submittedAt().isAfter(second.submittedAt()) ? first : second;
+  }
+
+  private List<UUID> inquiryIds(List<Inquiry> inquiries) {
+    return inquiries.stream().map(Inquiry::getId).toList();
   }
 
   private boolean isBuyerListTarget(Inquiry inquiry, InquiryStatus status) {

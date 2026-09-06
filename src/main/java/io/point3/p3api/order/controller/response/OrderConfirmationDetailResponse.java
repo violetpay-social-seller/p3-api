@@ -1,8 +1,10 @@
 package io.point3.p3api.order.controller.response;
 
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderConfirmationDetailResponse(
@@ -16,6 +18,7 @@ public record OrderConfirmationDetailResponse(
     String storeNameSnapshot,
     String orderSummary,
     String additionalItems,
+    List<OrderOptionRowResponse> optionRows,
     String sellerNote,
     OrderConfirmationStatus status,
     Instant sentAt,
@@ -24,7 +27,12 @@ public record OrderConfirmationDetailResponse(
     UUID replacedByConfirmationId,
     Instant createdAt) {
 
-  public static OrderConfirmationDetailResponse from(OrderConfirmation confirmation) {
+  public OrderConfirmationDetailResponse {
+    optionRows = List.copyOf(optionRows);
+  }
+
+  public static OrderConfirmationDetailResponse from(
+      OrderConfirmation confirmation, OrderOptionRowResolver optionRowResolver) {
     return new OrderConfirmationDetailResponse(
         confirmation.getId(),
         confirmation.getInquiryId(),
@@ -36,6 +44,9 @@ public record OrderConfirmationDetailResponse(
         confirmation.getStoreNameSnapshot(),
         confirmation.getOrderSummary(),
         confirmation.getAdditionalItems(),
+        optionRowResolver.fromConfirmation(confirmation).stream()
+            .map(OrderOptionRowResponse::from)
+            .toList(),
         confirmation.getSellerNote(),
         confirmation.getStatus(),
         confirmation.getSentAt(),
@@ -43,5 +54,10 @@ public record OrderConfirmationDetailResponse(
         confirmation.getBuyerViewedAt(),
         confirmation.getReplacedByConfirmationId(),
         confirmation.getCreatedAt());
+  }
+
+  @Override
+  public List<OrderOptionRowResponse> optionRows() {
+    return List.copyOf(optionRows);
   }
 }

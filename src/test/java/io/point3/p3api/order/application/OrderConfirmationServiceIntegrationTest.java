@@ -21,10 +21,12 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.query.OrderConfirmationPreview;
 import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
+import io.point3.p3api.order.controller.response.OrderConfirmationResponse;
 import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
@@ -92,6 +94,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private ObjectMapper objectMapper;
 
+  @Autowired
+  private OrderOptionRowResolver orderOptionRowResolver;
+
   @Test
   @DisplayName("주문확인서 전송은 스토어명과 주문서 스냅샷을 저장하고 타임라인 카드를 기록한다")
   void sendsOrderConfirmationWithSubmissionSnapshotAndTimelineItem() throws Exception {
@@ -140,6 +145,18 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals("토핑", additionalItems.get(0).get("label").asText());
     assertEquals("딸기", additionalItems.get(0).get("value").asText());
     assertEquals(3000, additionalItems.get(0).get("amount").asInt());
+    OrderConfirmationResponse response =
+        OrderConfirmationResponse.from(result, orderOptionRowResolver);
+    assertEquals(3, response.optionRows().size());
+    assertEquals("메뉴명", response.optionRows().get(0).label());
+    assertEquals("초코 케이크", response.optionRows().get(0).value());
+    assertEquals(0L, response.optionRows().get(0).amount());
+    assertEquals("사이즈", response.optionRows().get(1).label());
+    assertEquals("10호", response.optionRows().get(1).value());
+    assertEquals(38000L, response.optionRows().get(1).amount());
+    assertEquals("토핑", response.optionRows().get(2).label());
+    assertEquals("딸기", response.optionRows().get(2).value());
+    assertEquals(3000L, response.optionRows().get(2).amount());
     assertEquals(ChatTimelineItemType.ORDER_CONFIRMATION, timelineItem.getType());
     assertEquals(persisted.getId(), timelineItem.getReferenceId());
     assertEquals(

@@ -2,8 +2,11 @@ package io.point3.p3api.order.application.query.order;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
+import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.application.result.OrderDetailResult;
 import io.point3.p3api.order.application.result.OrderResult;
@@ -29,6 +32,8 @@ public class OrderQueryService implements OrderQueryUseCase {
   private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
   private final OrderPersistencePort orderPersistencePort;
+  private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
+  private final OrderOptionRowResolver orderOptionRowResolver;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
   private final Clock clock;
@@ -81,8 +86,16 @@ public class OrderQueryService implements OrderQueryUseCase {
     List<RefundResult> refunds = refundPersistencePort.findAllByOrderId(order.getId()).stream()
         .map(RefundResult::from)
         .toList();
+    var confirmation = orderConfirmationPersistencePort
+        .findById(order.getConfirmationId())
+        .orElseThrow(
+            () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
 
-    return OrderDetailResult.of(OrderResult.from(order), paymentAttempt, refunds);
+    return OrderDetailResult.of(
+        OrderResult.from(order),
+        paymentAttempt,
+        refunds,
+        orderOptionRowResolver.fromConfirmation(confirmation));
   }
 
   private void validateDateRange(LocalDate startDate, LocalDate endDate) {

@@ -1,11 +1,13 @@
 package io.point3.p3api.order.controller.response;
 
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult.ChatTimelineItemSnapshot;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult.OrderConfirmationSnapshot;
 import io.point3.p3api.order.domain.type.OrderConfirmationStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderConfirmationResponse(
@@ -19,6 +21,7 @@ public record OrderConfirmationResponse(
     String storeNameSnapshot,
     String orderSummary,
     String additionalItems,
+    List<OrderOptionRowResponse> optionRows,
     String sellerNote,
     OrderConfirmationStatus status,
     Instant sentAt,
@@ -26,7 +29,12 @@ public record OrderConfirmationResponse(
     ChatTimelineItemType timelineEventType,
     Instant timelineEventCreatedAt) {
 
-  public static OrderConfirmationResponse from(SendOrderConfirmationResult result) {
+  public OrderConfirmationResponse {
+    optionRows = List.copyOf(optionRows);
+  }
+
+  public static OrderConfirmationResponse from(
+      SendOrderConfirmationResult result, OrderOptionRowResolver optionRowResolver) {
     OrderConfirmationSnapshot confirmation = result.orderConfirmation();
     ChatTimelineItemSnapshot timelineItem = result.chatTimelineItem();
 
@@ -41,11 +49,21 @@ public record OrderConfirmationResponse(
         confirmation.storeNameSnapshot(),
         confirmation.orderSummary(),
         confirmation.additionalItems(),
+        optionRowResolver
+            .fromConfirmation(confirmation.orderSummary(), confirmation.additionalItems())
+            .stream()
+            .map(OrderOptionRowResponse::from)
+            .toList(),
         confirmation.sellerNote(),
         confirmation.status(),
         confirmation.sentAt(),
         timelineItem.id(),
         timelineItem.type(),
         timelineItem.createdAt());
+  }
+
+  @Override
+  public List<OrderOptionRowResponse> optionRows() {
+    return List.copyOf(optionRows);
   }
 }

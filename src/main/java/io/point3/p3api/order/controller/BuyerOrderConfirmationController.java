@@ -4,6 +4,7 @@ import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.web.response.ApiResponse;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
 import io.point3.p3api.order.application.state.OrderConfirmationStateUseCase;
 import io.point3.p3api.order.controller.response.OrderConfirmationDetailResponse;
@@ -23,6 +24,7 @@ public class BuyerOrderConfirmationController {
 
   private final OrderConfirmationQueryUseCase orderConfirmationQueryUseCase;
   private final OrderConfirmationStateUseCase orderConfirmationStateUseCase;
+  private final OrderOptionRowResolver orderOptionRowResolver;
 
   @GetMapping
   public ApiResponse<List<OrderConfirmationDetailResponse>> getHistory(
@@ -30,7 +32,8 @@ public class BuyerOrderConfirmationController {
     RoleGuard.requireBuyer(currentUser);
     return ApiResponse.ok(
         orderConfirmationQueryUseCase.getBuyerHistory(inquiryId, currentUser.userId()).stream()
-            .map(OrderConfirmationDetailResponse::from)
+            .map(confirmation ->
+                OrderConfirmationDetailResponse.from(confirmation, orderOptionRowResolver))
             .toList());
   }
 
@@ -41,9 +44,10 @@ public class BuyerOrderConfirmationController {
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
 
-    return ApiResponse.ok(
-        OrderConfirmationDetailResponse.from(orderConfirmationQueryUseCase.getBuyerConfirmation(
-            inquiryId, confirmationId, currentUser.userId())));
+    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
+        orderConfirmationQueryUseCase.getBuyerConfirmation(
+            inquiryId, confirmationId, currentUser.userId()),
+        orderOptionRowResolver));
   }
 
   @PatchMapping("/{confirmationId}/viewed")
@@ -52,9 +56,10 @@ public class BuyerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(
-        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.markBuyerViewed(
-            inquiryId, confirmationId, currentUser.userId())));
+    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
+        orderConfirmationStateUseCase.markBuyerViewed(
+            inquiryId, confirmationId, currentUser.userId()),
+        orderOptionRowResolver));
   }
 
   @PatchMapping("/{confirmationId}/revision")
@@ -63,8 +68,9 @@ public class BuyerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(
-        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.requestRevision(
-            inquiryId, confirmationId, currentUser.userId())));
+    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
+        orderConfirmationStateUseCase.requestRevision(
+            inquiryId, confirmationId, currentUser.userId()),
+        orderOptionRowResolver));
   }
 }

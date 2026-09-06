@@ -14,6 +14,7 @@ import io.point3.p3api.order.application.state.OrderStateUseCase;
 import io.point3.p3api.order.application.state.RefundOrderCommand;
 import io.point3.p3api.order.application.state.RequestOrderCancelCommand;
 import io.point3.p3api.order.controller.request.OrderCancelRequest;
+import io.point3.p3api.order.controller.request.SellerOrderRefundRequest;
 import io.point3.p3api.order.controller.response.OrderCalendarResponse;
 import io.point3.p3api.order.controller.response.OrderDetailResponse;
 import io.point3.p3api.order.controller.response.OrderListItemResponse;
@@ -124,9 +125,13 @@ public class OrderController {
       @PathVariable UUID orderId,
       @CurrentStoreId UUID storeId,
       @Authenticated CurrentUser currentUser,
-      @Valid @RequestBody OrderCancelRequest request) {
+      @RequestBody(required = false) SellerOrderRefundRequest request) {
     RoleGuard.requireSeller(currentUser);
     return ApiResponse.ok(OrderDetailResponse.from(orderStateUseCase.refund(
-        RefundOrderCommand.of(orderId, storeId, currentUser.userId(), request.reason()))));
+        RefundOrderCommand.of(orderId, storeId, currentUser.userId(), refundReason(request)))));
+  }
+
+  private String refundReason(SellerOrderRefundRequest request) {
+    return request == null ? null : request.reason();
   }
 }

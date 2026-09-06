@@ -133,6 +133,11 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(1, buyerDetail.refunds().size());
     assertEquals(RefundStatus.COMPLETED, buyerDetail.refunds().get(0).status());
     assertEquals(fixture.order().getId(), sellerDetail.order().id());
+    assertEquals(2, sellerDetail.optionRows().size());
+    assertEquals("메뉴명", sellerDetail.optionRows().get(0).label());
+    assertEquals("초코 케이크", sellerDetail.optionRows().get(0).value());
+    assertEquals("토핑", sellerDetail.optionRows().get(1).label());
+    assertEquals("딸기", sellerDetail.optionRows().get(1).value());
   }
 
   @Test
@@ -171,6 +176,19 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
             .stream()
             .filter(notification -> notification.getType() == NotificationType.ORDER_REFUNDED)
             .count());
+  }
+
+  @Test
+  @DisplayName("판매자 환불은 사유가 없으면 기본 사유로 처리한다")
+  void refundsWithDefaultReason() {
+    Fixture fixture = prepareFixture("order-refund-default");
+
+    OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), null));
+
+    assertEquals(OrderStatus.REFUNDED, refunded.order().status());
+    assertEquals("판매자 환불 처리", refunded.order().cancelReason());
+    assertEquals("판매자 환불 처리", refunded.refunds().getFirst().reason());
   }
 
   @Test
@@ -242,8 +260,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         41000,
         Instant.parse("2026-09-01T04:00:00Z"),
         "주문 테스트 스토어",
-        null,
-        null,
+        "{\"answers\":[{\"label\":\"메뉴명\","
+            + "\"selectedOptions\":[{\"label\":\"초코 케이크\",\"price\":0}]}]}",
+        "[{\"label\":\"토핑\",\"value\":\"딸기\",\"amount\":3000}]",
         "픽업 전 연락");
     confirmation.sent(Instant.parse("2026-08-30T01:00:00Z"));
     confirmation.markPaid();

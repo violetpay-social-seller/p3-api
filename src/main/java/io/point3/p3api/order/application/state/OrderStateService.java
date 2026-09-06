@@ -1,6 +1,7 @@
 package io.point3.p3api.order.application.state;
 
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
@@ -9,6 +10,8 @@ import io.point3.p3api.notification.application.create.CreateNotificationCommand
 import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
 import io.point3.p3api.notification.domain.type.NotificationReferenceType;
 import io.point3.p3api.notification.domain.type.NotificationType;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
+import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.application.port.OrderStatusHistoryPersistencePort;
 import io.point3.p3api.order.application.result.OrderDetailResult;
@@ -42,7 +45,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderStateService implements OrderStateUseCase {
 
   private final OrderPersistencePort orderPersistencePort;
+  private final OrderConfirmationPersistencePort orderConfirmationPersistencePort;
   private final OrderStatusHistoryPersistencePort orderStatusHistoryPersistencePort;
+  private final OrderOptionRowResolver orderOptionRowResolver;
   private final InquiryPersistencePort inquiryPersistencePort;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
@@ -167,8 +172,15 @@ public class OrderStateService implements OrderStateUseCase {
     List<RefundResult> refunds = refundPersistencePort.findAllByOrderId(order.getId()).stream()
         .map(RefundResult::from)
         .toList();
+    var confirmation = orderConfirmationPersistencePort
+        .findById(order.getConfirmationId())
+        .orElseThrow(
+            () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
 
     return OrderDetailResult.of(
-        OrderResult.from(order), PaymentAttemptResult.from(paymentAttempt, now), refunds);
+        OrderResult.from(order),
+        PaymentAttemptResult.from(paymentAttempt, now),
+        refunds,
+        orderOptionRowResolver.fromConfirmation(confirmation));
   }
 }

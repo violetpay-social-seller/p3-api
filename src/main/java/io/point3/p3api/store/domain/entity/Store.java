@@ -48,8 +48,7 @@ public class Store {
   @JdbcTypeCode(SqlTypes.JSON)
   private String snsLinks;
 
-  @Column(name = "business_hours", columnDefinition = "jsonb")
-  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "business_hours", columnDefinition = "text")
   private String businessHours;
 
   @Column(name = "pickup_settings", columnDefinition = "jsonb")
@@ -110,7 +109,6 @@ public class Store {
       String contact,
       boolean contactVisible,
       String snsLinks,
-      String businessHours,
       String address) {
     Objects.requireNonNull(name, "name");
 
@@ -119,12 +117,15 @@ public class Store {
     this.contact = contact;
     this.contactVisible = contactVisible;
     this.snsLinks = snsLinks;
-    this.businessHours = businessHours;
     this.address = address;
   }
 
   public void updatePickupSettings(String pickupSettings) {
     this.pickupSettings = pickupSettings;
+  }
+
+  public void updateBusinessHours(String businessHours) {
+    this.businessHours = businessHours;
   }
 
   public void markSettlementAccountInputCompleted(Instant registeredAt) {

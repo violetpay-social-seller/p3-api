@@ -46,8 +46,10 @@ public record StoreSettingResponse(
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      int dailyOrderCapacity,
-      boolean enabled) {
+      Integer dailyOrderCapacity,
+      boolean enabled,
+      LocalTime breakStartTime,
+      LocalTime breakEndTime) {
 
     private static WeeklyPickupSettingResponse from(
         StoreSettingResult.WeeklyPickupSetting setting) {
@@ -56,7 +58,9 @@ public record StoreSettingResponse(
           setting.startTime(),
           setting.endTime(),
           setting.dailyOrderCapacity(),
-          setting.enabled());
+          setting.enabled(),
+          setting.breakStartTime(),
+          setting.breakEndTime());
     }
   }
 }

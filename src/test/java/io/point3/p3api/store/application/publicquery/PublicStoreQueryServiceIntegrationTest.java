@@ -14,12 +14,17 @@ import io.point3.p3api.store.application.publicquery.result.PublicStoreResult;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
+import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.infrastructure.persistence.RepresentativeImageJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,6 +55,9 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private RepresentativeImageJpaRepository representativeImageJpaRepository;
 
+  @Autowired
+  private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
+
   @Test
   @DisplayName("공개 스토어 조회는 READY processed variant URL만 응답한다")
   void getsPublicStoreWithReadyProcessedDeliveryUrls() {
@@ -57,6 +65,7 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
     Asset profileAsset = saveAsset(seller.getId(), "original/profile.png");
     saveVariant(profileAsset, "processed/profile_640.webp");
     StoreResult store = createStore(seller.getId(), profileAsset.getId());
+    saveWeeklyPickupSettings(store.id());
     activate(store.id());
 
     Asset readyRepresentativeAsset = saveAsset(seller.getId(), "original/ready.png");
@@ -82,6 +91,7 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(
         "https://assets.example.test/processed/ready_640.webp",
         result.representativeImages().getFirst().variants().getFirst().deliveryUrl());
+    assertEquals("화~일 9:00~20:00 · 월 휴무 · 휴게시간 12:00~13:00", result.businessHours());
   }
 
   private User saveSeller() {
@@ -122,5 +132,29 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
   private void saveVariant(Asset asset, String objectKey) {
     assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
         asset, AssetVariantType.MEDIUM, objectKey, "image/webp", 640, 640, 512));
+  }
+
+  private void saveWeeklyPickupSettings(UUID storeId) {
+    storeWeeklyPickupSettingJpaRepository.saveAllAndFlush(List.of(
+        weeklyPickupSetting(storeId, DayOfWeek.MONDAY, false),
+        weeklyPickupSetting(storeId, DayOfWeek.TUESDAY, true),
+        weeklyPickupSetting(storeId, DayOfWeek.WEDNESDAY, true),
+        weeklyPickupSetting(storeId, DayOfWeek.THURSDAY, true),
+        weeklyPickupSetting(storeId, DayOfWeek.FRIDAY, true),
+        weeklyPickupSetting(storeId, DayOfWeek.SATURDAY, true),
+        weeklyPickupSetting(storeId, DayOfWeek.SUNDAY, true)));
+  }
+
+  private StoreWeeklyPickupSetting weeklyPickupSetting(
+      UUID storeId, DayOfWeek dayOfWeek, boolean enabled) {
+    return StoreWeeklyPickupSetting.create(
+        storeId,
+        dayOfWeek,
+        LocalTime.of(9, 0),
+        LocalTime.of(20, 0),
+        10,
+        LocalTime.of(12, 0),
+        LocalTime.of(13, 0),
+        enabled);
   }
 }

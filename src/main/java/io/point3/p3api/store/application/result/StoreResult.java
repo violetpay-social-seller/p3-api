@@ -24,7 +24,7 @@ public record StoreResult(
     Instant createdAt,
     Instant updatedAt) {
 
-  public static StoreResult from(Store store) {
+  public static StoreResult from(Store store, String businessHours) {
     return new StoreResult(
         store.getId(),
         store.getOwnerUserId(),
@@ -35,7 +35,7 @@ public record StoreResult(
         store.getContact(),
         store.isContactVisible(),
         store.getSnsLinks(),
-        store.getBusinessHours(),
+        businessHours,
         store.getPickupSettings(),
         store.getAddress(),
         store.getSettlementAccountStatus(),

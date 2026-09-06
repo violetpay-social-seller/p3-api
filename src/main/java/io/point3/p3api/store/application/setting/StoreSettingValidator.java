@@ -38,7 +38,8 @@ public class StoreSettingValidator {
           || !isHalfHourly(setting.startTime())
           || !isHalfHourly(setting.endTime())
           || !setting.startTime().isBefore(setting.endTime())
-          || setting.dailyOrderCapacity() <= 0) {
+          || (setting.dailyOrderCapacity() != null && setting.dailyOrderCapacity() <= 0)
+          || !hasValidBreakTime(setting)) {
         throw new BaseException(CommonErrorCode.INVALID_INPUT);
       }
     }
@@ -55,5 +56,19 @@ public class StoreSettingValidator {
 
   private boolean isHalfHourly(LocalTime time) {
     return time.getMinute() % 30 == 0 && time.getSecond() == 0 && time.getNano() == 0;
+  }
+
+  private boolean hasValidBreakTime(UpdateStoreSettingCommand.WeeklyPickupSetting setting) {
+    if (setting.breakStartTime() == null && setting.breakEndTime() == null) {
+      return true;
+    }
+    if (setting.breakStartTime() == null || setting.breakEndTime() == null) {
+      return false;
+    }
+    return isHalfHourly(setting.breakStartTime())
+        && isHalfHourly(setting.breakEndTime())
+        && setting.breakStartTime().isBefore(setting.breakEndTime())
+        && !setting.breakStartTime().isBefore(setting.startTime())
+        && !setting.breakEndTime().isAfter(setting.endTime());
   }
 }

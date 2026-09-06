@@ -37,8 +37,8 @@ public record StoreOrderSettingAvailabilityResponse(
       boolean available,
       boolean holiday,
       List<LocalTime> pickupSlots,
-      int dailyOrderCapacity,
-      int remainingOrderCapacity,
+      Integer dailyOrderCapacity,
+      Integer remainingOrderCapacity,
       Instant cancellationCutoffAt) {
 
     public DateAvailabilityResponse {

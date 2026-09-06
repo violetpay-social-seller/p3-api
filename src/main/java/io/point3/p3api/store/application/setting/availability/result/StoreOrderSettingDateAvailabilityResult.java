@@ -10,8 +10,8 @@ public record StoreOrderSettingDateAvailabilityResult(
     boolean available,
     boolean holiday,
     List<LocalTime> pickupSlots,
-    int dailyOrderCapacity,
-    int remainingOrderCapacity,
+    Integer dailyOrderCapacity,
+    Integer remainingOrderCapacity,
     Instant cancellationCutoffAt) {
 
   public StoreOrderSettingDateAvailabilityResult {
@@ -23,8 +23,8 @@ public record StoreOrderSettingDateAvailabilityResult(
       boolean available,
       boolean holiday,
       List<LocalTime> pickupSlots,
-      int dailyOrderCapacity,
-      int remainingOrderCapacity,
+      Integer dailyOrderCapacity,
+      Integer remainingOrderCapacity,
       Instant cancellationCutoffAt) {
     return new StoreOrderSettingDateAvailabilityResult(
         date,

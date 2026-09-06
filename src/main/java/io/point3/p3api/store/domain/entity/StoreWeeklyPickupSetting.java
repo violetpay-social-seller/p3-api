@@ -42,8 +42,14 @@ public class StoreWeeklyPickupSetting {
   @Column(name = "end_time", nullable = false)
   private LocalTime endTime;
 
-  @Column(name = "daily_order_capacity", nullable = false)
-  private int dailyOrderCapacity;
+  @Column(name = "daily_order_capacity")
+  private Integer dailyOrderCapacity;
+
+  @Column(name = "break_start_time")
+  private LocalTime breakStartTime;
+
+  @Column(name = "break_end_time")
+  private LocalTime breakEndTime;
 
   @Column(nullable = false)
   private boolean enabled;
@@ -61,13 +67,17 @@ public class StoreWeeklyPickupSetting {
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      int dailyOrderCapacity,
+      Integer dailyOrderCapacity,
+      LocalTime breakStartTime,
+      LocalTime breakEndTime,
       boolean enabled) {
     this.storeId = storeId;
     this.dayOfWeek = dayOfWeek;
     this.startTime = startTime;
     this.endTime = endTime;
     this.dailyOrderCapacity = dailyOrderCapacity;
+    this.breakStartTime = breakStartTime;
+    this.breakEndTime = breakEndTime;
     this.enabled = enabled;
   }
 
@@ -76,7 +86,9 @@ public class StoreWeeklyPickupSetting {
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      int dailyOrderCapacity,
+      Integer dailyOrderCapacity,
+      LocalTime breakStartTime,
+      LocalTime breakEndTime,
       boolean enabled) {
     Objects.requireNonNull(storeId, "storeId");
     Objects.requireNonNull(dayOfWeek, "dayOfWeek");
@@ -84,6 +96,23 @@ public class StoreWeeklyPickupSetting {
     Objects.requireNonNull(endTime, "endTime");
 
     return new StoreWeeklyPickupSetting(
-        storeId, dayOfWeek, startTime, endTime, dailyOrderCapacity, enabled);
+        storeId,
+        dayOfWeek,
+        startTime,
+        endTime,
+        dailyOrderCapacity,
+        breakStartTime,
+        breakEndTime,
+        enabled);
+  }
+
+  public static StoreWeeklyPickupSetting create(
+      UUID storeId,
+      DayOfWeek dayOfWeek,
+      LocalTime startTime,
+      LocalTime endTime,
+      Integer dailyOrderCapacity,
+      boolean enabled) {
+    return create(storeId, dayOfWeek, startTime, endTime, dailyOrderCapacity, null, null, enabled);
   }
 }

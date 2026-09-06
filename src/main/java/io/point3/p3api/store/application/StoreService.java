@@ -3,6 +3,7 @@ package io.point3.p3api.store.application;
 import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.store.application.businesshours.StoreBusinessHoursTextFormatter;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
@@ -10,6 +11,7 @@ import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.application.slug.StoreSlugGenerator;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
@@ -33,6 +35,8 @@ public class StoreService
   private final AssetPersistencePort assetPersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final StoreActivationValidator storeActivationValidator;
+  private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
+  private final StoreBusinessHoursTextFormatter businessHoursTextFormatter;
 
   @Override
   public StoreResult create(CreateStoreCommand command) {
@@ -49,17 +53,16 @@ public class StoreService
         command.contact(),
         command.contactVisible(),
         command.snsLinks(),
-        command.businessHours(),
         command.address());
     store.updatePickupSettings(command.pickupSettings());
 
-    return StoreResult.from(storePersistencePort.save(store));
+    return toResult(storePersistencePort.save(store));
   }
 
   @Override
   @Transactional(readOnly = true)
   public StoreResult getStore(UUID storeId) {
-    return StoreResult.from(findStore(storeId));
+    return toResult(findStore(storeId));
   }
 
   @Override
@@ -74,11 +77,10 @@ public class StoreService
         command.contact(),
         command.contactVisible(),
         command.snsLinks(),
-        command.businessHours(),
         command.address());
     store.updatePickupSettings(command.pickupSettings());
 
-    return StoreResult.from(store);
+    return toResult(store);
   }
 
   @Override
@@ -88,12 +90,12 @@ public class StoreService
     if (command.status() == StoreStatus.ACTIVE) {
       validateCanActive(store);
       store.active();
-      return StoreResult.from(store);
+      return toResult(store);
     }
 
     if (command.status() == StoreStatus.INACTIVE) {
       store.inactive();
-      return StoreResult.from(store);
+      return toResult(store);
     }
 
     throw new BaseException(StoreErrorCode.STORE_STATUS_FORBIDDEN);
@@ -109,6 +111,13 @@ public class StoreService
     return storePersistencePort
         .findById(storeId)
         .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+  }
+
+  private StoreResult toResult(Store store) {
+    return StoreResult.from(
+        store,
+        businessHoursTextFormatter.format(
+            weeklyPickupSettingPersistencePort.findAllByStoreId(store.getId())));
   }
 
   private Store getStoreByOwner(UUID ownerUserId) {

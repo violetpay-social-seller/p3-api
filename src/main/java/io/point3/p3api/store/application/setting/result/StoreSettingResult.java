@@ -57,8 +57,10 @@ public record StoreSettingResult(
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      int dailyOrderCapacity,
-      boolean enabled) {
+      Integer dailyOrderCapacity,
+      boolean enabled,
+      LocalTime breakStartTime,
+      LocalTime breakEndTime) {
 
     private static WeeklyPickupSetting from(StoreWeeklyPickupSetting setting) {
       return new WeeklyPickupSetting(
@@ -66,7 +68,9 @@ public record StoreSettingResult(
           setting.getStartTime(),
           setting.getEndTime(),
           setting.getDailyOrderCapacity(),
-          setting.isEnabled());
+          setting.isEnabled(),
+          setting.getBreakStartTime(),
+          setting.getBreakEndTime());
     }
   }
 }

@@ -38,11 +38,14 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
         representativeImagePersistencePort.findActiveByStoreId(storeId).size() >= 3;
     boolean photoRegistration = representativeReady;
     boolean settlementAccount = "INPUT_COMPLETED".equals(store.getSettlementAccountStatus());
+    boolean enabledPickupSetting = weeklyPickupSettingPersistencePort
+        .findAllByStoreId(storeId).stream()
+        .anyMatch(setting -> setting.isEnabled());
     boolean storeInfo = hasText(store.getAddress())
-        && hasText(store.getBusinessHours())
-        && hasText(store.getCancellationRefundPolicy());
+        && hasText(store.getCancellationRefundPolicy())
+        && enabledPickupSetting;
     List<String> reasons =
-        blockedReasons(orderForm, notice, representativeReady, settlementAccount, storeId);
+        blockedReasons(orderForm, notice, enabledPickupSetting, representativeReady, settlementAccount);
     int completedCount = (storeInfo ? 1 : 0)
         + (orderForm ? 1 : 0)
         + (notice ? 1 : 0)
@@ -65,9 +68,9 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
   private List<String> blockedReasons(
       boolean orderForm,
       boolean notice,
+      boolean enabledPickupSetting,
       boolean representativeReady,
-      boolean settlementAccount,
-      UUID storeId) {
+      boolean settlementAccount) {
     List<String> reasons = new ArrayList<>();
     if (!orderForm) {
       reasons.add("ACTIVE_ORDER_FORM_REQUIRED");
@@ -75,8 +78,7 @@ public class StoreManagementStatusQueryService implements StoreManagementStatusQ
     if (!notice) {
       reasons.add("ORDER_NOTICE_REQUIRED");
     }
-    if (weeklyPickupSettingPersistencePort.findAllByStoreId(storeId).stream()
-        .noneMatch(setting -> setting.isEnabled())) {
+    if (!enabledPickupSetting) {
       reasons.add("ENABLED_PICKUP_SETTING_REQUIRED");
     }
     if (!representativeReady) {

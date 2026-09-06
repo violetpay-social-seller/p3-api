@@ -26,6 +26,7 @@ import io.point3.p3api.store.application.representative.command.UpdateRepresenta
 import io.point3.p3api.store.application.representative.result.RepresentativeImageResult;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
+import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
@@ -102,6 +103,22 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         () -> storeService.create(createStoreCommand(seller.getId(), "다른 베이커리")));
 
     assertEquals(StoreErrorCode.STORE_ALREADY_EXISTS, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("매장 소개 전용 수정은 다른 스토어 기본 정보를 유지한다")
+  void updatesStoreDescriptionOnly() {
+    User seller = saveSeller();
+    StoreResult created = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+
+    StoreResult updated = storeService.updateDescription(
+        new UpdateStoreDescriptionCommand(created.id(), "새로운 매장 소개"));
+    Store persisted = storeJpaRepository.findById(created.id()).orElseThrow();
+
+    assertEquals("새로운 매장 소개", updated.description());
+    assertEquals("새로운 매장 소개", persisted.getDescription());
+    assertEquals(created.name(), persisted.getName());
+    assertEquals(created.address(), persisted.getAddress());
   }
 
   @Test

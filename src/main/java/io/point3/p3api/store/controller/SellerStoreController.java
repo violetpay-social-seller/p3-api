@@ -24,6 +24,7 @@ import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.controller.request.StoreBusinessHoursRequest;
 import io.point3.p3api.store.controller.request.StoreCreateRequest;
+import io.point3.p3api.store.controller.request.StoreDescriptionRequest;
 import io.point3.p3api.store.controller.request.StoreRefundPolicyRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
@@ -145,6 +146,13 @@ public class SellerStoreController {
   public ApiResponse<StoreResponse> update(
       @CurrentStoreId UUID storeId, @Valid @RequestBody StoreUpdateRequest request) {
     StoreResult result = storeUpdateUseCase.update(toCommand(storeId, request));
+    return ApiResponse.ok(StoreResponse.from(result));
+  }
+
+  @PutMapping("/description")
+  public ApiResponse<StoreResponse> updateDescription(
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreDescriptionRequest request) {
+    StoreResult result = storeUpdateUseCase.updateDescription(request.toCommand(storeId));
     return ApiResponse.ok(StoreResponse.from(result));
   }
 

@@ -133,11 +133,32 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
     assertTrue(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
   }
 
+  @Test
+  @DisplayName("매장 소개가 없으면 환불정책과 활성 픽업 설정이 있어도 스토어 정보를 완료로 판단하지 않는다")
+  void doesNotCompleteStoreInfoWithoutDescription() {
+    StoreResult store = createStore(null);
+    weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
+        store.id(),
+        DayOfWeek.MONDAY,
+        LocalTime.of(10, 0),
+        LocalTime.of(18, 0),
+        null,
+        true)));
+    storeRefundPolicyUpdateUseCase.updateRefundPolicy(new UpdateStoreRefundPolicyCommand(
+        store.id(), List.of(new UpdateStoreRefundPolicyCommand.Rule(7, 100))));
+
+    assertFalse(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
+  }
+
   private StoreNotice notice(UUID storeId, StoreNoticeType type, String content) {
     return StoreNotice.create(storeId, type, content);
   }
 
   private StoreResult createStore() {
+    return createStore("주문제작 케이크 스토어");
+  }
+
+  private StoreResult createStore(String description) {
     User seller = userJpaRepository.saveAndFlush(User.create(
         UUID.randomUUID().toString(),
         uniqueEmail("store-management-seller"),
@@ -149,7 +170,7 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
         seller.getId(),
         "P3 베이커리",
         null,
-        "주문제작 케이크 스토어",
+        description,
         "010-1234-5678",
         true,
         null,

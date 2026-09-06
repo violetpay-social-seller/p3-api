@@ -15,6 +15,7 @@ import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPe
 import io.point3.p3api.store.application.slug.StoreSlugGenerator;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
+import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.type.StoreStatus;
@@ -80,6 +81,13 @@ public class StoreService
         command.address());
     store.updatePickupSettings(command.pickupSettings());
 
+    return toResult(store);
+  }
+
+  @Override
+  public StoreResult updateDescription(UpdateStoreDescriptionCommand command) {
+    Store store = findStore(command.storeId());
+    store.updateDescription(command.description());
     return toResult(store);
   }
 

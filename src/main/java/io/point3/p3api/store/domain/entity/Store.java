@@ -128,6 +128,10 @@ public class Store {
     this.businessHours = businessHours;
   }
 
+  public void updateDescription(String description) {
+    this.description = description;
+  }
+
   public void updateCancellationRefundPolicy(String cancellationRefundPolicy) {
     this.cancellationRefundPolicy = cancellationRefundPolicy;
   }

@@ -8,5 +8,7 @@ public interface StoreUpdateUseCase {
 
   StoreResult updateDescription(UpdateStoreDescriptionCommand command);
 
+  StoreResult completeAccountRegistration(CompleteAccountRegistrationCommand command);
+
   StoreResult changeStatus(ChangeStoreStatusCommand command);
 }

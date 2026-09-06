@@ -55,13 +55,17 @@ public class GlobalExceptionHandler {
       HttpMessageNotReadableException e, HttpServletRequest request) {
     ErrorCode errorCode = CommonErrorCode.INVALID_INPUT;
     String instance = request.getRequestURI();
+    Throwable rootCause = rootCause(e);
 
     log.warn(
-        "Unreadable message exception. code={} ,title={} ,status={} ,type={}",
+        "Unreadable message exception. code={} ,title={} ,status={} ,type={} ,cause={} ,message={}",
         errorCode.getCode(),
         errorCode.getTitle(),
         errorCode.getStatus(),
-        errorCode.getType());
+        errorCode.getType(),
+        rootCause.getClass().getName(),
+        rootCause.getMessage(),
+        e);
 
     return ResponseEntity.status(errorCode.getStatus())
         .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
@@ -101,5 +105,13 @@ public class GlobalExceptionHandler {
 
     return ResponseEntity.status(errorCode.getStatus())
         .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+  }
+
+  private Throwable rootCause(Throwable exception) {
+    Throwable current = exception;
+    while (current.getCause() != null && current.getCause() != current) {
+      current = current.getCause();
+    }
+    return current;
   }
 }

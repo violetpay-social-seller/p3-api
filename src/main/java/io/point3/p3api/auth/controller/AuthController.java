@@ -57,8 +57,12 @@ public class AuthController {
   public ApiResponse<UserProfileResponse> updateProfile(
       @Authenticated CurrentUser currentUser,
       @Valid @RequestBody UserProfileUpdateRequest request) {
-    UserProfileResult result = userProfileUpdateUseCase.updateProfile(
-        UpdateUserProfileCommand.of(currentUser.userId(), request.email(), request.name()));
+    UserProfileResult result = userProfileUpdateUseCase.updateProfile(UpdateUserProfileCommand.of(
+        currentUser.userId(),
+        request.email(),
+        request.name(),
+        request.profileAssetId(),
+        request.profileAssetIdProvided()));
 
     return ApiResponse.ok(UserProfileResponse.from(result));
   }

@@ -15,6 +15,11 @@ import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
+import io.point3.p3api.store.application.port.StorePersistencePort;
+import io.point3.p3api.store.domain.entity.Store;
+import io.point3.p3api.user.application.port.UserPersistencePort;
+import io.point3.p3api.user.application.profile.ProfileImageDeliveryService;
+import io.point3.p3api.user.domain.entity.User;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -39,6 +44,9 @@ public class InquiryListService implements InquiryListUseCase {
   private final ChatMessagePort chatMessagePort;
   private final ChatTimelineItemPort chatTimelineItemPort;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
+  private final StorePersistencePort storePersistencePort;
+  private final UserPersistencePort userPersistencePort;
+  private final ProfileImageDeliveryService profileImageDeliveryService;
   private final Clock clock;
 
   @Override
@@ -73,6 +81,10 @@ public class InquiryListService implements InquiryListUseCase {
     List<Inquiry> inquiries = inquiryPersistencePort.findAllByStoreId(storeId).stream()
         .filter(inquiry -> isSellerListTarget(inquiry, status))
         .toList();
+    Store store = inquiries.isEmpty() ? null : findStore(storeId);
+    Map<UUID, User> buyersById = buyersById(inquiries);
+    Map<UUID, String> profileImageDeliveryUrlByUserId =
+        profileImageDeliveryService.resolveByUserId(buyersById.values().stream().toList());
     Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId =
         latestEventByInquiryId(inquiries);
     Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId =
@@ -80,7 +92,13 @@ public class InquiryListService implements InquiryListUseCase {
 
     return inquiries.stream()
         .map(inquiry -> toSellerItem(
-            inquiry, sellerUserId, latestEventByInquiryId, latestSubmissionByInquiryId))
+            inquiry,
+            sellerUserId,
+            store,
+            buyersById,
+            profileImageDeliveryUrlByUserId,
+            latestEventByInquiryId,
+            latestSubmissionByInquiryId))
         .filter(item -> !unreadOnly || item.unreadCount() > 0)
         .sorted(byLatestEvent())
         .toList();
@@ -145,9 +163,20 @@ public class InquiryListService implements InquiryListUseCase {
   private InquiryListItem toSellerItem(
       Inquiry inquiry,
       UUID sellerUserId,
+      Store store,
+      Map<UUID, User> buyersById,
+      Map<UUID, String> profileImageDeliveryUrlByUserId,
       Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId,
       Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId) {
-    InquiryChatDetail detail = inquiryChatDetailQueryUseCase.getSellerDetail(inquiry);
+    User buyer = findBuyer(inquiry, buyersById);
+    InquiryChatDetail detail = InquiryChatDetail.of(
+        inquiry,
+        store,
+        new InquiryChatDetail.Participant(
+            buyer.getId(), buyer.getName(), profileImageDeliveryUrlByUserId.get(buyer.getId())),
+        null,
+        inquiry.getSellerLastReadAt(),
+        inquiry.getBuyerLastReadAt());
     InquiryListItem.LatestEvent latestEvent = latestEventByInquiryId.get(inquiry.getId());
     return toItem(
         inquiry,
@@ -256,6 +285,30 @@ public class InquiryListService implements InquiryListUseCase {
 
   private List<UUID> inquiryIds(List<Inquiry> inquiries) {
     return inquiries.stream().map(Inquiry::getId).toList();
+  }
+
+  private Store findStore(UUID storeId) {
+    return storePersistencePort
+        .findById(storeId)
+        .orElseThrow(() -> new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND));
+  }
+
+  private Map<UUID, User> buyersById(List<Inquiry> inquiries) {
+    List<UUID> buyerUserIds =
+        inquiries.stream().map(Inquiry::getBuyerUserId).distinct().toList();
+    Map<UUID, User> buyersById = new HashMap<>();
+    userPersistencePort
+        .findAllById(buyerUserIds)
+        .forEach(user -> buyersById.put(user.getId(), user));
+    return buyersById;
+  }
+
+  private User findBuyer(Inquiry inquiry, Map<UUID, User> buyersById) {
+    User buyer = buyersById.get(inquiry.getBuyerUserId());
+    if (buyer == null) {
+      throw new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND);
+    }
+    return buyer;
   }
 
   private boolean isBuyerListTarget(Inquiry inquiry, InquiryStatus status) {

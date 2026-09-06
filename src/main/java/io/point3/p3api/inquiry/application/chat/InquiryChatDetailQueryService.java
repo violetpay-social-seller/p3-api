@@ -8,6 +8,7 @@ import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.user.application.port.UserPersistencePort;
+import io.point3.p3api.user.application.profile.ProfileImageDeliveryService;
 import io.point3.p3api.user.domain.entity.User;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
   private final StorePersistencePort storePersistencePort;
   private final UserPersistencePort userPersistencePort;
   private final OrderStartReferenceAssetService orderStartReferenceAssetService;
+  private final ProfileImageDeliveryService profileImageDeliveryService;
 
   @Override
   public InquiryChatDetail getBuyerDetail(Inquiry inquiry) {
@@ -31,7 +33,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
     return InquiryChatDetail.of(
         inquiry,
         store,
-        new InquiryChatDetail.Participant(owner.getId(), owner.getName()),
+        participant(owner),
         orderStartReferenceAssetService.findByInquiryId(inquiry.getId()),
         inquiry.getBuyerLastReadAt(),
         inquiry.getSellerLastReadAt());
@@ -45,7 +47,7 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
     return InquiryChatDetail.of(
         inquiry,
         store,
-        new InquiryChatDetail.Participant(buyer.getId(), buyer.getName()),
+        participant(buyer),
         orderStartReferenceAssetService.findByInquiryId(inquiry.getId()),
         inquiry.getSellerLastReadAt(),
         inquiry.getBuyerLastReadAt());
@@ -61,5 +63,10 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
     return userPersistencePort
         .findById(userId)
         .orElseThrow(() -> new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND));
+  }
+
+  private InquiryChatDetail.Participant participant(User user) {
+    return new InquiryChatDetail.Participant(
+        user.getId(), user.getName(), profileImageDeliveryService.resolve(user));
   }
 }

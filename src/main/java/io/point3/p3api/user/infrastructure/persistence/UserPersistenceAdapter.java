@@ -3,6 +3,7 @@ package io.point3.p3api.user.infrastructure.persistence;
 import io.point3.p3api.user.application.port.UserPersistencePort;
 import io.point3.p3api.user.application.render.UserRender;
 import io.point3.p3api.user.domain.entity.User;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,11 @@ public class UserPersistenceAdapter implements UserRender, UserPersistencePort {
   @Override
   public Optional<User> findById(UUID userId) {
     return userJpaRepository.findById(userId);
+  }
+
+  @Override
+  public List<User> findAllById(List<UUID> userIds) {
+    return userJpaRepository.findAllById(userIds);
   }
 
   @Override

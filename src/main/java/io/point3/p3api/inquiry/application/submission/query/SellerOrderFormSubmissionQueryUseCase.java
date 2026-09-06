@@ -1,6 +1,6 @@
 package io.point3.p3api.inquiry.application.submission.query;
 
-import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmissionResult;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public interface SellerOrderFormSubmissionQueryUseCase {
 
-  List<OrderFormSubmission> getSubmissions(UUID inquiryId, UUID storeId);
+  List<OrderFormSubmissionResult> getSubmissions(UUID inquiryId, UUID storeId);
 
-  OrderFormSubmission getSubmission(UUID inquiryId, UUID submissionId, UUID storeId);
+  OrderFormSubmissionResult getSubmission(UUID inquiryId, UUID submissionId, UUID storeId);
 }

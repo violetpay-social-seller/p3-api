@@ -4,30 +4,34 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
+import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
+import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
-import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
-import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
 import io.point3.p3api.store.application.location.command.SearchStoreLocationCommand;
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
 import io.point3.p3api.store.application.location.result.StoreLocationResult;
 import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
+import io.point3.p3api.store.application.refundpolicy.query.StoreRefundPolicyQueryUseCase;
+import io.point3.p3api.store.application.refundpolicy.update.StoreRefundPolicyUpdateUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
-import io.point3.p3api.store.controller.request.StoreCreateRequest;
 import io.point3.p3api.store.controller.request.StoreBusinessHoursRequest;
+import io.point3.p3api.store.controller.request.StoreCreateRequest;
+import io.point3.p3api.store.controller.request.StoreRefundPolicyRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
-import io.point3.p3api.store.controller.response.StoreLocationSearchResponse;
 import io.point3.p3api.store.controller.response.StoreBusinessHoursResponse;
+import io.point3.p3api.store.controller.response.StoreLocationSearchResponse;
 import io.point3.p3api.store.controller.response.StoreManagementStatusResponse;
+import io.point3.p3api.store.controller.response.StoreRefundPolicyResponse;
 import io.point3.p3api.store.controller.response.StoreResponse;
 import io.point3.p3api.store.controller.response.StoreSettingResponse;
 import io.point3.p3api.store.controller.response.StoreShareLinkResponse;
@@ -60,6 +64,8 @@ public class SellerStoreController {
   private final StoreManagementStatusQueryUseCase storeManagementStatusQueryUseCase;
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;
   private final StoreSettingUpdateUseCase storeSettingUpdateUseCase;
+  private final StoreRefundPolicyQueryUseCase storeRefundPolicyQueryUseCase;
+  private final StoreRefundPolicyUpdateUseCase storeRefundPolicyUpdateUseCase;
   private final StoreLocationSearchUseCase storeLocationSearchUseCase;
   private final StoreWebProperties storeWebProperties;
 
@@ -106,6 +112,19 @@ public class SellerStoreController {
       @CurrentStoreId UUID storeId, @Valid @RequestBody StoreSettingRequest request) {
     return ApiResponse.ok(
         StoreSettingResponse.from(storeSettingUpdateUseCase.update(request.toCommand(storeId))));
+  }
+
+  @GetMapping("/refund-policy")
+  public ApiResponse<StoreRefundPolicyResponse> getRefundPolicy(@CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(
+        StoreRefundPolicyResponse.from(storeRefundPolicyQueryUseCase.getRefundPolicy(storeId)));
+  }
+
+  @PutMapping("/refund-policy")
+  public ApiResponse<StoreRefundPolicyResponse> updateRefundPolicy(
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreRefundPolicyRequest request) {
+    return ApiResponse.ok(StoreRefundPolicyResponse.from(
+        storeRefundPolicyUpdateUseCase.updateRefundPolicy(request.toCommand(storeId))));
   }
 
   @GetMapping("/share-link")

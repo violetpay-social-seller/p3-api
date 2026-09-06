@@ -81,6 +81,8 @@ public class StoreSettingService implements StoreSettingUpdateUseCase, StoreSett
             setting.startTime(),
             setting.endTime(),
             setting.dailyOrderCapacity(),
+            setting.breakStartTime(),
+            setting.breakEndTime(),
             setting.enabled()))
         .toList());
   }

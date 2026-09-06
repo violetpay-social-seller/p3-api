@@ -24,6 +24,18 @@ public record UpdateStoreSettingCommand(
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      int dailyOrderCapacity,
-      boolean enabled) {}
+      Integer dailyOrderCapacity,
+      boolean enabled,
+      LocalTime breakStartTime,
+      LocalTime breakEndTime) {
+
+    public WeeklyPickupSetting(
+        DayOfWeek dayOfWeek,
+        LocalTime startTime,
+        LocalTime endTime,
+        Integer dailyOrderCapacity,
+        boolean enabled) {
+      this(dayOfWeek, startTime, endTime, dailyOrderCapacity, enabled, null, null);
+    }
+  }
 }

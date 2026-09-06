@@ -9,6 +9,7 @@ import io.point3.p3api.store.application.businesshours.result.StoreBusinessHours
 import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
+import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
@@ -30,6 +31,7 @@ public class StoreBusinessHoursService
 
   private final StorePersistencePort storePersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
+  private final StoreBusinessHoursTextFormatter businessHoursTextFormatter;
 
   @Override
   @Transactional(readOnly = true)
@@ -62,19 +64,21 @@ public class StoreBusinessHoursService
   @Override
   public StoreBusinessHoursResult updateBusinessHours(UpdateStoreBusinessHoursCommand command) {
     validate(command);
-    requireStore(command.storeId());
+    Store store = requireStore(command.storeId());
     Map<DayOfWeek, StoreWeeklyPickupSetting> existing = weeklyPickupSettingPersistencePort
         .findAllByStoreId(command.storeId()).stream()
         .collect(java.util.stream.Collectors.toMap(
             StoreWeeklyPickupSetting::getDayOfWeek, Function.identity()));
     EnumSet<DayOfWeek> openDays = EnumSet.copyOf(command.openDays());
     List<StoreWeeklyPickupSetting> replacements = java.util.Arrays.stream(DayOfWeek.values())
-        .filter(day -> openDays.contains(day) || existing.containsKey(day))
         .map(day -> replacement(command, day, existing.get(day), openDays.contains(day)))
         .sorted(Comparator.comparing(StoreWeeklyPickupSetting::getDayOfWeek))
         .toList();
     weeklyPickupSettingPersistencePort.deleteAllByStoreId(command.storeId());
-    weeklyPickupSettingPersistencePort.saveAll(replacements);
+    List<StoreWeeklyPickupSetting> savedSettings =
+        weeklyPickupSettingPersistencePort.saveAll(replacements);
+    store.updateBusinessHours(businessHoursTextFormatter.format(savedSettings));
+    storePersistencePort.save(store);
     return new StoreBusinessHoursResult(
         openDays.stream().sorted().toList(),
         command.startTime(),
@@ -101,12 +105,12 @@ public class StoreBusinessHoursService
     }
     return StoreWeeklyPickupSetting.create(
         command.storeId(),
-        existing.getDayOfWeek(),
-        existing.getStartTime(),
-        existing.getEndTime(),
-        existing.getDailyOrderCapacity(),
-        existing.getBreakStartTime(),
-        existing.getBreakEndTime(),
+        day,
+        existing == null ? command.startTime() : existing.getStartTime(),
+        existing == null ? command.endTime() : existing.getEndTime(),
+        existing == null ? null : existing.getDailyOrderCapacity(),
+        existing == null ? command.breakStartTime() : existing.getBreakStartTime(),
+        existing == null ? command.breakEndTime() : existing.getBreakEndTime(),
         false);
   }
 
@@ -134,9 +138,8 @@ public class StoreBusinessHoursService
     return time.getMinute() % 30 == 0 && time.getSecond() == 0 && time.getNano() == 0;
   }
 
-  private void requireStore(UUID storeId) {
-    if (storePersistencePort.findById(storeId).isEmpty()) {
-      throw new BaseException(StoreErrorCode.STORE_NOT_FOUND);
-    }
+  private Store requireStore(UUID storeId) {
+    return storePersistencePort.findById(storeId)
+        .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
   }
 }

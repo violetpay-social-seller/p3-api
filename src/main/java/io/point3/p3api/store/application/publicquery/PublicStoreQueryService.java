@@ -8,11 +8,13 @@ import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
+import io.point3.p3api.store.application.businesshours.StoreBusinessHoursTextFormatter;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.publicquery.result.PublicRepresentativeImageResult;
 import io.point3.p3api.store.application.publicquery.result.PublicStorePage;
 import io.point3.p3api.store.application.publicquery.result.PublicStoreResult;
 import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
+import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
 import java.util.HashMap;
@@ -35,6 +37,8 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
   private final AssetVariantDeliveryService assetVariantDeliveryService;
+  private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
+  private final StoreBusinessHoursTextFormatter businessHoursTextFormatter;
 
   @Override
   public PublicStorePage getStores(PublicStoreListQuery query) {
@@ -88,7 +92,8 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
         store.isContactVisible() ? store.getContact() : null,
         store.isContactVisible(),
         store.getSnsLinks(),
-        store.getBusinessHours(),
+        businessHoursTextFormatter.format(
+            weeklyPickupSettingPersistencePort.findAllByStoreId(store.getId())),
         store.getAddress(),
         publicImages);
   }

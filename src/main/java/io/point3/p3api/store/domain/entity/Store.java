@@ -48,8 +48,7 @@ public class Store {
   @JdbcTypeCode(SqlTypes.JSON)
   private String snsLinks;
 
-  @Column(name = "business_hours", columnDefinition = "jsonb")
-  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "business_hours", columnDefinition = "text")
   private String businessHours;
 
   @Column(name = "pickup_settings", columnDefinition = "jsonb")
@@ -125,6 +124,10 @@ public class Store {
 
   public void updatePickupSettings(String pickupSettings) {
     this.pickupSettings = pickupSettings;
+  }
+
+  public void updateBusinessHours(String businessHours) {
+    this.businessHours = businessHours;
   }
 
   public void markSettlementAccountInputCompleted(Instant registeredAt) {

@@ -53,7 +53,6 @@ public class StoreService
         command.contact(),
         command.contactVisible(),
         command.snsLinks(),
-        command.businessHours(),
         command.address());
     store.updatePickupSettings(command.pickupSettings());
 
@@ -78,7 +77,6 @@ public class StoreService
         command.contact(),
         command.contactVisible(),
         command.snsLinks(),
-        command.businessHours(),
         command.address());
     store.updatePickupSettings(command.pickupSettings());
 

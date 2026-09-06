@@ -109,7 +109,6 @@ public class Store {
       String contact,
       boolean contactVisible,
       String snsLinks,
-      String businessHours,
       String address) {
     Objects.requireNonNull(name, "name");
 
@@ -118,7 +117,6 @@ public class Store {
     this.contact = contact;
     this.contactVisible = contactVisible;
     this.snsLinks = snsLinks;
-    this.businessHours = businessHours;
     this.address = address;
   }
 

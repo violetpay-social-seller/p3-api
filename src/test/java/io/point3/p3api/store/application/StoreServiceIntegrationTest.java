@@ -17,6 +17,8 @@ import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpa
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.businesshours.StoreBusinessHoursService;
 import io.point3.p3api.store.application.businesshours.command.UpdateStoreBusinessHoursCommand;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.representative.RepresentativeImageService;
 import io.point3.p3api.store.application.representative.command.CreateRepresentativeImageCommand;
@@ -58,6 +60,9 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreBusinessHoursService storeBusinessHoursService;
+
+  @Autowired
+  private StoreSettingService storeSettingService;
 
   @Autowired
   private RepresentativeImageService representativeImageService;
@@ -252,6 +257,32 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("스토어 설정 수정은 무제한 주문 수량을 허용하고 영업시간 캐시를 갱신한다")
+  void updatesBusinessHoursWhenStoreSettingsChange() {
+    User seller = saveSeller();
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        store.id(),
+        60,
+        "주문 전 안내",
+        0,
+        List.of(
+            weeklyPickupSetting(DayOfWeek.MONDAY, false),
+            weeklyPickupSetting(DayOfWeek.TUESDAY, true),
+            weeklyPickupSetting(DayOfWeek.WEDNESDAY, true),
+            weeklyPickupSetting(DayOfWeek.THURSDAY, true),
+            weeklyPickupSetting(DayOfWeek.FRIDAY, true),
+            weeklyPickupSetting(DayOfWeek.SATURDAY, true),
+            weeklyPickupSetting(DayOfWeek.SUNDAY, true)),
+        List.of()));
+
+    Store persisted = storeJpaRepository.findById(store.id()).orElseThrow();
+
+    assertEquals("화~일 9:00~20:00 · 월 휴무 · 휴게시간 12:00~13:00", persisted.getBusinessHours());
+  }
+
+  @Test
   @DisplayName("활성 스토어는 대표이미지가 3개 아래로 줄어드는 숨김을 거절한다")
   void rejectsHidingRepresentativeImageBelowMinimumForActiveStore() {
     User seller = saveSeller();
@@ -385,5 +416,17 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         LocalTime.of(12, 0),
         LocalTime.of(13, 0),
         enabled);
+  }
+
+  private UpdateStoreSettingCommand.WeeklyPickupSetting weeklyPickupSetting(
+      DayOfWeek dayOfWeek, boolean enabled) {
+    return new UpdateStoreSettingCommand.WeeklyPickupSetting(
+        dayOfWeek,
+        LocalTime.of(9, 0),
+        LocalTime.of(20, 0),
+        null,
+        enabled,
+        LocalTime.of(12, 0),
+        LocalTime.of(13, 0));
   }
 }

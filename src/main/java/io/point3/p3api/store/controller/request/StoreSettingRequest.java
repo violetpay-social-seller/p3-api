@@ -46,7 +46,7 @@ public record StoreSettingRequest(
       @NotNull DayOfWeek dayOfWeek,
       @NotNull LocalTime startTime,
       @NotNull LocalTime endTime,
-      @NotNull @Min(1) Integer dailyOrderCapacity,
+      @Min(1) Integer dailyOrderCapacity,
       boolean enabled,
       LocalTime breakStartTime,
       LocalTime breakEndTime) {

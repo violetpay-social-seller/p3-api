@@ -3,7 +3,8 @@ package io.point3.p3api.user.application.profile;
 import java.util.Objects;
 import java.util.UUID;
 
-public record UpdateUserProfileCommand(UUID userId, String email, String name) {
+public record UpdateUserProfileCommand(
+    UUID userId, String email, String name, UUID profileAssetId, boolean profileAssetIdProvided) {
 
   public UpdateUserProfileCommand {
     Objects.requireNonNull(userId, "userId");
@@ -12,6 +13,12 @@ public record UpdateUserProfileCommand(UUID userId, String email, String name) {
   }
 
   public static UpdateUserProfileCommand of(UUID userId, String email, String name) {
-    return new UpdateUserProfileCommand(userId, email, name);
+    return new UpdateUserProfileCommand(userId, email, name, null, false);
+  }
+
+  public static UpdateUserProfileCommand of(
+      UUID userId, String email, String name, UUID profileAssetId, boolean profileAssetIdProvided) {
+    return new UpdateUserProfileCommand(
+        userId, email, name, profileAssetId, profileAssetIdProvided);
   }
 }

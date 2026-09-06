@@ -11,17 +11,21 @@ public record UserProfileResult(
     String email,
     String phoneNumber,
     SignupProvider signupProvider,
+    UUID profileAssetId,
+    String profileImageDeliveryUrl,
     String name,
     UserRole role,
     UserStatus status,
     String nextRoute) {
 
-  public static UserProfileResult from(User user) {
+  public static UserProfileResult from(User user, String profileImageDeliveryUrl) {
     return new UserProfileResult(
         user.getId(),
         user.getEmail(),
         user.getPhoneNumber(),
         user.getSignupProvider(),
+        user.getProfileAssetId(),
+        profileImageDeliveryUrl,
         user.getName(),
         user.getRole(),
         user.getStatus(),

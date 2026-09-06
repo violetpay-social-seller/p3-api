@@ -1,8 +1,11 @@
 package io.point3.p3api.user.application;
 
+import io.point3.p3api.asset.application.port.AssetPersistencePort;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.user.application.port.UserPersistencePort;
+import io.point3.p3api.user.application.profile.ProfileImageDeliveryService;
 import io.point3.p3api.user.application.profile.UpdateUserProfileCommand;
 import io.point3.p3api.user.application.profile.UserProfileQueryUseCase;
 import io.point3.p3api.user.application.profile.UserProfileUpdateUseCase;
@@ -28,6 +31,8 @@ public class UserService
         UserProfileUpdateUseCase {
 
   private final UserPersistencePort userPersistencePort;
+  private final AssetPersistencePort assetPersistencePort;
+  private final ProfileImageDeliveryService profileImageDeliveryService;
   private final UserRender userRender;
 
   @Override
@@ -71,7 +76,7 @@ public class UserService
   public UserProfileResult getProfile(UUID userId) {
     User user = findActiveUser(userId);
 
-    return UserProfileResult.from(user);
+    return toProfileResult(user);
   }
 
   @Override
@@ -79,9 +84,13 @@ public class UserService
   public UserProfileResult updateProfile(UpdateUserProfileCommand command) {
     User user = findActiveUser(command.userId());
     validateEmailOwner(command.email(), user);
+    validateProfileAsset(command.profileAssetId(), user.getId(), command.profileAssetIdProvided());
     user.updateProfile(command.email(), command.name());
+    if (command.profileAssetIdProvided()) {
+      user.updateProfileAsset(command.profileAssetId());
+    }
 
-    return UserProfileResult.from(user);
+    return toProfileResult(user);
   }
 
   private User findActiveUser(UUID userId) {
@@ -100,6 +109,20 @@ public class UserService
         .ifPresent(user -> {
           throw new BaseException(CommonErrorCode.INVALID_INPUT, "Email already exists");
         });
+  }
+
+  private void validateProfileAsset(UUID profileAssetId, UUID userId, boolean provided) {
+    if (!provided || profileAssetId == null) {
+      return;
+    }
+
+    if (assetPersistencePort.findByIdAndUploadedBy(profileAssetId, userId).isEmpty()) {
+      throw new BaseException(AssetErrorCode.ASSET_NOT_FOUND);
+    }
+  }
+
+  private UserProfileResult toProfileResult(User user) {
+    return UserProfileResult.from(user, profileImageDeliveryService.resolve(user));
   }
 
   private void ensureActive(User user) {

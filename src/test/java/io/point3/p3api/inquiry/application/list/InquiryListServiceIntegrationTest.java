@@ -5,6 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.chat.domain.entity.ChatMessage;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
@@ -42,7 +47,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.test.context.TestPropertySource;
 
+@TestPropertySource(properties = "p3.asset.delivery.base-url=https://assets.example.test")
 class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
@@ -71,6 +78,12 @@ class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private UserJpaRepository userJpaRepository;
+
+  @Autowired
+  private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
 
   @Autowired
   private InquiryJpaRepository inquiryJpaRepository;
@@ -143,6 +156,25 @@ class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(item.latestEvent().createdAt(), item.latestEventAt());
     assertEquals(submission.getId(), item.latestOrderFormSubmission().submissionId());
     assertEquals(submission.getSubmittedAt(), item.latestOrderFormSubmission().submittedAt());
+  }
+
+  @Test
+  @DisplayName("판매자 상담 목록은 구매자 프로필 이미지 delivery URL을 응답한다")
+  void getsSellerInquiriesWithBuyerProfileImage() {
+    Fixture fixture = prepareFixture("inquiry-list-profile");
+    Asset profileAsset = saveAsset(fixture.buyer().getId(), "original/buyer-profile.png");
+    saveVariant(profileAsset, "processed/buyer-profile_640.webp");
+    fixture.buyer().updateProfileAsset(profileAsset.getId());
+    userJpaRepository.saveAndFlush(fixture.buyer());
+
+    List<InquiryListItem> sellerItems = inquiryListService.getSellerInquiries(
+        fixture.firstStore().id(), fixture.firstSeller().getId(), null);
+
+    InquiryListItem item = sellerItems.getFirst();
+    assertEquals(fixture.buyer().getId(), item.detail().participant().userId());
+    assertEquals(
+        "https://assets.example.test/processed/buyer-profile_640.webp",
+        item.detail().participant().profileImageDeliveryUrl());
   }
 
   @Test
@@ -221,6 +253,18 @@ class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
         role,
         "010-0000-0000",
         SignupProvider.GOOGLE));
+  }
+
+  private Asset saveAsset(UUID uploadedBy, String objectKey) {
+    Asset asset =
+        Asset.create(UUID.randomUUID(), uploadedBy, objectKey, "image/png", 1024L, objectKey);
+    asset.markReady();
+    return assetJpaRepository.saveAndFlush(asset);
+  }
+
+  private AssetVariant saveVariant(Asset asset, String objectKey) {
+    return assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset, AssetVariantType.MEDIUM, objectKey, "image/webp", 640, 640, 512L));
   }
 
   private record Fixture(

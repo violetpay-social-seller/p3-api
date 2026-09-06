@@ -2,11 +2,18 @@ package io.point3.p3api.user.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.user.application.profile.UpdateUserProfileCommand;
 import io.point3.p3api.user.application.registration.CompleteRegistrationCommand;
@@ -21,7 +28,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 
+@TestPropertySource(properties = "p3.asset.delivery.base-url=https://assets.example.test")
 class UserServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
@@ -29,6 +38,12 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private UserJpaRepository userJpaRepository;
+
+  @Autowired
+  private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
 
   @Test
   @DisplayName("등록되지 않은 Cognito 사용자는 역할 선택이 필요하다고 응답한다")
@@ -115,6 +130,8 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(user.getEmail(), result.email());
     assertEquals(user.getPhoneNumber(), result.phoneNumber());
     assertEquals(user.getSignupProvider(), result.signupProvider());
+    assertNull(result.profileAssetId());
+    assertNull(result.profileImageDeliveryUrl());
     assertEquals("조회 사용자", result.name());
     assertEquals(UserRole.SELLER, result.role());
     assertEquals("SELLER_HOME", result.nextRoute());
@@ -138,7 +155,61 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(user.getId(), result.userId());
     assertEquals(updatedEmail, result.email());
     assertEquals("변경 이름", result.name());
+    assertNull(result.profileAssetId());
     assertEquals("BUYER_HOME", result.nextRoute());
+  }
+
+  @Test
+  @DisplayName("회원 정보 수정은 본인이 업로드한 프로필 이미지를 설정하고 delivery URL을 응답한다")
+  void updatesProfileAsset() {
+    User user = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(),
+        uniqueEmail("profile-image"),
+        "프로필 사용자",
+        UserRole.BUYER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
+    Asset profileAsset = saveAsset(user.getId(), "original/profile.png");
+    saveVariant(profileAsset, "processed/profile_640.webp");
+    String updatedEmail = uniqueEmail("profile-image-updated");
+
+    UserProfileResult result = userService.updateProfile(UpdateUserProfileCommand.of(
+        user.getId(), updatedEmail, "이미지 사용자", profileAsset.getId(), true));
+
+    assertEquals(profileAsset.getId(), result.profileAssetId());
+    assertEquals(
+        "https://assets.example.test/processed/profile_640.webp", result.profileImageDeliveryUrl());
+  }
+
+  @Test
+  @DisplayName("회원 정보 수정은 다른 사용자의 asset을 프로필 이미지로 설정할 수 없다")
+  void rejectsOtherUserProfileAsset() {
+    User user = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(),
+        uniqueEmail("profile-image-owner"),
+        "프로필 사용자",
+        UserRole.BUYER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
+    User other = userJpaRepository.saveAndFlush(User.create(
+        "cognito-" + UUID.randomUUID(),
+        uniqueEmail("profile-image-other"),
+        "다른 사용자",
+        UserRole.BUYER,
+        "010-0000-0000",
+        SignupProvider.GOOGLE));
+    Asset otherAsset = saveAsset(other.getId(), "original/other-profile.png");
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> userService.updateProfile(UpdateUserProfileCommand.of(
+            user.getId(),
+            uniqueEmail("profile-image-rejected"),
+            "변경 이름",
+            otherAsset.getId(),
+            true)));
+
+    assertEquals(AssetErrorCode.ASSET_NOT_FOUND, exception.getErrorCode());
   }
 
   @Test
@@ -165,5 +236,17 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
             UpdateUserProfileCommand.of(user.getId(), other.getEmail().toUpperCase(), "변경 이름")));
 
     assertEquals(CommonErrorCode.INVALID_INPUT, exception.getErrorCode());
+  }
+
+  private Asset saveAsset(UUID uploadedBy, String objectKey) {
+    Asset asset =
+        Asset.create(UUID.randomUUID(), uploadedBy, objectKey, "image/png", 1024L, objectKey);
+    asset.markReady();
+    return assetJpaRepository.saveAndFlush(asset);
+  }
+
+  private AssetVariant saveVariant(Asset asset, String objectKey) {
+    return assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset, AssetVariantType.MEDIUM, objectKey, "image/webp", 640, 640, 512L));
   }
 }

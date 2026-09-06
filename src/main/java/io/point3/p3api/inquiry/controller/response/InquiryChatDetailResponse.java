@@ -30,10 +30,11 @@ public record InquiryChatDetailResponse(
         detail.createdAt());
   }
 
-  public record ParticipantResponse(UUID userId, String name) {
+  public record ParticipantResponse(UUID userId, String name, String profileImageDeliveryUrl) {
 
     private static ParticipantResponse from(InquiryChatDetail.Participant participant) {
-      return new ParticipantResponse(participant.userId(), participant.name());
+      return new ParticipantResponse(
+          participant.userId(), participant.name(), participant.profileImageDeliveryUrl());
     }
   }
 

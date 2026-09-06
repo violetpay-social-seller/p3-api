@@ -39,6 +39,9 @@ public class User {
   @Column(name = "payer_id", length = 128)
   private String payerId;
 
+  @Column(name = "profile_asset_id")
+  private UUID profileAssetId;
+
   @Column(name = "name", nullable = false, length = 100)
   private String name;
 
@@ -108,6 +111,10 @@ public class User {
 
     this.email = email;
     this.name = name;
+  }
+
+  public void updateProfileAsset(UUID profileAssetId) {
+    this.profileAssetId = profileAssetId;
   }
 
   public void connectPayer(String payerId) {

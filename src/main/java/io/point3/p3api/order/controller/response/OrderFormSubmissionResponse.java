@@ -4,6 +4,7 @@ import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmission
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderFormSubmissionResponse(
@@ -15,8 +16,13 @@ public record OrderFormSubmissionResponse(
     LocalTime pickupTime,
     String answers,
     String referenceAssets,
+    List<OrderOptionRowResponse> optionRows,
     boolean cancellationRefundAgreed,
     Instant submittedAt) {
+
+  public OrderFormSubmissionResponse {
+    optionRows = List.copyOf(optionRows);
+  }
 
   public static OrderFormSubmissionResponse from(OrderFormSubmissionResult submission) {
     return new OrderFormSubmissionResponse(
@@ -28,7 +34,13 @@ public record OrderFormSubmissionResponse(
         submission.pickupTime(),
         submission.answers(),
         submission.referenceAssets(),
+        submission.optionRows().stream().map(OrderOptionRowResponse::from).toList(),
         submission.cancellationRefundAgreed(),
         submission.submittedAt());
+  }
+
+  @Override
+  public List<OrderOptionRowResponse> optionRows() {
+    return List.copyOf(optionRows);
   }
 }

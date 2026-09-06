@@ -7,6 +7,7 @@ import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePo
 import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmissionResult;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class BuyerOrderFormSubmissionQueryService implements BuyerOrderFormSubmi
   private final InquiryChatAccessService inquiryChatAccessService;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormAnswerDeliveryService orderFormAnswerDeliveryService;
+  private final OrderOptionRowResolver orderOptionRowResolver;
 
   @Override
   public OrderFormSubmissionResult getSubmission(
@@ -41,7 +43,8 @@ public class BuyerOrderFormSubmissionQueryService implements BuyerOrderFormSubmi
   }
 
   private OrderFormSubmissionResult toResult(OrderFormSubmission submission) {
+    String answers = orderFormAnswerDeliveryService.appendImageDeliveries(submission.getAnswers());
     return OrderFormSubmissionResult.from(
-        submission, orderFormAnswerDeliveryService.appendImageDeliveries(submission.getAnswers()));
+        submission, answers, orderOptionRowResolver.fromSubmissionAnswers(answers));
   }
 }

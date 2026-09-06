@@ -79,6 +79,9 @@ class BuyerOrderFormSubmissionQueryServiceIntegrationTest extends IntegrationTes
     assertEquals(fixture.submission().getId(), result.id());
     assertEquals(fixture.buyer().getId(), result.submittedBy());
     assertEquals("[{\"label\":\"메뉴명\",\"value\":\"초코 케이크\"}]", result.answers());
+    assertEquals(1, result.optionRows().size());
+    assertEquals("메뉴명", result.optionRows().getFirst().label());
+    assertEquals("초코 케이크", result.optionRows().getFirst().value());
   }
 
   @Test

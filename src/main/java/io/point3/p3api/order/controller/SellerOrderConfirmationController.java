@@ -4,6 +4,7 @@ import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
+import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
@@ -36,6 +37,7 @@ public class SellerOrderConfirmationController {
   private final OrderConfirmationQueryUseCase orderConfirmationQueryUseCase;
   private final OrderConfirmationStateUseCase orderConfirmationStateUseCase;
   private final OrderConfirmationPreviewQueryService orderConfirmationPreviewQueryService;
+  private final OrderOptionRowResolver orderOptionRowResolver;
 
   @GetMapping("/preview")
   public ApiResponse<OrderConfirmationPreviewResponse> getPreview(
@@ -49,7 +51,8 @@ public class SellerOrderConfirmationController {
       @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
     return ApiResponse.ok(
         orderConfirmationQueryUseCase.getSellerHistory(inquiryId, storeId).stream()
-            .map(OrderConfirmationDetailResponse::from)
+            .map(confirmation ->
+                OrderConfirmationDetailResponse.from(confirmation, orderOptionRowResolver))
             .toList());
   }
 
@@ -62,7 +65,7 @@ public class SellerOrderConfirmationController {
     SendOrderConfirmationResult result = sendOrderConfirmationUseCase.send(
         toCommand(inquiryId, storeId, currentUser.userId(), request));
 
-    return ApiResponse.ok(OrderConfirmationResponse.from(result));
+    return ApiResponse.ok(OrderConfirmationResponse.from(result, orderOptionRowResolver));
   }
 
   @GetMapping("/{confirmationId}")
@@ -72,7 +75,8 @@ public class SellerOrderConfirmationController {
       @Authenticated CurrentUser currentUser,
       @CurrentStoreId UUID storeId) {
     return ApiResponse.ok(OrderConfirmationDetailResponse.from(
-        orderConfirmationQueryUseCase.getSellerConfirmation(inquiryId, confirmationId, storeId)));
+        orderConfirmationQueryUseCase.getSellerConfirmation(inquiryId, confirmationId, storeId),
+        orderOptionRowResolver));
   }
 
   @PatchMapping("/{confirmationId}/replacement")
@@ -81,9 +85,10 @@ public class SellerOrderConfirmationController {
       @PathVariable UUID confirmationId,
       @CurrentStoreId UUID storeId,
       @Valid @RequestBody OrderConfirmationReplaceRequest request) {
-    return ApiResponse.ok(
-        OrderConfirmationDetailResponse.from(orderConfirmationStateUseCase.replace(
-            inquiryId, confirmationId, request.replacementConfirmationId(), storeId)));
+    return ApiResponse.ok(OrderConfirmationDetailResponse.from(
+        orderConfirmationStateUseCase.replace(
+            inquiryId, confirmationId, request.replacementConfirmationId(), storeId),
+        orderOptionRowResolver));
   }
 
   private SendOrderConfirmationCommand toCommand(

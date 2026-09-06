@@ -8,6 +8,7 @@ import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.order.application.calendar.OrderCalendarQueryUseCase;
 import io.point3.p3api.order.application.query.order.OrderQueryUseCase;
+import io.point3.p3api.order.application.query.order.SellerOrderListQuery;
 import io.point3.p3api.order.application.state.CompleteOrderPickupCommand;
 import io.point3.p3api.order.application.state.OrderStateUseCase;
 import io.point3.p3api.order.application.state.RefundOrderCommand;
@@ -19,6 +20,7 @@ import io.point3.p3api.order.controller.response.OrderListItemResponse;
 import io.point3.p3api.order.controller.response.OrderResponse;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -66,8 +68,15 @@ public class OrderController {
   }
 
   @GetMapping("/seller/orders")
-  public ApiResponse<List<OrderListItemResponse>> getSellerOrders(@CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(orderQueryUseCase.getSellerOrders(storeId).stream()
+  public ApiResponse<List<OrderListItemResponse>> getSellerOrders(
+      @CurrentStoreId UUID storeId,
+      @RequestParam(name = "status", required = false) List<String> statuses,
+      @RequestParam(required = false) LocalDate startDate,
+      @RequestParam(required = false) LocalDate endDate,
+      @RequestParam(required = false) String dateBasis) {
+    SellerOrderListQuery query =
+        SellerOrderListQuery.of(storeId, statuses, startDate, endDate, dateBasis);
+    return ApiResponse.ok(orderQueryUseCase.getSellerOrders(query).stream()
         .map(order -> OrderListItemResponse.from(order, objectMapper))
         .toList());
   }

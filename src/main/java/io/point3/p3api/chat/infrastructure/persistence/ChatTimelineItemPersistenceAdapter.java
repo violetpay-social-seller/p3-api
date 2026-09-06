@@ -44,4 +44,12 @@ public class ChatTimelineItemPersistenceAdapter implements ChatTimelineItemPort 
   public Instant findLatestCreatedAt(UUID inquiryId) {
     return chatTimelineItemJpaRepository.findLatestCreatedAt(inquiryId);
   }
+
+  @Override
+  public List<ChatTimelineItem> findLatestByInquiryIds(List<UUID> inquiryIds) {
+    if (inquiryIds.isEmpty()) {
+      return List.of();
+    }
+    return chatTimelineItemJpaRepository.findLatestByInquiryIds(inquiryIds);
+  }
 }

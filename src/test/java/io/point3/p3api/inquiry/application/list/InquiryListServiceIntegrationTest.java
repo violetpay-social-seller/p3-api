@@ -1,10 +1,14 @@
 package io.point3.p3api.inquiry.application.list;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
+import io.point3.p3api.chat.domain.entity.ChatMessage;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import io.point3.p3api.chat.infrastructure.persistence.ChatMessageJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.ChatErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
@@ -12,8 +16,12 @@ import io.point3.p3api.inquiry.application.command.OpenInquiryCommand;
 import io.point3.p3api.inquiry.application.open.InquiryOpenService;
 import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
+import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.inquiry.domain.type.InquiryStatus;
 import io.point3.p3api.inquiry.infrastructure.persistence.InquiryJpaRepository;
+import io.point3.p3api.inquiry.infrastructure.persistence.OrderFormSubmissionJpaRepository;
+import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
+import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -23,6 +31,8 @@ import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +56,15 @@ class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private ChatTimelineItemPublisher chatTimelineItemPublisher;
+
+  @Autowired
+  private ChatMessageJpaRepository chatMessageJpaRepository;
+
+  @Autowired
+  private OrderFormSubmissionJpaRepository orderFormSubmissionJpaRepository;
+
+  @Autowired
+  private OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
 
   @Autowired
   private StoreService storeService;
@@ -88,6 +107,42 @@ class InquiryListServiceIntegrationTest extends IntegrationTestSupport {
 
     assertEquals(
         2, inquiryListService.getBuyerInquiries(fixture.buyer().getId(), null).size());
+  }
+
+  @Test
+  @DisplayName("판매자 상담 목록은 최신 이벤트와 최근 주문서 제출 요약을 응답한다")
+  void getsSellerInquiriesWithSummaries() {
+    Fixture fixture = prepareFixture("inquiry-list-summary");
+    OrderFormTemplate template = orderFormTemplateJpaRepository.saveAndFlush(
+        OrderFormTemplate.create(fixture.firstStore().id(), "기본 주문서"));
+    ChatMessage message = chatMessageJpaRepository.saveAndFlush(
+        ChatMessage.create(fixture.firstInquiry().getId(), fixture.buyer().getId(), "안녕하세요"));
+    chatTimelineItemPublisher.publishMessage(
+        fixture.firstInquiry().getId(), fixture.buyer().getId(), message.getId());
+    OrderFormSubmission submission =
+        orderFormSubmissionJpaRepository.saveAndFlush(OrderFormSubmission.create(
+            fixture.firstInquiry().getId(),
+            template.getId(),
+            fixture.buyer().getId(),
+            LocalDate.parse("2030-08-30"),
+            LocalTime.parse("13:30"),
+            "[]",
+            "[]",
+            true));
+
+    List<InquiryListItem> sellerItems = inquiryListService.getSellerInquiries(
+        fixture.firstStore().id(), fixture.firstSeller().getId(), null);
+
+    InquiryListItem item = sellerItems.getFirst();
+    assertEquals(fixture.firstInquiry().getId(), item.inquiryId());
+    assertNotNull(item.latestEvent().eventId());
+    assertEquals(message.getId(), item.latestEvent().referenceId());
+    assertEquals(ChatTimelineItemType.MESSAGE, item.latestEvent().type());
+    assertEquals(fixture.buyer().getId(), item.latestEvent().senderUserId());
+    assertEquals("안녕하세요", item.latestEvent().content());
+    assertEquals(item.latestEvent().createdAt(), item.latestEventAt());
+    assertEquals(submission.getId(), item.latestOrderFormSubmission().submissionId());
+    assertEquals(submission.getSubmittedAt(), item.latestOrderFormSubmission().submittedAt());
   }
 
   @Test

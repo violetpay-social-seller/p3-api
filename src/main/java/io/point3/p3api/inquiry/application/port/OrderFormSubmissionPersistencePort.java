@@ -12,4 +12,6 @@ public interface OrderFormSubmissionPersistencePort {
   Optional<OrderFormSubmission> findById(UUID submissionId);
 
   List<OrderFormSubmission> findAllByInquiryId(UUID inquiryId);
+
+  List<OrderFormSubmission> findLatestByInquiryIds(List<UUID> inquiryIds);
 }

@@ -59,4 +59,16 @@ public interface ChatTimelineItemJpaRepository extends JpaRepository<ChatTimelin
 
   @Query("select max(item.createdAt) from ChatTimelineItem item where item.inquiryId = :inquiryId")
   Instant findLatestCreatedAt(@Param("inquiryId") UUID inquiryId);
+
+  @Query("""
+      select item
+      from ChatTimelineItem item
+      where item.inquiryId in :inquiryIds
+        and item.createdAt = (
+          select max(latest.createdAt)
+          from ChatTimelineItem latest
+          where latest.inquiryId = item.inquiryId
+        )
+      """)
+  List<ChatTimelineItem> findLatestByInquiryIds(@Param("inquiryIds") List<UUID> inquiryIds);
 }

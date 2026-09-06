@@ -15,4 +15,6 @@ public interface ChatTimelineItemPort {
   long countUnread(UUID inquiryId, UUID readerUserId, Instant readAt);
 
   Instant findLatestCreatedAt(UUID inquiryId);
+
+  List<ChatTimelineItem> findLatestByInquiryIds(List<UUID> inquiryIds);
 }

@@ -72,22 +72,7 @@ public enum StoreErrorCode implements ErrorCode {
       "STORE_STATUS_FORBIDDEN_400",
       "Store status can not be changed",
       HttpStatus.BAD_REQUEST,
-      "/errors/store/status-forbidden"),
-  STORE_LOCATION_QUERY_INVALID(
-      "STORE_LOCATION_QUERY_INVALID_400",
-      "Store location query must be between 2 and 100 characters",
-      HttpStatus.BAD_REQUEST,
-      "/errors/store/location-query-invalid"),
-  STORE_LOCATION_SEARCH_UNAVAILABLE(
-      "STORE_LOCATION_SEARCH_UNAVAILABLE_502",
-      "Store location search is unavailable",
-      HttpStatus.BAD_GATEWAY,
-      "/errors/store/location-search-unavailable"),
-  STORE_LOCATION_SEARCH_CONFIGURATION_INVALID(
-      "STORE_LOCATION_SEARCH_CONFIGURATION_INVALID_500",
-      "Store location search configuration is invalid",
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      "/errors/store/location-search-configuration-invalid");
+      "/errors/store/status-forbidden");
 
   private final String code;
   private final String title;

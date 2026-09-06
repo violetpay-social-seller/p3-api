@@ -64,8 +64,3 @@ p3:
     client-id: ${P3_POINT3_CLIENT_ID:}
     api-token: ${P3_POINT3_API_TOKEN:}
     session-ttl: ${P3_POINT3_SESSION_TTL:PT24H}
-
-  kakao-local:
-    base-url: ${P3_KAKAO_LOCAL_BASE_URL:https://dapi.kakao.com}
-    rest-api-key: ${P3_KAKAO_LOCAL_REST_API_KEY:}
-    request-timeout: ${P3_KAKAO_LOCAL_REQUEST_TIMEOUT:PT3S}

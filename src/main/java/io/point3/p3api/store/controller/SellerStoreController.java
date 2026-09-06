@@ -7,6 +7,9 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
+import io.point3.p3api.store.application.location.command.SearchStoreLocationCommand;
+import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
+import io.point3.p3api.store.application.location.result.StoreLocationResult;
 import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
@@ -19,12 +22,14 @@ import io.point3.p3api.store.controller.request.StoreCreateRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
+import io.point3.p3api.store.controller.response.StoreLocationSearchResponse;
 import io.point3.p3api.store.controller.response.StoreManagementStatusResponse;
 import io.point3.p3api.store.controller.response.StoreResponse;
 import io.point3.p3api.store.controller.response.StoreSettingResponse;
 import io.point3.p3api.store.controller.response.StoreShareLinkResponse;
 import io.point3.p3api.store.infrastructure.web.StoreWebProperties;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -34,6 +39,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -48,6 +54,7 @@ public class SellerStoreController {
   private final StoreManagementStatusQueryUseCase storeManagementStatusQueryUseCase;
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;
   private final StoreSettingUpdateUseCase storeSettingUpdateUseCase;
+  private final StoreLocationSearchUseCase storeLocationSearchUseCase;
   private final StoreWebProperties storeWebProperties;
 
   @PostMapping
@@ -86,6 +93,14 @@ public class SellerStoreController {
   public ApiResponse<StoreShareLinkResponse> getShareLink(@CurrentStoreId UUID storeId) {
     StoreResult store = storeQueryUseCase.getStore(storeId);
     return ApiResponse.ok(StoreShareLinkResponse.from(store, publicStoreUrl(store.slug())));
+  }
+
+  @GetMapping("/locations/search")
+  public ApiResponse<StoreLocationSearchResponse> searchLocations(
+      @CurrentStoreId UUID storeId, @RequestParam String query) {
+    List<StoreLocationResult> results =
+        storeLocationSearchUseCase.search(SearchStoreLocationCommand.of(query));
+    return ApiResponse.ok(StoreLocationSearchResponse.from(results));
   }
 
   @PatchMapping

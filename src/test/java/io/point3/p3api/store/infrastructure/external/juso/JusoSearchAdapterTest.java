@@ -33,8 +33,15 @@ class JusoSearchAdapterTest {
     stubResponse(200, """
         {
           "results": {
-            "common": {"errorCode": "0"},
+            "common": {
+              "errorCode": "0",
+              "errorMessage": "정상",
+              "countPerPage": "10",
+              "totalCount": "1",
+              "currentPage": "1"
+            },
             "juso": [{
+              "siNm": "서울특별시",
               "bdNm": "강남역센트럴푸르지오시티",
               "roadAddr": "서울특별시 강남구 테헤란로 123",
               "jibunAddr": "서울특별시 강남구 역삼동 123-45",

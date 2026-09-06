@@ -7,6 +7,8 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
+import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
+import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
 import io.point3.p3api.store.application.location.command.SearchStoreLocationCommand;
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
 import io.point3.p3api.store.application.location.result.StoreLocationResult;
@@ -19,10 +21,12 @@ import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.controller.request.StoreCreateRequest;
+import io.point3.p3api.store.controller.request.StoreBusinessHoursRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
 import io.point3.p3api.store.controller.response.StoreLocationSearchResponse;
+import io.point3.p3api.store.controller.response.StoreBusinessHoursResponse;
 import io.point3.p3api.store.controller.response.StoreManagementStatusResponse;
 import io.point3.p3api.store.controller.response.StoreResponse;
 import io.point3.p3api.store.controller.response.StoreSettingResponse;
@@ -51,6 +55,8 @@ public class SellerStoreController {
   private final StoreQueryUseCase storeQueryUseCase;
   private final StoreUpdateUseCase storeUpdateUseCase;
   private final StoreDeleteUseCase storeDeleteUseCase;
+  private final StoreBusinessHoursQueryUseCase storeBusinessHoursQueryUseCase;
+  private final StoreBusinessHoursUpdateUseCase storeBusinessHoursUpdateUseCase;
   private final StoreManagementStatusQueryUseCase storeManagementStatusQueryUseCase;
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;
   private final StoreSettingUpdateUseCase storeSettingUpdateUseCase;
@@ -80,6 +86,19 @@ public class SellerStoreController {
   @GetMapping("/settings")
   public ApiResponse<StoreSettingResponse> getSettings(@CurrentStoreId UUID storeId) {
     return ApiResponse.ok(StoreSettingResponse.from(storeSettingQueryUseCase.getSetting(storeId)));
+  }
+
+  @GetMapping("/business-hours")
+  public ApiResponse<StoreBusinessHoursResponse> getBusinessHours(@CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(
+        StoreBusinessHoursResponse.from(storeBusinessHoursQueryUseCase.getBusinessHours(storeId)));
+  }
+
+  @PutMapping("/business-hours")
+  public ApiResponse<StoreBusinessHoursResponse> updateBusinessHours(
+      @CurrentStoreId UUID storeId, @Valid @RequestBody StoreBusinessHoursRequest request) {
+    return ApiResponse.ok(StoreBusinessHoursResponse.from(
+        storeBusinessHoursUpdateUseCase.updateBusinessHours(request.toCommand(storeId))));
   }
 
   @PutMapping("/settings")

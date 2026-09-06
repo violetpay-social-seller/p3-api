@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
 import io.point3.p3api.store.application.create.StoreCreateUseCase;
+import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
+import io.point3.p3api.store.application.businesshours.update.StoreBusinessHoursUpdateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.location.command.SearchStoreLocationCommand;
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
@@ -48,6 +50,8 @@ class SellerStoreLocationControllerWebTest {
         mock(StoreQueryUseCase.class),
         mock(StoreUpdateUseCase.class),
         mock(StoreDeleteUseCase.class),
+        mock(StoreBusinessHoursQueryUseCase.class),
+        mock(StoreBusinessHoursUpdateUseCase.class),
         mock(StoreManagementStatusQueryUseCase.class),
         mock(StoreSettingQueryUseCase.class),
         mock(StoreSettingUpdateUseCase.class),

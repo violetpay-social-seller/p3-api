@@ -64,3 +64,9 @@ p3:
     client-id: ${P3_POINT3_CLIENT_ID:}
     api-token: ${P3_POINT3_API_TOKEN:}
     session-ttl: ${P3_POINT3_SESSION_TTL:PT24H}
+
+  juso-search:
+    base-url: ${P3_JUSO_SEARCH_BASE_URL:https://business.juso.go.kr/addrlink/addrLinkApi.do}
+    api-key: ${P3_JUSO_SEARCH_API_KEY:}
+    count-per-page: ${P3_JUSO_SEARCH_COUNT_PER_PAGE:10}
+    request-timeout: ${P3_JUSO_SEARCH_REQUEST_TIMEOUT:PT3S}

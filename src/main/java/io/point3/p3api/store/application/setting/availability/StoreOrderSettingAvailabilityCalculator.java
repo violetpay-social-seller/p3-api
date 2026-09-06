@@ -27,15 +27,18 @@ public class StoreOrderSettingAvailabilityCalculator {
     }
 
     List<LocalTime> pickupSlots = getPickupSlots(date, weeklySetting, earliestPickupAt);
-    int remainingOrderCapacity =
-        (int) Math.max(weeklySetting.dailyOrderCapacity() - occupiedCount, 0);
+    Integer dailyOrderCapacity = weeklySetting.dailyOrderCapacity();
+    Integer remainingOrderCapacity = dailyOrderCapacity == null
+        ? null
+        : (int) Math.max(dailyOrderCapacity - occupiedCount, 0);
 
     return StoreOrderSettingDateAvailabilityResult.from(
         date,
-        !pickupSlots.isEmpty() && remainingOrderCapacity > 0,
+        !pickupSlots.isEmpty()
+            && (remainingOrderCapacity == null || remainingOrderCapacity > 0),
         false,
         pickupSlots,
-        weeklySetting.dailyOrderCapacity(),
+        dailyOrderCapacity,
         remainingOrderCapacity,
         cancellationCutoffAt(date, cancellationCutoffDays));
   }

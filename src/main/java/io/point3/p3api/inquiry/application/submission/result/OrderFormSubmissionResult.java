@@ -16,17 +16,21 @@ public record OrderFormSubmissionResult(
     LocalDate pickupDate,
     LocalTime pickupTime,
     String answers,
-    String referenceAssets,
+    List<OrderFormReferenceAssetResult> referenceAssets,
     List<OrderOptionRow> optionRows,
     boolean cancellationRefundAgreed,
     Instant submittedAt) {
 
   public OrderFormSubmissionResult {
+    referenceAssets = referenceAssets == null ? List.of() : List.copyOf(referenceAssets);
     optionRows = List.copyOf(optionRows);
   }
 
   public static OrderFormSubmissionResult from(
-      OrderFormSubmission submission, String answers, List<OrderOptionRow> optionRows) {
+      OrderFormSubmission submission,
+      String answers,
+      List<OrderFormReferenceAssetResult> referenceAssets,
+      List<OrderOptionRow> optionRows) {
     return new OrderFormSubmissionResult(
         submission.getId(),
         submission.getInquiryId(),
@@ -35,10 +39,15 @@ public record OrderFormSubmissionResult(
         submission.getPickupDate(),
         submission.getPickupTime(),
         answers,
-        submission.getReferenceAssets(),
+        referenceAssets,
         optionRows,
         submission.isCancellationRefundAgreed(),
         submission.getSubmittedAt());
+  }
+
+  @Override
+  public List<OrderFormReferenceAssetResult> referenceAssets() {
+    return List.copyOf(referenceAssets);
   }
 
   @Override

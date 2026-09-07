@@ -24,6 +24,7 @@ public class SellerOrderFormSubmissionQueryService
   private final InquiryChatAccessService inquiryChatAccessService;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormAnswerDeliveryService orderFormAnswerDeliveryService;
+  private final OrderFormReferenceAssetDeliveryService orderFormReferenceAssetDeliveryService;
   private final OrderOptionRowResolver orderOptionRowResolver;
   private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
 
@@ -60,6 +61,9 @@ public class SellerOrderFormSubmissionQueryService
   private OrderFormSubmissionResult toResult(OrderFormSubmission submission) {
     String answers = orderFormAnswerDeliveryService.appendImageDeliveries(submission.getAnswers());
     return OrderFormSubmissionResult.from(
-        submission, answers, orderOptionRowResolver.fromSubmissionAnswers(answers));
+        submission,
+        answers,
+        orderFormReferenceAssetDeliveryService.appendDeliveries(submission.getReferenceAssets()),
+        orderOptionRowResolver.fromSubmissionAnswers(answers));
   }
 }

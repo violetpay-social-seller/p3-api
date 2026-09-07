@@ -21,6 +21,7 @@ public class BuyerOrderFormSubmissionQueryService implements BuyerOrderFormSubmi
   private final InquiryChatAccessService inquiryChatAccessService;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormAnswerDeliveryService orderFormAnswerDeliveryService;
+  private final OrderFormReferenceAssetDeliveryService orderFormReferenceAssetDeliveryService;
   private final OrderOptionRowResolver orderOptionRowResolver;
 
   @Override
@@ -45,6 +46,9 @@ public class BuyerOrderFormSubmissionQueryService implements BuyerOrderFormSubmi
   private OrderFormSubmissionResult toResult(OrderFormSubmission submission) {
     String answers = orderFormAnswerDeliveryService.appendImageDeliveries(submission.getAnswers());
     return OrderFormSubmissionResult.from(
-        submission, answers, orderOptionRowResolver.fromSubmissionAnswers(answers));
+        submission,
+        answers,
+        orderFormReferenceAssetDeliveryService.appendDeliveries(submission.getReferenceAssets()),
+        orderOptionRowResolver.fromSubmissionAnswers(answers));
   }
 }

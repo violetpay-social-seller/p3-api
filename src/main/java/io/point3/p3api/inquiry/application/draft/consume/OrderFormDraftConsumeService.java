@@ -88,7 +88,7 @@ public class OrderFormDraftConsumeService implements OrderFormDraftConsumeUseCas
         new CreateOrderFormSubmissionCommand.NoticeAgreement(draft.noticeAgreed()),
         new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(
             draft.cancellationRefundAgreed()),
-        CreateOrderFormSubmissionCommand.emptyReferenceAssets(),
+        toSubmissionReferenceAssets(draft),
         !draft.startReferenceAssetProvided());
   }
 

@@ -86,6 +86,10 @@
         {
           "name": "P3_INTERNAL_AUTH_TOKEN",
           "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_INTERNAL_AUTH_TOKEN"
+        },
+        {
+          "name": "P3_JUSO_SEARCH_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_JUSO_SEARCH_API_KEY"
         }
       ],
       "logConfiguration": {

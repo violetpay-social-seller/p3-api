@@ -3,7 +3,6 @@ package io.point3.p3api.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -242,7 +241,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
 
   @Test
   @DisplayName("주문서 draft는 검증 후 저장되고 로그인 후 실제 문의 제출로 소비된다")
-  void createsAndConsumesOrderFormDraft() {
+  void createsAndConsumesOrderFormDraft() throws Exception {
     Fixture fixture = prepareFixtureWithoutInquiry("workflow-draft");
     UUID galleryAssetId =
         createVisibleGalleryAsset(fixture.store().id(), fixture.seller().getId());
@@ -283,7 +282,14 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
     assertEquals(InquiryStatus.WAITING, consumed.inquiry().getStatus());
     assertEquals(fixture.buyer().getId(), consumed.submission().getSubmittedBy());
     assertEquals(fixture.form().id(), consumed.submission().getTemplateId());
-    assertNull(consumed.submission().getReferenceAssets());
+    JsonNode submissionReferenceAssets =
+        objectMapper.readTree(consumed.submission().getReferenceAssets());
+    assertEquals(1, submissionReferenceAssets.size());
+    assertEquals(
+        galleryAssetId.toString(),
+        submissionReferenceAssets.get(0).get("assetId").asText());
+    assertEquals("STORE_GALLERY", submissionReferenceAssets.get(0).get("source").asText());
+    assertEquals(0, submissionReferenceAssets.get(0).get("sortOrder").asInt());
     assertEquals(consumed.submission().getId(), persistedSubmissionEvent.getReferenceId());
 
     InquiryChatDetail chatDetail = inquiryChatDetailQueryService.getBuyerDetail(consumed.inquiry());

@@ -4,6 +4,7 @@ import io.point3.p3api.auth.infrastructure.stomp.StompCurrentUserArgumentResolve
 import io.point3.p3api.auth.infrastructure.stomp.StompJwtAuthenticationInterceptor;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatMessageAuthorizationInterceptor;
 import io.point3.p3api.chat.infrastructure.stomp.StompChatSubscriptionAuthorizationInterceptor;
+import io.point3.p3api.inquiry.infrastructure.stomp.StompInquiryListSubscriptionAuthorizationInterceptor;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,6 +27,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   private final StompChatSubscriptionAuthorizationInterceptor
       stompChatSubscriptionAuthorizationInterceptor;
   private final StompChatMessageAuthorizationInterceptor stompChatMessageAuthorizationInterceptor;
+  private final StompInquiryListSubscriptionAuthorizationInterceptor
+      stompInquiryListSubscriptionAuthorizationInterceptor;
   private final StompCurrentUserArgumentResolver stompCurrentUserArgumentResolver;
 
   @Override
@@ -46,6 +49,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     registration.interceptors(
         stompJwtAuthenticationInterceptor,
         stompChatSubscriptionAuthorizationInterceptor,
+        stompInquiryListSubscriptionAuthorizationInterceptor,
         stompChatMessageAuthorizationInterceptor);
   }
 

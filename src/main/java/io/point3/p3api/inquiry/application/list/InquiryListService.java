@@ -10,6 +10,7 @@ import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.chat.InquiryChatDetailQueryUseCase;
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
+import io.point3.p3api.inquiry.application.realtime.InquiryListChangeEventPublisher;
 import io.point3.p3api.inquiry.application.result.InquiryChatDetail;
 import io.point3.p3api.inquiry.application.result.InquiryListItem;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
@@ -47,6 +48,7 @@ public class InquiryListService implements InquiryListUseCase {
   private final StorePersistencePort storePersistencePort;
   private final UserPersistencePort userPersistencePort;
   private final ProfileImageDeliveryService profileImageDeliveryService;
+  private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
   private final Clock clock;
 
   @Override
@@ -109,13 +111,14 @@ public class InquiryListService implements InquiryListUseCase {
     inquiryChatAccessService
         .getBuyerInquiry(inquiryId, buyerUserId)
         .markBuyerRead(Instant.now(clock));
+    inquiryListChangeEventPublisher.publishReaderChanged(inquiryId, buyerUserId);
   }
 
   @Override
   public void markSellerRead(UUID inquiryId, UUID storeId) {
-    inquiryChatAccessService
-        .getSellerInquiry(inquiryId, storeId)
-        .markSellerRead(Instant.now(clock));
+    Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
+    inquiry.markSellerRead(Instant.now(clock));
+    publishSellerChanged(inquiryId, storeId);
   }
 
   @Override
@@ -123,6 +126,7 @@ public class InquiryListService implements InquiryListUseCase {
     Inquiry inquiry = inquiryChatAccessService.getBuyerInquiry(inquiryId, buyerUserId);
     ensureBuyerVisible(inquiry);
     inquiry.moveBuyerToTrash(Instant.now(clock));
+    inquiryListChangeEventPublisher.publishReaderChanged(inquiryId, buyerUserId);
   }
 
   @Override
@@ -130,6 +134,7 @@ public class InquiryListService implements InquiryListUseCase {
     Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
     ensureSellerVisible(inquiry);
     inquiry.moveSellerToTrash(Instant.now(clock));
+    publishSellerChanged(inquiryId, storeId);
   }
 
   @Override
@@ -137,6 +142,7 @@ public class InquiryListService implements InquiryListUseCase {
     Inquiry inquiry = inquiryChatAccessService.getBuyerInquiry(inquiryId, buyerUserId);
     ensureBuyerVisible(inquiry);
     inquiry.restoreBuyerFromTrash();
+    inquiryListChangeEventPublisher.publishReaderChanged(inquiryId, buyerUserId);
   }
 
   @Override
@@ -144,6 +150,7 @@ public class InquiryListService implements InquiryListUseCase {
     Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
     ensureSellerVisible(inquiry);
     inquiry.restoreSellerFromTrash();
+    publishSellerChanged(inquiryId, storeId);
   }
 
   @Override
@@ -291,6 +298,11 @@ public class InquiryListService implements InquiryListUseCase {
     return storePersistencePort
         .findById(storeId)
         .orElseThrow(() -> new BaseException(ChatErrorCode.CHAT_INQUIRY_NOT_FOUND));
+  }
+
+  private void publishSellerChanged(UUID inquiryId, UUID storeId) {
+    inquiryListChangeEventPublisher.publishReaderChanged(
+        inquiryId, findStore(storeId).getOwnerUserId());
   }
 
   private Map<UUID, User> buyersById(List<Inquiry> inquiries) {

@@ -52,6 +52,7 @@ public class AssetVariantService implements AssetVariantRegisterUseCase, AssetVa
         .toList();
 
     List<AssetVariant> registeredVariants = assetVariantPersistencePort.saveAll(variants);
+    asset.markReady();
     return RegisteredAssetVariants.from(
         command.assetId(), registeredVariants, assetDeliveryUrlResolver::resolve);
   }

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -26,7 +27,7 @@ public class InquiryListRealtimeEventHandler {
   private final ChatTimelineItemPort chatTimelineItemPort;
   private final InquiryListRealtimePublisherPort inquiryListRealtimePublisherPort;
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void publish(InquiryListChangedEvent event) {
     Inquiry inquiry = findInquiry(event.inquiryId());
@@ -51,7 +52,7 @@ public class InquiryListRealtimeEventHandler {
     }
   }
 
-  @Transactional(readOnly = true)
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void publish(InquiryListReaderChangedEvent event) {
     Inquiry inquiry = findInquiry(event.inquiryId());

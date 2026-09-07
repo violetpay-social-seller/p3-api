@@ -4,6 +4,7 @@ import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
+import io.point3.p3api.inquiry.application.realtime.InquiryListChangeEventPublisher;
 import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmissionResult;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
@@ -24,6 +25,7 @@ public class SellerOrderFormSubmissionQueryService
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormAnswerDeliveryService orderFormAnswerDeliveryService;
   private final OrderOptionRowResolver orderOptionRowResolver;
+  private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
 
   @Override
   public List<OrderFormSubmissionResult> getSubmissions(UUID inquiryId, UUID storeId) {
@@ -45,6 +47,7 @@ public class SellerOrderFormSubmissionQueryService
     validate(submission, inquiry);
 
     inquiry.markInProgressOnSellerReview();
+    inquiryListChangeEventPublisher.publishInquiryChanged(inquiry.getId());
     return toResult(submission);
   }
 

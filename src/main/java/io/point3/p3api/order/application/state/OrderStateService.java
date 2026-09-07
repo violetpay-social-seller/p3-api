@@ -5,6 +5,7 @@ import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.exception.code.PaymentErrorCode;
 import io.point3.p3api.inquiry.application.port.InquiryPersistencePort;
+import io.point3.p3api.inquiry.application.realtime.InquiryListChangeEventPublisher;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.notification.application.create.CreateNotificationCommand;
 import io.point3.p3api.notification.application.create.NotificationCreateUseCase;
@@ -55,6 +56,7 @@ public class OrderStateService implements OrderStateUseCase {
   private final Clock clock;
   private final StorePersistencePort storePersistencePort;
   private final NotificationCreateUseCase notificationCreateUseCase;
+  private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
 
   @Override
   public OrderResult pickUp(CompleteOrderPickupCommand command) {
@@ -65,6 +67,7 @@ public class OrderStateService implements OrderStateUseCase {
         .findById(order.getInquiryId())
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
     inquiry.markPickedUp();
+    inquiryListChangeEventPublisher.publishInquiryChanged(inquiry.getId());
 
     return OrderResult.from(order);
   }

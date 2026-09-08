@@ -22,6 +22,7 @@ import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.notification.infrastructure.persistence.NotificationJpaRepository;
 import io.point3.p3api.order.application.option.OrderOptionRowResolver;
+import io.point3.p3api.order.application.price.ConfirmedOptionPrice;
 import io.point3.p3api.order.application.query.OrderConfirmationPreview;
 import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
@@ -229,14 +230,59 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("문의 가격 옵션이 선택된 주문서는 자동 합계와 주문확인서 전송을 거절한다")
-  void rejectsAutomaticAmountForUnconfirmedPrice() {
+  @DisplayName("문의 가격 옵션은 미리보기에서 입력 대상을 반환하고 확정 가격으로 전송한다")
+  void previewsAndConfirmsManualOptionPrice() throws Exception {
     Fixture fixture = prepareFixture(true);
 
-    BaseException previewException = assertThrows(
-        BaseException.class,
-        () -> orderConfirmationPreviewQueryService.getPreview(
-            fixture.inquiry().getId(), fixture.store().id()));
+    OrderConfirmationPreview preview = orderConfirmationPreviewQueryService.getPreview(
+        fixture.inquiry().getId(), fixture.store().id());
+    UUID optionGroupId = fixture.form().optionGroups().get(1).id();
+    SendOrderConfirmationResult result =
+        orderConfirmationService.send(new SendOrderConfirmationCommand(
+            fixture.inquiry().getId(),
+            fixture.store().id(),
+            fixture.seller().getId(),
+            fixture.submission().getId(),
+            "맞춤 케이크",
+            "맞춤 사이즈",
+            3000,
+            Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(new ConfirmedOptionPrice(optionGroupId, "size-custom", 3000L)),
+            List.of(),
+            null));
+
+    assertEquals(0, preview.baseAmount());
+    assertTrue(preview.requiresManualAmount());
+    assertTrue(preview.inquiryRequired());
+    assertEquals(1, preview.unconfirmedOptions().size());
+    assertEquals(optionGroupId, preview.unconfirmedOptions().getFirst().optionGroupId());
+    assertEquals("size-custom", preview.unconfirmedOptions().getFirst().optionValue());
+    assertEquals("사이즈", preview.unconfirmedOptions().getFirst().label());
+    assertEquals("맞춤 크기", preview.unconfirmedOptions().getFirst().displayValue());
+    assertEquals("가격 협의", preview.unconfirmedOptions().getFirst().priceLabel());
+
+    OrderConfirmation persisted =
+        orderConfirmationJpaRepository.findById(result.orderConfirmation().id()).orElseThrow();
+    JsonNode confirmedPrices = objectMapper.readTree(persisted.getConfirmedOptionPrices());
+    assertEquals(
+        optionGroupId.toString(), confirmedPrices.get(0).get("optionGroupId").asText());
+    assertEquals("size-custom", confirmedPrices.get(0).get("optionValue").asText());
+    assertEquals(3000, confirmedPrices.get(0).get("amount").asLong());
+    assertEquals(3000, persisted.getAmount());
+    assertEquals(2, orderOptionRowResolver.fromConfirmation(persisted).size());
+    assertEquals(
+        3000L, orderOptionRowResolver.fromConfirmation(persisted).get(1).amount());
+    OrderConfirmationResponse response =
+        OrderConfirmationResponse.from(result, orderOptionRowResolver);
+    assertEquals(persisted.getConfirmedOptionPrices(), response.confirmedOptionPrices());
+    assertEquals(3000L, response.optionRows().get(1).amount());
+  }
+
+  @Test
+  @DisplayName("문의 가격 옵션의 확정 가격이 누락되면 주문확인서 전송을 거절한다")
+  void rejectsMissingManualOptionPrice() {
+    Fixture fixture = prepareFixture(true);
+
     BaseException sendException = assertThrows(
         BaseException.class,
         () -> orderConfirmationService.send(new SendOrderConfirmationCommand(
@@ -245,18 +291,64 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
             fixture.seller().getId(),
             fixture.submission().getId(),
             "맞춤 케이크",
-            null,
-            0,
+            "맞춤 사이즈",
+            3000,
             Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(),
             List.of(),
             null)));
 
     assertEquals(
         OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED,
-        previewException.getErrorCode());
-    assertEquals(
-        OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED,
         sendException.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("서버 계산 금액과 요청 총액이 다르면 주문확인서 전송을 거절한다")
+  void rejectsMismatchedTotalAmount() {
+    Fixture fixture = prepareFixture();
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderConfirmationService.send(new SendOrderConfirmationCommand(
+            fixture.inquiry().getId(),
+            fixture.store().id(),
+            fixture.seller().getId(),
+            fixture.submission().getId(),
+            "초코 케이크",
+            "기본 사이즈",
+            39000,
+            Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(),
+            null)));
+
+    assertEquals(
+        OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("문의 옵션을 0원으로 확정해 최종 금액이 0원이면 전송을 거절한다")
+  void rejectsZeroFinalAmount() {
+    Fixture fixture = prepareFixture(true);
+    UUID optionGroupId = fixture.form().optionGroups().get(1).id();
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderConfirmationService.send(new SendOrderConfirmationCommand(
+            fixture.inquiry().getId(),
+            fixture.store().id(),
+            fixture.seller().getId(),
+            fixture.submission().getId(),
+            "맞춤 케이크",
+            "맞춤 사이즈",
+            0,
+            Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(new ConfirmedOptionPrice(optionGroupId, "size-custom", 0L)),
+            List.of(),
+            null)));
+
+    assertEquals(
+        OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID, exception.getErrorCode());
   }
 
   @Test

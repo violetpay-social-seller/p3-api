@@ -36,12 +36,17 @@ public class OrderQueryService implements OrderQueryUseCase {
   private final OrderOptionRowResolver orderOptionRowResolver;
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
+  private final OrderReferenceAssetDeliveryService orderReferenceAssetDeliveryService;
   private final Clock clock;
 
   @Override
   public List<OrderResult> getBuyerOrders(UUID buyerUserId) {
-    return orderPersistencePort.findAllByBuyerUserId(buyerUserId).stream()
-        .map(OrderResult::from)
+    List<Order> orders = orderPersistencePort.findAllByBuyerUserId(buyerUserId);
+    var referenceAssetsByOrderId =
+        orderReferenceAssetDeliveryService.appendDeliveriesByOrderId(orders);
+    return orders.stream()
+        .map(order -> OrderResult.from(
+            order, referenceAssetsByOrderId.getOrDefault(order.getId(), List.of())))
         .toList();
   }
 
@@ -63,8 +68,12 @@ public class OrderQueryService implements OrderQueryUseCase {
     Instant startInclusive = startInclusive(query.startDate());
     Instant endExclusive = endExclusive(query.endDate());
 
-    return orderPersistencePort.findSellerOrders(query, startInclusive, endExclusive).stream()
-        .map(OrderResult::from)
+    List<Order> orders = orderPersistencePort.findSellerOrders(query, startInclusive, endExclusive);
+    var referenceAssetsByOrderId =
+        orderReferenceAssetDeliveryService.appendDeliveriesByOrderId(orders);
+    return orders.stream()
+        .map(order -> OrderResult.from(
+            order, referenceAssetsByOrderId.getOrDefault(order.getId(), List.of())))
         .toList();
   }
 
@@ -92,7 +101,9 @@ public class OrderQueryService implements OrderQueryUseCase {
             () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
 
     return OrderDetailResult.of(
-        OrderResult.from(order),
+        OrderResult.from(
+            order,
+            orderReferenceAssetDeliveryService.appendDeliveries(order.getStartReferenceAssets())),
         paymentAttempt,
         refunds,
         orderOptionRowResolver.fromConfirmation(confirmation));

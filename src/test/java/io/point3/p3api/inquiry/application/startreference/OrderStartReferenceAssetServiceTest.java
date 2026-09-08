@@ -136,8 +136,8 @@ class OrderStartReferenceAssetServiceTest {
   }
 
   @Test
-  @DisplayName("주문 생성용 스냅샷은 단일 assetId 배열이다")
-  void createsOrderAssetIdSnapshot() {
+  @DisplayName("주문 생성용 스냅샷은 assetId, source, sortOrder를 보존한다")
+  void createsOrderReferenceAssetSnapshot() throws Exception {
     UUID inquiryId = UUID.randomUUID();
     UUID buyerId = UUID.randomUUID();
     UUID firstAssetId = UUID.randomUUID();
@@ -149,7 +149,12 @@ class OrderStartReferenceAssetServiceTest {
             firstAssetId, OrderFormReferenceAssetSource.STORE_GALLERY),
         true);
 
-    assertEquals("[\"" + firstAssetId + "\"]", service.createOrderAssetIdSnapshot(inquiryId));
+    var snapshot =
+        new ObjectMapper().readTree(service.createOrderReferenceAssetSnapshot(inquiryId));
+
+    assertEquals(firstAssetId.toString(), snapshot.get(0).get("assetId").asText());
+    assertEquals("STORE_GALLERY", snapshot.get(0).get("source").asText());
+    assertEquals(0, snapshot.get(0).get("sortOrder").asInt());
   }
 
   private Asset asset(UUID uploadedBy) {

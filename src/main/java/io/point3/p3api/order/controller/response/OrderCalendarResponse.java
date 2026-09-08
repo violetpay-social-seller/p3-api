@@ -3,6 +3,7 @@ package io.point3.p3api.order.controller.response;
 import io.point3.p3api.order.application.result.OrderCalendarDayResult;
 import io.point3.p3api.order.application.result.OrderCalendarOrderResult;
 import io.point3.p3api.order.application.result.OrderCalendarResult;
+import io.point3.p3api.order.application.result.OrderReferenceAssetResult;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -64,7 +65,14 @@ public record OrderCalendarResponse(
       Instant pickupAt,
       LocalDate pickupDate,
       LocalTime pickupTime,
-      OrderStatus status) {
+      OrderStatus status,
+      List<UUID> startReferenceAssets,
+      List<ReferenceAssetResponse> referenceAssets) {
+
+    public OrderItem {
+      startReferenceAssets = List.copyOf(startReferenceAssets);
+      referenceAssets = List.copyOf(referenceAssets);
+    }
 
     static OrderItem from(OrderCalendarOrderResult result) {
       return new OrderItem(
@@ -77,7 +85,21 @@ public record OrderCalendarResponse(
           result.pickupAt(),
           result.pickupDate(),
           result.pickupTime(),
-          result.status());
+          result.status(),
+          result.referenceAssets().stream()
+              .map(OrderReferenceAssetResult::assetId)
+              .toList(),
+          result.referenceAssets().stream().map(ReferenceAssetResponse::from).toList());
+    }
+
+    @Override
+    public List<UUID> startReferenceAssets() {
+      return List.copyOf(startReferenceAssets);
+    }
+
+    @Override
+    public List<ReferenceAssetResponse> referenceAssets() {
+      return List.copyOf(referenceAssets);
     }
   }
 }

@@ -1,6 +1,5 @@
 package io.point3.p3api.order.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
@@ -39,14 +38,13 @@ public class OrderController {
   private final OrderQueryUseCase orderQueryUseCase;
   private final OrderStateUseCase orderStateUseCase;
   private final OrderCalendarQueryUseCase orderCalendarQueryUseCase;
-  private final ObjectMapper objectMapper;
 
   @GetMapping("/orders")
   public ApiResponse<List<OrderListItemResponse>> getBuyerOrders(
       @Authenticated CurrentUser currentUser) {
     RoleGuard.requireBuyer(currentUser);
     return ApiResponse.ok(orderQueryUseCase.getBuyerOrders(currentUser.userId()).stream()
-        .map(order -> OrderListItemResponse.from(order, objectMapper))
+        .map(OrderListItemResponse::from)
         .toList());
   }
 
@@ -78,7 +76,7 @@ public class OrderController {
     SellerOrderListQuery query =
         SellerOrderListQuery.of(storeId, statuses, startDate, endDate, dateBasis);
     return ApiResponse.ok(orderQueryUseCase.getSellerOrders(query).stream()
-        .map(order -> OrderListItemResponse.from(order, objectMapper))
+        .map(OrderListItemResponse::from)
         .toList());
   }
 

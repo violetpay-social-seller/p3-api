@@ -10,6 +10,7 @@ import io.point3.p3api.inquiry.application.draft.model.OrderFormDraftData;
 import io.point3.p3api.inquiry.application.port.OrderStartReferenceAssetPersistencePort;
 import io.point3.p3api.inquiry.application.result.OrderStartReferenceAssetResult;
 import io.point3.p3api.inquiry.domain.entity.OrderStartReferenceAsset;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -66,12 +67,14 @@ public class OrderStartReferenceAssetService {
   }
 
   @Transactional(readOnly = true)
-  public String createOrderAssetIdSnapshot(UUID inquiryId) {
-    List<UUID> assetIds =
+  public String createOrderReferenceAssetSnapshot(UUID inquiryId) {
+    List<StartReferenceAssetSnapshot> snapshots =
         orderStartReferenceAssetPersistencePort.findAllByInquiryId(inquiryId).stream()
-            .map(OrderStartReferenceAsset::getAssetId)
+            .sorted(Comparator.comparingInt(OrderStartReferenceAsset::getSortOrder))
+            .map(asset -> new StartReferenceAssetSnapshot(
+                asset.getAssetId(), asset.getSource().name(), asset.getSortOrder()))
             .toList();
-    return write(assetIds);
+    return write(snapshots);
   }
 
   private String write(Object snapshot) {

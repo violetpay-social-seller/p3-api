@@ -95,8 +95,8 @@ public class OrderStateService implements OrderStateUseCase {
   @Override
   public OrderDetailResult refund(RefundOrderCommand command) {
     Order order = getSellerOrderForUpdate(command.orderId(), command.storeId());
-    validateRefundable(order);
     validateNoExistingRefund(order.getId());
+    validateRefundable(order);
     Instant requestedAt = Instant.now(clock);
     var calculation = orderRefundPolicyCalculator.calculate(
         order.getPaidAmount(),

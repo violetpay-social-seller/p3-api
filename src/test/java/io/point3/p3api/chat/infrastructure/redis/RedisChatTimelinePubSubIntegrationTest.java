@@ -6,14 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.point3.p3api.chat.application.send.SendChatMessageResult;
+import io.point3.p3api.chat.application.realtime.ChatTimelineRealtimeEvent;
+import io.point3.p3api.chat.application.realtime.ChatTimelineRealtimePayload;
 import io.point3.p3api.chat.controller.ChatStompDestination;
-import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
-import io.point3.p3api.chat.domain.entity.ChatMessage;
-import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.time.Instant;
 import java.util.List;
@@ -36,7 +33,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @Testcontainers
-class RedisChatMessagePubSubIntegrationTest {
+class RedisChatTimelinePubSubIntegrationTest {
 
   private static final int REDIS_PORT = 6379;
 
@@ -69,41 +66,42 @@ class RedisChatMessagePubSubIntegrationTest {
   @DisplayName("Redis 발행 이벤트를 수신해 로컬 STOMP 문의방 토픽으로 전달한다")
   void publishesRedisEventAndForwardsItToLocalStompTopic() throws InterruptedException {
     UUID inquiryId = UUID.randomUUID();
-    ChatTimelineItemStompResponse response = new ChatTimelineItemStompResponse(
+    ChatTimelineRealtimePayload payload = new ChatTimelineRealtimePayload(
         UUID.randomUUID(),
-        ChatTimelineItemType.MESSAGE,
+        UUID.randomUUID(),
+        ChatTimelineItemType.ORDER_CONFIRMATION,
         UUID.randomUUID(),
         Instant.now(),
-        "안녕하세요",
+        null,
         List.of());
     CountDownLatch forwarded = new CountDownLatch(1);
     AtomicReference<String> destination = new AtomicReference<>();
-    AtomicReference<ChatTimelineItemStompResponse> forwardedResponse = new AtomicReference<>();
+    AtomicReference<ChatTimelineRealtimePayload> forwardedPayload = new AtomicReference<>();
     SimpMessagingTemplate messagingTemplate = mock(SimpMessagingTemplate.class);
     doAnswer(invocation -> {
           destination.set(invocation.getArgument(0));
-          forwardedResponse.set(invocation.getArgument(1));
+          forwardedPayload.set(invocation.getArgument(1));
           forwarded.countDown();
           return null;
         })
         .when(messagingTemplate)
-        .convertAndSend(anyString(), any(ChatTimelineItemStompResponse.class));
+        .convertAndSend(anyString(), any(ChatTimelineRealtimePayload.class));
 
-    ChatMessageRedisEventSerializer eventSerializer =
-        new ChatMessageRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
-    RedisChatMessageSubscriber subscriber =
-        new RedisChatMessageSubscriber(eventSerializer, messagingTemplate);
+    ChatTimelineRedisEventSerializer eventSerializer =
+        new ChatTimelineRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
+    RedisChatTimelineSubscriber subscriber =
+        new RedisChatTimelineSubscriber(eventSerializer, messagingTemplate);
     listenerContainer = createListenerContainer(subscriber);
     listenerContainer.start();
     awaitListening();
 
-    RedisChatMessagePublisher publisher =
-        new RedisChatMessagePublisher(stringRedisTemplate(), eventSerializer);
-    publisher.publish(sendResult(inquiryId, response));
+    RedisChatTimelinePublisher publisher =
+        new RedisChatTimelinePublisher(stringRedisTemplate(), eventSerializer);
+    publisher.publish(new ChatTimelineRealtimeEvent(inquiryId, payload));
 
-    assertTrue(forwarded.await(5, TimeUnit.SECONDS), "STOMP topic으로 메시지가 전달되지 않았습니다.");
+    assertTrue(forwarded.await(5, TimeUnit.SECONDS), "STOMP topic으로 타임라인 이벤트가 전달되지 않았습니다.");
     assertEquals(ChatStompDestination.topicDestination(inquiryId), destination.get());
-    assertEquals(response, forwardedResponse.get());
+    assertEquals(payload, forwardedPayload.get());
   }
 
   private void awaitListening() throws InterruptedException {
@@ -115,10 +113,10 @@ class RedisChatMessagePubSubIntegrationTest {
   }
 
   private RedisMessageListenerContainer createListenerContainer(
-      RedisChatMessageSubscriber subscriber) {
+      RedisChatTimelineSubscriber subscriber) {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(connectionFactory);
-    container.addMessageListener(subscriber, new ChannelTopic(ChatRedisChannel.MESSAGES));
+    container.addMessageListener(subscriber, new ChannelTopic(ChatRedisChannel.TIMELINE_ITEMS));
     container.afterPropertiesSet();
     return container;
   }
@@ -127,19 +125,5 @@ class RedisChatMessagePubSubIntegrationTest {
     StringRedisTemplate stringRedisTemplate = new StringRedisTemplate(connectionFactory);
     stringRedisTemplate.afterPropertiesSet();
     return stringRedisTemplate;
-  }
-
-  private SendChatMessageResult sendResult(UUID inquiryId, ChatTimelineItemStompResponse response) {
-    ChatMessage chatMessage = mock(ChatMessage.class);
-    when(chatMessage.getInquiryId()).thenReturn(inquiryId);
-    when(chatMessage.getContent()).thenReturn(response.content());
-
-    ChatTimelineItem chatTimelineItem = mock(ChatTimelineItem.class);
-    when(chatTimelineItem.getId()).thenReturn(response.eventId());
-    when(chatTimelineItem.getType()).thenReturn(response.type());
-    when(chatTimelineItem.getSenderUserId()).thenReturn(response.senderUserId());
-    when(chatTimelineItem.getCreatedAt()).thenReturn(response.createdAt());
-
-    return new SendChatMessageResult(chatMessage, chatTimelineItem, List.of());
   }
 }

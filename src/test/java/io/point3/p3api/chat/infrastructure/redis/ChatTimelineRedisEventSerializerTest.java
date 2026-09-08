@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.point3.p3api.chat.controller.response.ChatTimelineItemStompResponse;
+import io.point3.p3api.chat.application.realtime.ChatTimelineRealtimePayload;
 import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -15,26 +15,27 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class ChatMessageRedisEventSerializerTest {
+class ChatTimelineRedisEventSerializerTest {
 
-  private final ChatMessageRedisEventSerializer serializer =
-      new ChatMessageRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
+  private final ChatTimelineRedisEventSerializer serializer =
+      new ChatTimelineRedisEventSerializer(new ObjectMapper().findAndRegisterModules());
 
   @Test
-  @DisplayName("Instant를 포함한 채팅 Redis 이벤트를 직렬화하고 원본대로 역직렬화한다")
+  @DisplayName("Instant와 referenceId를 포함한 채팅 타임라인 Redis 이벤트를 원본대로 복원한다")
   void serializesAndDeserializesEventIncludingInstant() {
-    ChatMessageRedisEvent event = new ChatMessageRedisEvent(
+    ChatTimelineRedisEvent event = new ChatTimelineRedisEvent(
         UUID.randomUUID(),
-        new ChatTimelineItemStompResponse(
+        new ChatTimelineRealtimePayload(
             UUID.randomUUID(),
-            ChatTimelineItemType.MESSAGE,
+            UUID.randomUUID(),
+            ChatTimelineItemType.ORDER_FORM_SUBMISSION,
             UUID.randomUUID(),
             Instant.parse("2026-08-17T10:00:00Z"),
-            "안녕하세요",
+            null,
             List.of()));
 
     String serialized = serializer.serialize(event);
-    ChatMessageRedisEvent deserialized =
+    ChatTimelineRedisEvent deserialized =
         serializer.deserialize(serialized.getBytes(StandardCharsets.UTF_8));
 
     assertEquals(event, deserialized);

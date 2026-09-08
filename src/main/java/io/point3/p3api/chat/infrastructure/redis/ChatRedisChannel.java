@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ChatRedisChannel {
 
-  public static final String MESSAGES = "chat:messages";
+  public static final String TIMELINE_ITEMS = "chat:timeline-items";
 }

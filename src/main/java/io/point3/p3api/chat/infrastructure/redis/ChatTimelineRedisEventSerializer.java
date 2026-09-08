@@ -6,14 +6,14 @@ import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-/** 채팅 Redis 이벤트를 JSON 문자열로 직렬화·역직렬화한다. */
+/** 채팅 타임라인 Redis 이벤트를 JSON 문자열로 직렬화·역직렬화한다. */
 @Component
 @RequiredArgsConstructor
-public class ChatMessageRedisEventSerializer {
+public class ChatTimelineRedisEventSerializer {
 
   private final ObjectMapper objectMapper;
 
-  public String serialize(ChatMessageRedisEvent event) {
+  public String serialize(ChatTimelineRedisEvent event) {
     try {
       return objectMapper.writeValueAsString(event);
     } catch (JsonProcessingException e) {
@@ -21,10 +21,10 @@ public class ChatMessageRedisEventSerializer {
     }
   }
 
-  public ChatMessageRedisEvent deserialize(byte[] payload) {
+  public ChatTimelineRedisEvent deserialize(byte[] payload) {
     try {
       return objectMapper.readValue(
-          new String(payload, StandardCharsets.UTF_8), ChatMessageRedisEvent.class);
+          new String(payload, StandardCharsets.UTF_8), ChatTimelineRedisEvent.class);
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException("Failed to deserialize chat Redis event", e);
     }

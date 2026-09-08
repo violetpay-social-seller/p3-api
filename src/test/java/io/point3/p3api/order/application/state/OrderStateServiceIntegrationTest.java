@@ -31,13 +31,21 @@ import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
 import io.point3.p3api.payment.infrastructure.persistence.RefundJpaRepository;
 import io.point3.p3api.store.domain.entity.Store;
+import io.point3.p3api.store.domain.entity.StoreRefundPolicy;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreRefundPolicyJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +56,8 @@ import org.springframework.context.annotation.Primary;
 
 @Import(OrderStateServiceIntegrationTest.RefundTestConfiguration.class)
 class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
+
+  private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
   @Autowired
   private OrderQueryUseCase orderQueryUseCase;
@@ -60,6 +70,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreJpaRepository storeJpaRepository;
+
+  @Autowired
+  private StoreRefundPolicyJpaRepository storeRefundPolicyJpaRepository;
 
   @Autowired
   private InquiryJpaRepository inquiryJpaRepository;
@@ -79,33 +92,57 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private NotificationJpaRepository notificationJpaRepository;
 
+  @Autowired
+  private RecordingPoint3PaymentPort point3PaymentPort;
+
+  @BeforeEach
+  void resetPoint3PaymentPort() {
+    point3PaymentPort.reset();
+  }
+
   @TestConfiguration
   static class RefundTestConfiguration {
     @Bean
     @Primary
-    Point3PaymentPort point3PaymentPort() {
-      return new Point3PaymentPort() {
-        @Override
-        public Point3PaymentSession createSession(
-            long amount, String productName, String merchantName) {
-          throw new UnsupportedOperationException();
-        }
+    RecordingPoint3PaymentPort point3PaymentPort() {
+      return new RecordingPoint3PaymentPort();
+    }
+  }
 
-        @Override
-        public Point3CaptureResult capture(String sessionId) {
-          throw new UnsupportedOperationException();
-        }
+  static class RecordingPoint3PaymentPort implements Point3PaymentPort {
 
-        @Override
-        public Point3CaptureResult getSession(String sessionId) {
-          throw new UnsupportedOperationException();
-        }
+    private int refundCallCount;
+    private long lastRefundAmount;
+    private boolean refundCompleted = true;
 
-        @Override
-        public Point3RefundResult refund(String sessionId, long amount, String reason, String key) {
-          return new Point3RefundResult(true, null);
-        }
-      };
+    @Override
+    public Point3PaymentSession createSession(
+        long amount, String productName, String merchantName) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Point3CaptureResult capture(String sessionId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Point3CaptureResult getSession(String sessionId) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Point3RefundResult refund(String sessionId, long amount, String reason, String key) {
+      refundCallCount++;
+      lastRefundAmount = amount;
+      return new Point3RefundResult(
+          refundCompleted, refundCompleted ? null : "POINT3_REFUND_FAILED");
+    }
+
+    void reset() {
+      refundCallCount = 0;
+      lastRefundAmount = 0;
+      refundCompleted = true;
     }
   }
 
@@ -192,6 +229,83 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("스토어 정책의 환불률로 부분 환불하고 Point3에 같은 금액을 요청한다")
+  void refundsPartialAmountFromStorePolicy() {
+    Fixture fixture = prepareFixture(
+        "order-partial-refund",
+        6,
+        List.of(new PolicyRule(7, 100), new PolicyRule(5, 80), new PolicyRule(3, 50)));
+
+    OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "정책 부분 환불"));
+
+    assertEquals(OrderStatus.REFUNDED, refunded.order().status());
+    assertEquals(32_800, refunded.refunds().getFirst().amount());
+    assertEquals(80, refunded.refunds().getFirst().refundRate());
+    assertEquals(1, point3PaymentPort.refundCallCount);
+    assertEquals(32_800, point3PaymentPort.lastRefundAmount);
+  }
+
+  @Test
+  @DisplayName("적용할 환불정책이 없으면 0원으로 완료하고 Point3를 호출하지 않는다")
+  void completesZeroAmountRefundWithoutPoint3Request() {
+    Fixture fixture = prepareFixture(
+        "order-zero-refund",
+        2,
+        List.of(new PolicyRule(7, 100), new PolicyRule(5, 80), new PolicyRule(3, 50)));
+
+    OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 가능 기간 경과"));
+
+    assertEquals(OrderStatus.REFUNDED, refunded.order().status());
+    assertEquals(0, refunded.refunds().getFirst().amount());
+    assertEquals(0, refunded.refunds().getFirst().refundRate());
+    assertEquals(RefundStatus.COMPLETED, refunded.refunds().getFirst().status());
+    assertEquals(0, point3PaymentPort.refundCallCount);
+  }
+
+  @Test
+  @DisplayName("완료된 주문 환불은 다시 요청할 수 없다")
+  void rejectsDuplicateRefund() {
+    Fixture fixture = prepareFixture("order-duplicate-refund");
+    RefundOrderCommand command = RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "중복 환불");
+    orderStateUseCase.refund(command);
+
+    BaseException exception =
+        assertThrows(BaseException.class, () -> orderStateUseCase.refund(command));
+
+    assertEquals(OrderErrorCode.ORDER_REFUND_ALREADY_PROCESSED, exception.getErrorCode());
+    assertEquals(1, point3PaymentPort.refundCallCount);
+  }
+
+  @Test
+  @DisplayName("Point3 환불 실패는 실패 내역을 남기고 같은 주문의 재시도를 허용한다")
+  void recordsFailedRefundAndAllowsRetry() {
+    Fixture fixture = prepareFixture("order-refund-retry");
+    RefundOrderCommand command = RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 재시도");
+    point3PaymentPort.refundCompleted = false;
+
+    OrderDetailResult failed = orderStateUseCase.refund(command);
+
+    assertEquals(OrderStatus.PAID, failed.order().status());
+    assertEquals(RefundStatus.FAILED, failed.refunds().getFirst().status());
+
+    point3PaymentPort.refundCompleted = true;
+    OrderDetailResult retried = orderStateUseCase.refund(command);
+
+    assertEquals(OrderStatus.REFUNDED, retried.order().status());
+    assertEquals(2, retried.refunds().size());
+    assertEquals(
+        1,
+        retried.refunds().stream()
+            .filter(refund -> refund.status() == RefundStatus.COMPLETED)
+            .count());
+    assertEquals(2, point3PaymentPort.refundCallCount);
+  }
+
+  @Test
   @DisplayName("판매자는 결제완료 주문을 픽업완료로 변경한다")
   void picksUpPaidOrder() {
     Fixture fixture = prepareFixture("order-pickup");
@@ -225,14 +339,25 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private Fixture prepareFixture(String prefix) {
+    return prepareFixture(prefix, 7, List.of(new PolicyRule(0, 100)));
+  }
+
+  private Fixture prepareFixture(
+      String prefix, int pickupDaysFromToday, List<PolicyRule> refundPolicies) {
     User seller = saveUser(UserRole.SELLER, prefix + "-seller");
     User buyer = saveUser(UserRole.BUYER, prefix + "-buyer");
     Store store = storeJpaRepository.saveAndFlush(
         Store.create(seller.getId(), "주문 테스트 스토어 " + prefix, "order-test-" + UUID.randomUUID()));
+    for (int index = 0; index < refundPolicies.size(); index++) {
+      PolicyRule policy = refundPolicies.get(index);
+      storeRefundPolicyJpaRepository.save(StoreRefundPolicy.create(
+          store.getId(), policy.daysBeforePickup(), policy.refundRate(), index));
+    }
+    storeRefundPolicyJpaRepository.flush();
     Inquiry inquiry =
         inquiryJpaRepository.saveAndFlush(Inquiry.create(store.getId(), buyer.getId()));
     OrderConfirmation confirmation = orderConfirmationJpaRepository.saveAndFlush(
-        createConfirmation(inquiry.getId(), seller.getId()));
+        createConfirmation(inquiry.getId(), seller.getId(), pickupAt(pickupDaysFromToday)));
     PaymentAttempt paymentAttempt =
         paymentAttemptJpaRepository.saveAndFlush(createPaymentAttempt(confirmation, buyer));
     Order order = orderJpaRepository.saveAndFlush(Order.create(
@@ -250,7 +375,8 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     return new Fixture(seller, buyer, store, inquiry, confirmation, paymentAttempt, order);
   }
 
-  private OrderConfirmation createConfirmation(UUID inquiryId, UUID sellerUserId) {
+  private OrderConfirmation createConfirmation(
+      UUID inquiryId, UUID sellerUserId, Instant pickupAt) {
     OrderConfirmation confirmation = OrderConfirmation.create(
         inquiryId,
         null,
@@ -258,7 +384,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         "초코 케이크 1호",
         "딸기 토핑",
         41000,
-        Instant.parse("2026-09-01T04:00:00Z"),
+        pickupAt,
         "주문 테스트 스토어",
         "{\"answers\":[{\"label\":\"메뉴명\","
             + "\"selectedOptions\":[{\"label\":\"초코 케이크\",\"price\":0}]}]}",
@@ -267,6 +393,14 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     confirmation.sent(Instant.parse("2026-08-30T01:00:00Z"));
     confirmation.markPaid();
     return confirmation;
+  }
+
+  private Instant pickupAt(int daysFromToday) {
+    return LocalDate.now(KOREA_ZONE_ID)
+        .plus(daysFromToday, ChronoUnit.DAYS)
+        .atTime(LocalTime.NOON)
+        .atZone(KOREA_ZONE_ID)
+        .toInstant();
   }
 
   private PaymentAttempt createPaymentAttempt(OrderConfirmation confirmation, User buyer) {
@@ -299,4 +433,6 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
       OrderConfirmation confirmation,
       PaymentAttempt paymentAttempt,
       Order order) {}
+
+  private record PolicyRule(int daysBeforePickup, int refundRate) {}
 }

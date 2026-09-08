@@ -3,6 +3,7 @@ package io.point3.p3api.order.infrastructure.persistence;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
+import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -19,6 +21,11 @@ public interface OrderJpaRepository
   Optional<Order> findByIdAndBuyerUserId(UUID orderId, UUID buyerUserId);
 
   Optional<Order> findByIdAndStoreId(UUID orderId, UUID storeId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("select orders from Order orders where orders.id = :orderId and orders.storeId = :storeId")
+  Optional<Order> findByIdAndStoreIdForUpdate(
+      @Param("orderId") UUID orderId, @Param("storeId") UUID storeId);
 
   Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId);
 

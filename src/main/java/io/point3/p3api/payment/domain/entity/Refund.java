@@ -39,6 +39,9 @@ public class Refund {
   @Column(name = "amount", nullable = false)
   private long amount;
 
+  @Column(name = "refund_rate", nullable = false)
+  private int refundRate;
+
   @Column(name = "reason", columnDefinition = "text")
   private String reason;
 
@@ -54,17 +57,33 @@ public class Refund {
   private Instant completedAt;
 
   private Refund(
-      UUID orderId, UUID paymentAttemptId, UUID requestedBy, long amount, String reason) {
+      UUID orderId,
+      UUID paymentAttemptId,
+      UUID requestedBy,
+      long amount,
+      int refundRate,
+      String reason) {
     this.orderId = orderId;
     this.paymentAttemptId = paymentAttemptId;
     this.requestedBy = requestedBy;
     this.amount = amount;
+    this.refundRate = refundRate;
     this.reason = reason;
     this.status = RefundStatus.REQUESTED;
   }
 
   public static Refund create(
       UUID orderId, UUID paymentAttemptId, UUID requestedBy, long amount, String reason) {
+    return create(orderId, paymentAttemptId, requestedBy, amount, 100, reason);
+  }
+
+  public static Refund create(
+      UUID orderId,
+      UUID paymentAttemptId,
+      UUID requestedBy,
+      long amount,
+      int refundRate,
+      String reason) {
     Objects.requireNonNull(orderId, "orderId");
     Objects.requireNonNull(paymentAttemptId, "paymentAttemptId");
     Objects.requireNonNull(requestedBy, "requestedBy");
@@ -72,8 +91,18 @@ public class Refund {
     if (amount < 0) {
       throw new IllegalArgumentException("amount must be greater than or equal to 0");
     }
+    if (refundRate < 0 || refundRate > 100) {
+      throw new IllegalArgumentException("refundRate must be between 0 and 100");
+    }
 
-    return new Refund(orderId, paymentAttemptId, requestedBy, amount, reason);
+    return new Refund(orderId, paymentAttemptId, requestedBy, amount, refundRate, reason);
+  }
+
+  public void startProcessing() {
+    if (status != RefundStatus.REQUESTED) {
+      throw new IllegalStateException("Refund status transition is not allowed");
+    }
+    status = RefundStatus.PROCESSING;
   }
 
   public void complete(Instant completedAt) {

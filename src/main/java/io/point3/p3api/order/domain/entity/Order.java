@@ -198,12 +198,16 @@ public class Order {
       throw new IllegalArgumentException("cancelReason must not be blank");
     }
 
-    if (this.status != OrderStatus.PAID && this.status != OrderStatus.CANCEL_REQUESTED) {
-      throw new IllegalStateException("Order status transition is not allowed");
-    }
+    validateRefundable();
 
     this.status = OrderStatus.REFUNDED;
     this.cancelReason = cancelReason;
+  }
+
+  public void validateRefundable() {
+    if (this.status != OrderStatus.PAID && this.status != OrderStatus.CANCEL_REQUESTED) {
+      throw new IllegalStateException("Order status transition is not allowed");
+    }
   }
 
   private void ensureStatus(OrderStatus expectedStatus) {

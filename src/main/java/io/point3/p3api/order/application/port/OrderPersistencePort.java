@@ -20,6 +20,8 @@ public interface OrderPersistencePort {
 
   Optional<Order> findByIdAndStoreId(UUID orderId, UUID storeId);
 
+  Optional<Order> findByIdAndStoreIdForUpdate(UUID orderId, UUID storeId);
+
   Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId);
 
   List<Order> findAllByBuyerUserId(UUID buyerUserId);

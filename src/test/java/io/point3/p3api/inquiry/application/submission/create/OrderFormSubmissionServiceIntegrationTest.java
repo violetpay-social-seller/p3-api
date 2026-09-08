@@ -8,6 +8,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.IntegrationTestSupport;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
+import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
+import io.point3.p3api.assetvariant.domain.type.AssetVariantType;
+import io.point3.p3api.assetvariant.infrastructure.persistence.AssetVariantJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.GalleryErrorCode;
@@ -44,6 +47,7 @@ import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +55,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
+
+  private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
 
   @Autowired
   private OrderFormSubmissionService submissionService;
@@ -77,6 +83,9 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
   private AssetJpaRepository assetJpaRepository;
 
   @Autowired
+  private AssetVariantJpaRepository assetVariantJpaRepository;
+
+  @Autowired
   private OrderFormSubmissionJpaRepository submissionJpaRepository;
 
   @Autowired
@@ -100,7 +109,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             new CreateOrderFormSubmissionCommand.FormAnswer(
                 sizeField.id(), selections(selection("size-10")))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         new CreateOrderFormSubmissionCommand.CancellationRefundAgreement(true),
         List.of(new CreateOrderFormSubmissionCommand.ReferenceAsset(
@@ -144,11 +153,14 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.buyer().getId(),
             fixture.inquiry().getId(),
             fixture.form().id(),
-            List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().optionGroups().get(0).id(),
-                selections(selection("menu").put("text", "초코 케이크")))),
+            List.of(
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "초코 케이크"))),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
-                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+                availablePickupDate(), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(false),
             CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
 
@@ -170,7 +182,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
                 UUID.randomUUID(), selections(selection("unknown")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
-                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+                availablePickupDate(), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
             CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
 
@@ -192,11 +204,14 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.buyer().getId(),
             fixture.inquiry().getId(),
             fixture.form().id(),
-            List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().optionGroups().get(0).id(),
-                selections(selection("menu").put("text", "초코 케이크")))),
+            List.of(
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "초코 케이크"))),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
-                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+                availablePickupDate(), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
             List.of(new CreateOrderFormSubmissionCommand.ReferenceAsset(
                 hiddenAssetId, OrderFormReferenceAssetSource.STORE_GALLERY, 0)))));
@@ -222,13 +237,15 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
                 fixture.form().optionGroups().get(0).id(),
                 selections(selection("menu").put("text", "초코 케이크"))),
             new CreateOrderFormSubmissionCommand.FormAnswer(
+                fixture.form().optionGroups().get(1).id(), selections(selection("size-10"))),
+            new CreateOrderFormSubmissionCommand.FormAnswer(
                 imageField.id(),
                 selections(selection("reference")
                     .set(
                         "assetIds",
                         objectMapper.getNodeFactory().arrayNode().add(buyerAssetId.toString()))))),
         new CreateOrderFormSubmissionCommand.PickupRequest(
-            LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+            availablePickupDate(), LocalTime.parse("13:30")),
         new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
         CreateOrderFormSubmissionCommand.emptyReferenceAssets()));
 
@@ -244,6 +261,8 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
                     fixture.form().optionGroups().get(0).id(),
                     selections(selection("menu").put("text", "초코 케이크"))),
                 new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10"))),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
                     imageField.id(),
                     selections(selection("reference")
                         .set(
@@ -253,7 +272,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
                                 .arrayNode()
                                 .add(fixture.visibleGalleryAssetId().toString()))))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
-                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+                availablePickupDate(), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
             CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
 
@@ -273,7 +292,7 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
                 day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
             .toList(),
-        List.of(LocalDate.parse("2026-08-30"))));
+        List.of(availablePickupDate())));
 
     BaseException exception = assertThrows(
         BaseException.class,
@@ -282,11 +301,14 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
             fixture.buyer().getId(),
             fixture.inquiry().getId(),
             fixture.form().id(),
-            List.of(new CreateOrderFormSubmissionCommand.FormAnswer(
-                fixture.form().optionGroups().get(0).id(),
-                selections(selection("menu").put("text", "초코 케이크")))),
+            List.of(
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "초코 케이크"))),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
             new CreateOrderFormSubmissionCommand.PickupRequest(
-                LocalDate.parse("2026-08-30"), LocalTime.parse("13:30")),
+                availablePickupDate(), LocalTime.parse("13:30")),
             new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
             CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
 
@@ -350,8 +372,23 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
         List.of()));
   }
 
+  private LocalDate availablePickupDate() {
+    return LocalDate.now(KOREA_ZONE_ID).plusDays(1);
+  }
+
   private UUID createVisibleGalleryAsset(UUID storeId, UUID sellerId) {
-    UUID assetId = saveAsset(sellerId, "visible-cake.png").getId();
+    Asset asset = saveAsset(sellerId, "visible-cake.png");
+    assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
+        asset,
+        AssetVariantType.MEDIUM,
+        "processed/" + asset.getId() + "/visible-cake_640.webp",
+        "image/webp",
+        640,
+        640,
+        512));
+    asset.markReady();
+    assetJpaRepository.saveAndFlush(asset);
+    UUID assetId = asset.getId();
     GalleryItemResult galleryItem =
         galleryItemService.create(new CreateGalleryItemCommand(storeId, assetId, 0, false));
     galleryItemService.update(new UpdateGalleryItemCommand(

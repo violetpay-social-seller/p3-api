@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderCalendarOrderResult(
@@ -19,9 +20,15 @@ public record OrderCalendarOrderResult(
     Instant pickupAt,
     LocalDate pickupDate,
     LocalTime pickupTime,
-    OrderStatus status) {
+    OrderStatus status,
+    List<OrderReferenceAssetResult> referenceAssets) {
 
-  public static OrderCalendarOrderResult from(Order order, ZoneId zoneId) {
+  public OrderCalendarOrderResult {
+    referenceAssets = List.copyOf(referenceAssets);
+  }
+
+  public static OrderCalendarOrderResult from(
+      Order order, ZoneId zoneId, List<OrderReferenceAssetResult> referenceAssets) {
     ZonedDateTime pickupDateTime = order.getPickupAt().atZone(zoneId);
 
     return new OrderCalendarOrderResult(
@@ -34,6 +41,16 @@ public record OrderCalendarOrderResult(
         order.getPickupAt(),
         pickupDateTime.toLocalDate(),
         pickupDateTime.toLocalTime(),
-        order.getStatus());
+        order.getStatus(),
+        referenceAssets);
+  }
+
+  public static OrderCalendarOrderResult from(Order order, ZoneId zoneId) {
+    return from(order, zoneId, List.of());
+  }
+
+  @Override
+  public List<OrderReferenceAssetResult> referenceAssets() {
+    return List.copyOf(referenceAssets);
   }
 }

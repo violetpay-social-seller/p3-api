@@ -307,8 +307,8 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     payer.connectPayer(payerId);
     confirmation.markPaid();
     inquiry.markPaid();
-    String startReferenceAssets =
-        orderStartReferenceAssetService.createOrderAssetIdSnapshot(confirmation.getInquiryId());
+    String startReferenceAssets = orderStartReferenceAssetService.createOrderReferenceAssetSnapshot(
+        confirmation.getInquiryId());
 
     Order order = orderPersistencePort
         .findByPaymentAttemptId(paymentAttempt.getId())

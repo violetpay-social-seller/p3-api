@@ -15,6 +15,7 @@ import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.application.port.OrderStatusHistoryPersistencePort;
+import io.point3.p3api.order.application.query.order.OrderReferenceAssetDeliveryService;
 import io.point3.p3api.order.application.refund.OrderRefundPolicyCalculator;
 import io.point3.p3api.order.application.result.OrderDetailResult;
 import io.point3.p3api.order.application.result.OrderResult;
@@ -61,6 +62,7 @@ public class OrderStateService implements OrderStateUseCase {
   private final StorePersistencePort storePersistencePort;
   private final NotificationCreateUseCase notificationCreateUseCase;
   private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
+  private final OrderReferenceAssetDeliveryService orderReferenceAssetDeliveryService;
 
   @Override
   public OrderResult pickUp(CompleteOrderPickupCommand command) {
@@ -73,7 +75,7 @@ public class OrderStateService implements OrderStateUseCase {
     inquiry.markPickedUp();
     inquiryListChangeEventPublisher.publishInquiryChanged(inquiry.getId());
 
-    return OrderResult.from(order);
+    return toResult(order);
   }
 
   @Override
@@ -89,7 +91,7 @@ public class OrderStateService implements OrderStateUseCase {
         () -> order.requestCancel(command.reason(), Instant.now(clock)));
     notifySellerCancelRequested(order);
 
-    return OrderResult.from(order);
+    return toResult(order);
   }
 
   @Override
@@ -226,9 +228,15 @@ public class OrderStateService implements OrderStateUseCase {
             () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
 
     return OrderDetailResult.of(
-        OrderResult.from(order),
+        toResult(order),
         PaymentAttemptResult.from(paymentAttempt, now),
         refunds,
         orderOptionRowResolver.fromConfirmation(confirmation));
+  }
+
+  private OrderResult toResult(Order order) {
+    return OrderResult.from(
+        order,
+        orderReferenceAssetDeliveryService.appendDeliveries(order.getStartReferenceAssets()));
   }
 }

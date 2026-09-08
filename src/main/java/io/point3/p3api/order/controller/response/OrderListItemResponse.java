@@ -1,10 +1,6 @@
 package io.point3.p3api.order.controller.response;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.point3.p3api.exception.BaseException;
-import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.order.application.result.OrderReferenceAssetResult;
 import io.point3.p3api.order.application.result.OrderResult;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import java.time.Instant;
@@ -21,6 +17,7 @@ public record OrderListItemResponse(
     String menuName,
     String optionSummary,
     List<UUID> startReferenceAssets,
+    List<ReferenceAssetResponse> referenceAssets,
     long paidAmount,
     Instant pickupAt,
     OrderStatus status,
@@ -29,13 +26,12 @@ public record OrderListItemResponse(
     Instant createdAt,
     Instant updatedAt) {
 
-  private static final TypeReference<List<UUID>> ASSET_IDS = new TypeReference<>() {};
-
   public OrderListItemResponse {
     startReferenceAssets = List.copyOf(startReferenceAssets);
+    referenceAssets = List.copyOf(referenceAssets);
   }
 
-  public static OrderListItemResponse from(OrderResult result, ObjectMapper objectMapper) {
+  public static OrderListItemResponse from(OrderResult result) {
     return new OrderListItemResponse(
         result.id(),
         result.storeId(),
@@ -45,7 +41,10 @@ public record OrderListItemResponse(
         result.orderNumber(),
         result.menuName(),
         result.optionSummary(),
-        readStartReferenceAssets(result.startReferenceAssets(), objectMapper),
+        result.referenceAssets().stream()
+            .map(OrderReferenceAssetResult::assetId)
+            .toList(),
+        result.referenceAssets().stream().map(ReferenceAssetResponse::from).toList(),
         result.paidAmount(),
         result.pickupAt(),
         result.status(),
@@ -60,16 +59,8 @@ public record OrderListItemResponse(
     return List.copyOf(startReferenceAssets);
   }
 
-  private static List<UUID> readStartReferenceAssets(
-      String startReferenceAssets, ObjectMapper objectMapper) {
-    if (startReferenceAssets == null || startReferenceAssets.isBlank()) {
-      return List.of();
-    }
-
-    try {
-      return objectMapper.readValue(startReferenceAssets, ASSET_IDS);
-    } catch (JsonProcessingException e) {
-      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
-    }
+  @Override
+  public List<ReferenceAssetResponse> referenceAssets() {
+    return List.copyOf(referenceAssets);
   }
 }

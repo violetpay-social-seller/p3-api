@@ -1,9 +1,11 @@
 package io.point3.p3api.order.application.calendar;
 
 import io.point3.p3api.order.application.port.OrderPersistencePort;
+import io.point3.p3api.order.application.query.order.OrderReferenceAssetDeliveryService;
 import io.point3.p3api.order.application.result.OrderCalendarDayResult;
 import io.point3.p3api.order.application.result.OrderCalendarOrderResult;
 import io.point3.p3api.order.application.result.OrderCalendarResult;
+import io.point3.p3api.order.application.result.OrderReferenceAssetResult;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import java.time.Clock;
@@ -29,6 +31,7 @@ public class OrderCalendarService implements OrderCalendarQueryUseCase {
   private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
   private final OrderPersistencePort orderPersistencePort;
+  private final OrderReferenceAssetDeliveryService orderReferenceAssetDeliveryService;
   private final Clock clock;
 
   @Override
@@ -63,8 +66,11 @@ public class OrderCalendarService implements OrderCalendarQueryUseCase {
         ? orderPersistencePort.findCalendarOrders(storeId, startInclusive, endExclusive)
         : orderPersistencePort.findCalendarOrdersByStatus(
             storeId, status, startInclusive, endExclusive);
+    Map<UUID, List<OrderReferenceAssetResult>> referenceAssetsByOrderId =
+        orderReferenceAssetDeliveryService.appendDeliveriesByOrderId(orders);
     Map<LocalDate, List<OrderCalendarOrderResult>> ordersByDate = orders.stream()
-        .map(order -> OrderCalendarOrderResult.from(order, KOREA_ZONE))
+        .map(order -> OrderCalendarOrderResult.from(
+            order, KOREA_ZONE, referenceAssetsByOrderId.getOrDefault(order.getId(), List.of())))
         .collect(Collectors.groupingBy(OrderCalendarOrderResult::pickupDate));
     List<OrderCalendarDayResult> days = startDate
         .datesUntil(endDateExclusive)

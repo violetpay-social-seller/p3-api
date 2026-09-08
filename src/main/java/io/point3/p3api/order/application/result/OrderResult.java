@@ -3,6 +3,7 @@ package io.point3.p3api.order.application.result;
 import io.point3.p3api.order.domain.entity.Order;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public record OrderResult(
@@ -14,7 +15,7 @@ public record OrderResult(
     String orderNumber,
     String menuName,
     String optionSummary,
-    String startReferenceAssets,
+    List<OrderReferenceAssetResult> referenceAssets,
     long paidAmount,
     Instant pickupAt,
     OrderStatus status,
@@ -23,6 +24,10 @@ public record OrderResult(
     Instant createdAt,
     Instant updatedAt) {
   public static OrderResult from(Order order) {
+    return from(order, List.of());
+  }
+
+  public static OrderResult from(Order order, List<OrderReferenceAssetResult> referenceAssets) {
     return new OrderResult(
         order.getId(),
         order.getStoreId(),
@@ -32,7 +37,7 @@ public record OrderResult(
         order.getOrderNumber(),
         order.getMenuNameSnapshot(),
         order.getOptionSummarySnapshot(),
-        order.getStartReferenceAssets(),
+        referenceAssets,
         order.getPaidAmount(),
         order.getPickupAt(),
         order.getStatus(),
@@ -40,5 +45,14 @@ public record OrderResult(
         order.getCancelReason(),
         order.getCreatedAt(),
         order.getUpdatedAt());
+  }
+
+  public OrderResult {
+    referenceAssets = List.copyOf(referenceAssets);
+  }
+
+  @Override
+  public List<OrderReferenceAssetResult> referenceAssets() {
+    return List.copyOf(referenceAssets);
   }
 }

@@ -20,6 +20,7 @@ public record OrderConfirmationResponse(
     Instant pickupAt,
     String storeNameSnapshot,
     String orderSummary,
+    String confirmedOptionPrices,
     String additionalItems,
     List<OrderOptionRowResponse> optionRows,
     String sellerNote,
@@ -48,9 +49,13 @@ public record OrderConfirmationResponse(
         confirmation.pickupAt(),
         confirmation.storeNameSnapshot(),
         confirmation.orderSummary(),
+        confirmation.confirmedOptionPrices(),
         confirmation.additionalItems(),
         optionRowResolver
-            .fromConfirmation(confirmation.orderSummary(), confirmation.additionalItems())
+            .fromConfirmation(
+                confirmation.orderSummary(),
+                confirmation.confirmedOptionPrices(),
+                confirmation.additionalItems())
             .stream()
             .map(OrderOptionRowResponse::from)
             .toList(),

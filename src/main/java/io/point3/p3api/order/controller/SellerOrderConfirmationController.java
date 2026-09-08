@@ -5,6 +5,7 @@ import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.order.application.option.OrderOptionRowResolver;
+import io.point3.p3api.order.application.price.ConfirmedOptionPrice;
 import io.point3.p3api.order.application.query.OrderConfirmationPreviewQueryService;
 import io.point3.p3api.order.application.query.OrderConfirmationQueryUseCase;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
@@ -102,6 +103,10 @@ public class SellerOrderConfirmationController {
         request.summaryText(),
         request.amount(),
         request.pickupAt(),
+        request.confirmedOptionPrices().stream()
+            .map(item ->
+                new ConfirmedOptionPrice(item.optionGroupId(), item.optionValue(), item.amount()))
+            .toList(),
         request.additionalItems().stream()
             .map(item -> new SendOrderConfirmationCommand.AdditionalItem(
                 item.label(), item.value(), item.amount()))

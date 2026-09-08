@@ -18,6 +18,7 @@ import io.point3.p3api.notification.application.create.NotificationCreateUseCase
 import io.point3.p3api.notification.domain.type.NotificationReferenceType;
 import io.point3.p3api.notification.domain.type.NotificationType;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
+import io.point3.p3api.order.application.price.OrderConfirmationPriceCalculator;
 import io.point3.p3api.order.application.result.SendOrderConfirmationResult;
 import io.point3.p3api.order.application.send.SendOrderConfirmationCommand;
 import io.point3.p3api.order.application.send.SendOrderConfirmationUseCase;
@@ -48,6 +49,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormQueryUseCase orderFormQueryUseCase;
   private final NotificationCreateUseCase notificationCreateUseCase;
+  private final OrderConfirmationPriceCalculator priceCalculator;
 
   private final Clock clock;
   private final ObjectMapper objectMapper;
@@ -88,6 +90,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
             .toInstant(),
         store.getName(),
         createOrderSummary(submission),
+        createConfirmedOptionPrices(command),
         createAdditionalItems(command),
         command.sellerNote());
 
@@ -145,46 +148,26 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
 
   private ConfirmationAmount calculateAmount(
       OrderFormSubmission submission, SendOrderConfirmationCommand command) {
-    long additionalAmount = command.additionalItems().stream()
-        .map(SendOrderConfirmationCommand.AdditionalItem::amount)
-        .filter(java.util.Objects::nonNull)
-        .mapToLong(Long::longValue)
-        .sum();
-    long baseAmount = 0;
     try {
-      for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
-        baseAmount = Math.addExact(baseAmount, readSnapshotPrice(answer.path("price")));
-        for (JsonNode option : answer.path("selectedOptions")) {
-          validateConfirmedPrice(option);
-          baseAmount = Math.addExact(baseAmount, readSnapshotPrice(option.path("price")));
+      long automaticAmount =
+          priceCalculator.calculate(submission.getAnswers(), command.confirmedOptionPrices());
+      for (SendOrderConfirmationCommand.AdditionalItem item : command.additionalItems()) {
+        if (item == null || item.amount() == null || item.amount() < 0) {
+          throw invalidAmount();
         }
+        automaticAmount = Math.addExact(automaticAmount, item.amount());
       }
-    } catch (JsonProcessingException e) {
-      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
+      if (automaticAmount <= 0 || command.amount() != automaticAmount) {
+        throw invalidAmount();
+      }
+      return new ConfirmationAmount(automaticAmount);
+    } catch (ArithmeticException exception) {
+      throw invalidAmount();
     }
-
-    long automaticAmount = Math.addExact(baseAmount, additionalAmount);
-    if (command.amount() != automaticAmount) {
-      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID);
-    }
-    return new ConfirmationAmount(automaticAmount);
   }
 
-  private long readSnapshotPrice(JsonNode price) {
-    if (price.isMissingNode() || price.isNull()) {
-      return 0;
-    }
-    if (!price.canConvertToLong() || price.asLong() < 0) {
-      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
-    }
-    return price.asLong();
-  }
-
-  private void validateConfirmedPrice(JsonNode option) {
-    JsonNode priceLabel = option.path("priceLabel");
-    if (priceLabel.isTextual() && !priceLabel.asText().isBlank()) {
-      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED);
-    }
+  private BaseException invalidAmount() {
+    return new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_INVALID);
   }
 
   private String createOrderSummary(OrderFormSubmission submission) {
@@ -206,6 +189,13 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     return write(command.additionalItems());
+  }
+
+  private String createConfirmedOptionPrices(SendOrderConfirmationCommand command) {
+    if (command.confirmedOptionPrices().isEmpty()) {
+      return null;
+    }
+    return write(command.confirmedOptionPrices());
   }
 
   private String write(Object value) {

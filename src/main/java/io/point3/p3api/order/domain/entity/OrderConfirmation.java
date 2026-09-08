@@ -57,6 +57,10 @@ public class OrderConfirmation {
   @JdbcTypeCode(SqlTypes.JSON)
   private String orderSummary;
 
+  @Column(name = "confirmed_option_prices", columnDefinition = "jsonb")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private String confirmedOptionPrices;
+
   @Column(name = "additional_items", columnDefinition = "jsonb")
   @JdbcTypeCode(SqlTypes.JSON)
   private String additionalItems;
@@ -94,6 +98,7 @@ public class OrderConfirmation {
       Instant pickupAt,
       String storeNameSnapshot,
       String orderSummary,
+      String confirmedOptionPrices,
       String additionalItems,
       String sellerNote) {
     this.inquiryId = inquiryId;
@@ -105,6 +110,7 @@ public class OrderConfirmation {
     this.pickupAt = pickupAt;
     this.storeNameSnapshot = storeNameSnapshot;
     this.orderSummary = orderSummary;
+    this.confirmedOptionPrices = confirmedOptionPrices;
     this.additionalItems = additionalItems;
     this.sellerNote = sellerNote;
     this.status = OrderConfirmationStatus.DRAFT;
@@ -120,6 +126,7 @@ public class OrderConfirmation {
       Instant pickupAt,
       String storeNameSnapshot,
       String orderSummary,
+      String confirmedOptionPrices,
       String additionalItems,
       String sellerNote) {
     Objects.requireNonNull(inquiryId, "inquiryId");
@@ -143,6 +150,34 @@ public class OrderConfirmation {
         pickupAt,
         storeNameSnapshot,
         orderSummary,
+        confirmedOptionPrices,
+        additionalItems,
+        sellerNote);
+  }
+
+  public static OrderConfirmation create(
+      UUID inquiryId,
+      UUID orderFormSubmissionId,
+      UUID createdBy,
+      String menuName,
+      String optionSummary,
+      long amount,
+      Instant pickupAt,
+      String storeNameSnapshot,
+      String orderSummary,
+      String additionalItems,
+      String sellerNote) {
+    return create(
+        inquiryId,
+        orderFormSubmissionId,
+        createdBy,
+        menuName,
+        optionSummary,
+        amount,
+        pickupAt,
+        storeNameSnapshot,
+        orderSummary,
+        null,
         additionalItems,
         sellerNote);
   }

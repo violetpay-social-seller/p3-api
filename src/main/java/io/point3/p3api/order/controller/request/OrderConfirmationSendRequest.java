@@ -13,13 +13,21 @@ public record OrderConfirmationSendRequest(
     UUID orderFormSubmissionId,
     @NotBlank @Size(max = 150) String confirmationTitle,
     @NotBlank String summaryText,
-    @Min(0) long amount,
+    @Min(1) long amount,
     @NotNull Instant pickupAt,
+    @Valid List<ConfirmedOptionPrice> confirmedOptionPrices,
     @Valid @NotNull List<AdditionalItem> additionalItems,
     String sellerNote) {
 
   public OrderConfirmationSendRequest {
+    confirmedOptionPrices =
+        confirmedOptionPrices == null ? List.of() : List.copyOf(confirmedOptionPrices);
     additionalItems = additionalItems == null ? null : List.copyOf(additionalItems);
+  }
+
+  @Override
+  public List<ConfirmedOptionPrice> confirmedOptionPrices() {
+    return List.copyOf(confirmedOptionPrices);
   }
 
   @Override
@@ -28,5 +36,12 @@ public record OrderConfirmationSendRequest(
   }
 
   public record AdditionalItem(
-      @NotBlank @Size(max = 100) String label, @NotBlank String value, Long amount) {}
+      @NotBlank @Size(max = 100) String label,
+      @NotBlank String value,
+      @NotNull @Min(0) Long amount) {}
+
+  public record ConfirmedOptionPrice(
+      @NotNull UUID optionGroupId,
+      @NotBlank String optionValue,
+      @NotNull @Min(0) Long amount) {}
 }

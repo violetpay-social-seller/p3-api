@@ -56,6 +56,7 @@ public record OrderFormSubmissionResponse(
       UUID assetId,
       OrderFormReferenceAssetSource source,
       int sortOrder,
+      String status,
       String deliveryUrl,
       List<VariantResponse> variants) {
 
@@ -68,6 +69,7 @@ public record OrderFormSubmissionResponse(
           result.assetId(),
           result.source(),
           result.sortOrder(),
+          result.status(),
           result.deliveryUrl(),
           result.variants().stream().map(VariantResponse::from).toList());
     }

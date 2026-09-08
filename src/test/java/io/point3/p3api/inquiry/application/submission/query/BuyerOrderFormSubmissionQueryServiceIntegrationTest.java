@@ -2,7 +2,6 @@ package io.point3.p3api.inquiry.application.submission.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,8 +110,8 @@ class BuyerOrderFormSubmissionQueryServiceIntegrationTest extends IntegrationTes
         fixture.inquiry().getId(), submission.getId(), fixture.buyer().getId());
 
     JsonNode answer = objectMapper.readTree(result.answers()).get(0);
-    assertImageAsset(answer.get("value").get(0));
-    assertImageAsset(answer.get("selectedOptions").get(0));
+    assertImageAsset(answer.get("value").get(0), pendingAsset.getObjectKey());
+    assertImageAsset(answer.get("selectedOptions").get(0), pendingAsset.getObjectKey());
   }
 
   @Test
@@ -197,11 +196,14 @@ class BuyerOrderFormSubmissionQueryServiceIntegrationTest extends IntegrationTes
   private void saveVariant(Asset asset, String objectKey) {
     assetVariantJpaRepository.saveAndFlush(AssetVariant.create(
         asset, AssetVariantType.MEDIUM, objectKey, "image/webp", 640, 640, 512));
+    asset.markReady();
+    assetJpaRepository.saveAndFlush(asset);
   }
 
-  private void assertImageAsset(JsonNode selectedOption) {
+  private void assertImageAsset(JsonNode selectedOption, String pendingAssetObjectKey) {
     JsonNode assets = selectedOption.get("assets");
     JsonNode asset = assets.get(0);
+    assertEquals("READY", asset.get("status").asText());
     assertEquals(
         "https://assets.example.test/processed/buyer-reference_640.webp",
         asset.get("deliveryUrl").asText());
@@ -209,7 +211,10 @@ class BuyerOrderFormSubmissionQueryServiceIntegrationTest extends IntegrationTes
     assertEquals(
         "https://assets.example.test/processed/buyer-reference_640.webp",
         asset.get("variants").get(0).get("deliveryUrl").asText());
-    assertTrue(assets.get(1).get("deliveryUrl").isNull());
+    assertEquals("UPLOADED", assets.get(1).get("status").asText());
+    assertEquals(
+        "https://assets.example.test/" + pendingAssetObjectKey,
+        assets.get(1).get("deliveryUrl").asText());
     assertEquals(0, assets.get(1).get("variants").size());
   }
 

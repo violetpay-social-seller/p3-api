@@ -1,14 +1,11 @@
 package io.point3.p3api.order.application.query;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.exception.BaseException;
-import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
+import io.point3.p3api.order.application.price.OrderConfirmationPriceCalculator;
 import io.point3.p3api.orderform.application.query.OrderFormQueryUseCase;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -27,7 +24,7 @@ public class OrderConfirmationPreviewQueryService {
   private final InquiryChatAccessService inquiryChatAccessService;
   private final OrderFormSubmissionPersistencePort submissionPersistencePort;
   private final OrderFormQueryUseCase orderFormQueryUseCase;
-  private final ObjectMapper objectMapper;
+  private final OrderConfirmationPriceCalculator priceCalculator;
 
   public OrderConfirmationPreview getPreview(UUID inquiryId, UUID storeId) {
     inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
@@ -36,18 +33,7 @@ public class OrderConfirmationPreviewQueryService {
             .findFirst()
             .orElseThrow(() -> new BaseException(
                 OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
-    long baseAmount = 0;
-    try {
-      for (JsonNode answer : objectMapper.readTree(submission.getAnswers())) {
-        baseAmount = Math.addExact(baseAmount, readSnapshotPrice(answer.path("price")));
-        for (JsonNode option : answer.path("selectedOptions")) {
-          validateConfirmedPrice(option);
-          baseAmount = Math.addExact(baseAmount, readSnapshotPrice(option.path("price")));
-        }
-      }
-    } catch (JsonProcessingException e) {
-      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
-    }
+    var pricePreview = priceCalculator.preview(submission.getAnswers());
     return new OrderConfirmationPreview(
         submission.getId(),
         orderFormQueryUseCase
@@ -59,24 +45,9 @@ public class OrderConfirmationPreviewQueryService {
             .atZone(KOREA_ZONE_ID)
             .toInstant(),
         submission.getAnswers(),
-        baseAmount,
-        false);
-  }
-
-  private long readSnapshotPrice(JsonNode price) {
-    if (price.isMissingNode() || price.isNull()) {
-      return 0;
-    }
-    if (!price.canConvertToLong() || price.asLong() < 0) {
-      throw new BaseException(CommonErrorCode.INTERNAL_SERVER_ERROR);
-    }
-    return price.asLong();
-  }
-
-  private void validateConfirmedPrice(JsonNode option) {
-    JsonNode priceLabel = option.path("priceLabel");
-    if (priceLabel.isTextual() && !priceLabel.asText().isBlank()) {
-      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_AMOUNT_UNCONFIRMED);
-    }
+        pricePreview.baseAmount(),
+        !pricePreview.unconfirmedOptions().isEmpty(),
+        !pricePreview.unconfirmedOptions().isEmpty(),
+        pricePreview.unconfirmedOptions());
   }
 }

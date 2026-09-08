@@ -5,10 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
-import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.inquiry.application.submission.result.OrderFormAssetDelivery;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class OrderFormAnswerDeliveryService {
 
   private final ObjectMapper objectMapper;
-  private final AssetVariantDeliveryService assetVariantDeliveryService;
+  private final OrderFormAssetDeliveryResolver orderFormAssetDeliveryResolver;
 
   public String appendImageDeliveries(String answers) {
     JsonNode root = readAnswers(answers);
@@ -36,8 +35,8 @@ public class OrderFormAnswerDeliveryService {
       return answers;
     }
 
-    Map<UUID, AssetVariantDelivery> deliveryByAssetId =
-        assetVariantDeliveryService.resolveReadyDeliveries(assetIds.stream().toList());
+    Map<UUID, OrderFormAssetDelivery> deliveryByAssetId =
+        orderFormAssetDeliveryResolver.resolve(assetIds.stream().toList());
     appendAssets(root, deliveryByAssetId);
     return writeAnswers(root);
   }
@@ -78,7 +77,7 @@ public class OrderFormAnswerDeliveryService {
         .forEach(assetIds::add));
   }
 
-  private void appendAssets(JsonNode root, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
+  private void appendAssets(JsonNode root, Map<UUID, OrderFormAssetDelivery> deliveryByAssetId) {
     root.forEach(answer -> {
       appendAssetsToOptions(answer.get("value"), deliveryByAssetId);
       appendAssetsToOptions(answer.get("selectedOptions"), deliveryByAssetId);
@@ -86,7 +85,7 @@ public class OrderFormAnswerDeliveryService {
   }
 
   private void appendAssetsToOptions(
-      JsonNode options, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
+      JsonNode options, Map<UUID, OrderFormAssetDelivery> deliveryByAssetId) {
     if (options == null || !options.isArray()) {
       return;
     }
@@ -98,7 +97,8 @@ public class OrderFormAnswerDeliveryService {
         .forEach(option -> appendAssets(option, deliveryByAssetId));
   }
 
-  private void appendAssets(ObjectNode option, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
+  private void appendAssets(
+      ObjectNode option, Map<UUID, OrderFormAssetDelivery> deliveryByAssetId) {
     List<String> assetIdTexts = assetIdTexts(option);
     if (assetIdTexts.isEmpty()) {
       return;
@@ -109,13 +109,15 @@ public class OrderFormAnswerDeliveryService {
     option.set("assets", assets);
   }
 
-  private ObjectNode asset(String assetIdText, Map<UUID, AssetVariantDelivery> deliveryByAssetId) {
-    AssetVariantDelivery delivery = parseAssetId(assetIdText)
-        .map(assetId -> deliveryByAssetId.getOrDefault(assetId, AssetVariantDelivery.empty()))
-        .orElseGet(AssetVariantDelivery::empty);
+  private ObjectNode asset(
+      String assetIdText, Map<UUID, OrderFormAssetDelivery> deliveryByAssetId) {
+    OrderFormAssetDelivery delivery = parseAssetId(assetIdText)
+        .map(assetId -> deliveryByAssetId.getOrDefault(assetId, OrderFormAssetDelivery.missing()))
+        .orElseGet(OrderFormAssetDelivery::missing);
 
     ObjectNode asset = objectMapper.createObjectNode();
     asset.put("assetId", assetIdText);
+    asset.put("status", delivery.status());
     if (delivery.deliveryUrl() == null) {
       asset.putNull("deliveryUrl");
     } else {
@@ -125,7 +127,7 @@ public class OrderFormAnswerDeliveryService {
     return asset;
   }
 
-  private ArrayNode variants(AssetVariantDelivery delivery) {
+  private ArrayNode variants(OrderFormAssetDelivery delivery) {
     ArrayNode variants = objectMapper.createArrayNode();
     delivery.variants().forEach(variant -> {
       ObjectNode item = objectMapper.createObjectNode();

@@ -5,8 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
-import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
+import io.point3.p3api.inquiry.application.submission.result.OrderFormAssetDelivery;
 import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +16,10 @@ import org.mockito.Mockito;
 
 class OrderFormReferenceAssetDeliveryServiceTest {
 
-  private final AssetVariantDeliveryService assetVariantDeliveryService =
-      Mockito.mock(AssetVariantDeliveryService.class);
+  private final OrderFormAssetDeliveryResolver orderFormAssetDeliveryResolver =
+      Mockito.mock(OrderFormAssetDeliveryResolver.class);
   private final OrderFormReferenceAssetDeliveryService service =
-      new OrderFormReferenceAssetDeliveryService(new ObjectMapper(), assetVariantDeliveryService);
+      new OrderFormReferenceAssetDeliveryService(new ObjectMapper(), orderFormAssetDeliveryResolver);
 
   @Test
   @DisplayName("주문서 참고 이미지 스냅샷에 delivery URL과 variants를 붙인다")
@@ -35,12 +34,13 @@ class OrderFormReferenceAssetDeliveryServiceTest {
           }
         ]
         """;
-    when(assetVariantDeliveryService.resolveReadyDeliveries(List.of(assetId)))
+    when(orderFormAssetDeliveryResolver.resolve(List.of(assetId)))
         .thenReturn(Map.of(
             assetId,
-            new AssetVariantDelivery(
+            new OrderFormAssetDelivery(
+                "READY",
                 "https://assets.example.test/processed/cake_640.webp",
-                List.of(new AssetVariantDelivery.Variant(
+                List.of(new OrderFormAssetDelivery.Variant(
                     "MEDIUM", "https://assets.example.test/processed/cake_640.webp", 640, 480)))));
 
     var results = service.appendDeliveries(snapshot);
@@ -49,6 +49,7 @@ class OrderFormReferenceAssetDeliveryServiceTest {
     assertEquals(assetId, results.getFirst().assetId());
     assertEquals(OrderFormReferenceAssetSource.STORE_GALLERY, results.getFirst().source());
     assertEquals(0, results.getFirst().sortOrder());
+    assertEquals("READY", results.getFirst().status());
     assertEquals(
         "https://assets.example.test/processed/cake_640.webp",
         results.getFirst().deliveryUrl());

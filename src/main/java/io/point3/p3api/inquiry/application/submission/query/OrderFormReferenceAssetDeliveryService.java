@@ -3,10 +3,9 @@ package io.point3.p3api.inquiry.application.submission.query;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.point3.p3api.assetvariant.application.AssetVariantDeliveryService;
-import io.point3.p3api.assetvariant.application.result.AssetVariantDelivery;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
+import io.point3.p3api.inquiry.application.submission.result.OrderFormAssetDelivery;
 import io.point3.p3api.inquiry.application.submission.result.OrderFormReferenceAssetResult;
 import io.point3.p3api.inquiry.domain.type.OrderFormReferenceAssetSource;
 import java.util.Comparator;
@@ -22,7 +21,7 @@ import org.springframework.stereotype.Component;
 public class OrderFormReferenceAssetDeliveryService {
 
   private final ObjectMapper objectMapper;
-  private final AssetVariantDeliveryService assetVariantDeliveryService;
+  private final OrderFormAssetDeliveryResolver orderFormAssetDeliveryResolver;
 
   public List<OrderFormReferenceAssetResult> appendDeliveries(String referenceAssets) {
     if (referenceAssets == null || referenceAssets.isBlank()) {
@@ -34,7 +33,7 @@ public class OrderFormReferenceAssetDeliveryService {
       return List.of();
     }
 
-    Map<UUID, AssetVariantDelivery> deliveries = assetVariantDeliveryService.resolveReadyDeliveries(
+    Map<UUID, OrderFormAssetDelivery> deliveries = orderFormAssetDeliveryResolver.resolve(
         snapshots.stream().map(ReferenceAssetSnapshot::assetId).toList());
     return snapshots.stream()
         .sorted(Comparator.comparingInt(ReferenceAssetSnapshot::sortOrder))
@@ -42,7 +41,7 @@ public class OrderFormReferenceAssetDeliveryService {
             snapshot.assetId(),
             snapshot.source(),
             snapshot.sortOrder(),
-            deliveries.getOrDefault(snapshot.assetId(), AssetVariantDelivery.empty())))
+            deliveries.getOrDefault(snapshot.assetId(), OrderFormAssetDelivery.missing())))
         .toList();
   }
 

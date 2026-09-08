@@ -4,6 +4,7 @@ import io.point3.p3api.chat.application.port.ChatTimelineItemPort;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +19,11 @@ public class ChatTimelineItemPersistenceAdapter implements ChatTimelineItemPort 
   @Override
   public ChatTimelineItem save(ChatTimelineItem chatTimelineItem) {
     return chatTimelineItemJpaRepository.save(chatTimelineItem);
+  }
+
+  @Override
+  public Optional<ChatTimelineItem> findById(UUID eventId) {
+    return chatTimelineItemJpaRepository.findById(eventId);
   }
 
   @Override

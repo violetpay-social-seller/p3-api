@@ -1,6 +1,7 @@
 package io.point3.p3api.chat.application.timeline;
 
 import io.point3.p3api.chat.application.port.ChatTimelineItemPort;
+import io.point3.p3api.chat.application.realtime.ChatTimelineRealtimeEventPublisher;
 import io.point3.p3api.chat.domain.entity.ChatTimelineItem;
 import io.point3.p3api.inquiry.application.realtime.InquiryListChangeEventPublisher;
 import java.util.UUID;
@@ -14,6 +15,7 @@ public class ChatTimelineItemPublisher {
 
   private final ChatTimelineItemPort chatTimelineItemPort;
   private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
+  private final ChatTimelineRealtimeEventPublisher chatTimelineRealtimeEventPublisher;
 
   public ChatTimelineItem publishMessage(UUID inquiryId, UUID senderUserId, UUID chatMessageId) {
     return save(ChatTimelineItem.message(inquiryId, senderUserId, chatMessageId));
@@ -42,6 +44,7 @@ public class ChatTimelineItemPublisher {
   private ChatTimelineItem save(ChatTimelineItem item) {
     ChatTimelineItem savedItem = chatTimelineItemPort.save(item);
     inquiryListChangeEventPublisher.publishInquiryChanged(savedItem.getInquiryId());
+    chatTimelineRealtimeEventPublisher.publishTimelineItemCreated(savedItem.getId());
     return savedItem;
   }
 }

@@ -8,21 +8,21 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
-/** 모든 App 인스턴스의 채팅 Redis 채널 구독을 설정한다. */
+/** 모든 App 인스턴스의 채팅 타임라인 Redis 채널 구독을 설정한다. */
 @Configuration
 @Profile("!local-scenario")
 @RequiredArgsConstructor
-public class RedisChatMessageListenerConfig {
+public class RedisChatTimelineListenerConfig {
 
-  private final RedisChatMessageSubscriber redisChatMessageSubscriber;
+  private final RedisChatTimelineSubscriber redisChatTimelineSubscriber;
 
   @Bean
-  public RedisMessageListenerContainer redisChatMessageListenerContainer(
+  public RedisMessageListenerContainer redisChatTimelineListenerContainer(
       RedisConnectionFactory redisConnectionFactory) {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(redisConnectionFactory);
     container.addMessageListener(
-        redisChatMessageSubscriber, new ChannelTopic(ChatRedisChannel.MESSAGES));
+        redisChatTimelineSubscriber, new ChannelTopic(ChatRedisChannel.TIMELINE_ITEMS));
     return container;
   }
 }

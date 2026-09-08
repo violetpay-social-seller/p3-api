@@ -12,7 +12,12 @@ public enum OrderErrorCode implements ErrorCode {
       "ORDER_STATUS_FORBIDDEN_400",
       "Order status can not be changed",
       HttpStatus.BAD_REQUEST,
-      "/errors/order/status-forbidden");
+      "/errors/order/status-forbidden"),
+  ORDER_REFUND_ALREADY_PROCESSED(
+      "ORDER_REFUND_ALREADY_PROCESSED_409",
+      "Order refund is already being processed or completed",
+      HttpStatus.CONFLICT,
+      "/errors/order/refund-already-processed");
 
   private final String code;
   private final String title;

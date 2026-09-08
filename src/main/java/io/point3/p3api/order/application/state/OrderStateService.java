@@ -15,6 +15,7 @@ import io.point3.p3api.order.application.option.OrderOptionRowResolver;
 import io.point3.p3api.order.application.port.OrderConfirmationPersistencePort;
 import io.point3.p3api.order.application.port.OrderPersistencePort;
 import io.point3.p3api.order.application.port.OrderStatusHistoryPersistencePort;
+import io.point3.p3api.order.application.refund.OrderRefundPolicyCalculator;
 import io.point3.p3api.order.application.result.OrderDetailResult;
 import io.point3.p3api.order.application.result.OrderResult;
 import io.point3.p3api.order.domain.entity.Order;
@@ -31,6 +32,7 @@ import io.point3.p3api.payment.domain.entity.PaymentAttempt;
 import io.point3.p3api.payment.domain.entity.Refund;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.store.application.port.StorePersistencePort;
+import io.point3.p3api.store.application.refundpolicy.port.StoreRefundPolicyPersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import java.time.Clock;
 import java.time.Instant;
@@ -53,6 +55,8 @@ public class OrderStateService implements OrderStateUseCase {
   private final PaymentAttemptPersistencePort paymentAttemptPersistencePort;
   private final RefundPersistencePort refundPersistencePort;
   private final Point3PaymentPort point3PaymentPort;
+  private final OrderRefundPolicyCalculator orderRefundPolicyCalculator;
+  private final StoreRefundPolicyPersistencePort storeRefundPolicyPersistencePort;
   private final Clock clock;
   private final StorePersistencePort storePersistencePort;
   private final NotificationCreateUseCase notificationCreateUseCase;
@@ -90,27 +94,39 @@ public class OrderStateService implements OrderStateUseCase {
 
   @Override
   public OrderDetailResult refund(RefundOrderCommand command) {
-    Order order = getSellerOrder(command.orderId(), command.storeId());
+    Order order = getSellerOrderForUpdate(command.orderId(), command.storeId());
+    validateRefundable(order);
+    validateNoExistingRefund(order.getId());
+    Instant requestedAt = Instant.now(clock);
+    var calculation = orderRefundPolicyCalculator.calculate(
+        order.getPaidAmount(),
+        order.getPickupAt(),
+        requestedAt,
+        storeRefundPolicyPersistencePort.findAllByStoreId(order.getStoreId()));
     Refund refund = Refund.create(
         order.getId(),
         order.getPaymentAttemptId(),
         command.sellerUserId(),
-        order.getPaidAmount(),
+        calculation.amount(),
+        calculation.refundRate(),
         command.reason());
+    refund.startProcessing();
     refund = refundPersistencePort.save(refund);
     PaymentAttempt paymentAttempt = paymentAttemptPersistencePort
         .findById(order.getPaymentAttemptId())
         .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
+    if (refund.getAmount() == 0) {
+      completeRefund(order, refund, command, requestedAt);
+      return toDetail(order);
+    }
     try {
       Point3RefundResult result = point3PaymentPort.refund(
           paymentAttempt.getPoint3SessionId(),
-          order.getPaidAmount(),
+          refund.getAmount(),
           command.reason(),
           refund.getId().toString());
       if (result.completed()) {
-        changeStatus(
-            order, command.sellerUserId(), command.reason(), () -> order.refund(command.reason()));
-        refund.complete(Instant.now(clock));
+        completeRefund(order, refund, command, Instant.now(clock));
       } else {
         refund.fail();
       }
@@ -123,9 +139,38 @@ public class OrderStateService implements OrderStateUseCase {
     return toDetail(order);
   }
 
+  private void completeRefund(
+      Order order, Refund refund, RefundOrderCommand command, Instant completedAt) {
+    changeStatus(
+        order, command.sellerUserId(), command.reason(), () -> order.refund(command.reason()));
+    refund.complete(completedAt);
+  }
+
+  private void validateRefundable(Order order) {
+    try {
+      order.validateRefundable();
+    } catch (IllegalStateException exception) {
+      throw new BaseException(OrderErrorCode.ORDER_STATUS_FORBIDDEN);
+    }
+  }
+
+  private void validateNoExistingRefund(UUID orderId) {
+    boolean alreadyProcessed = refundPersistencePort.findAllByOrderId(orderId).stream()
+        .anyMatch(refund -> refund.getStatus() != RefundStatus.FAILED);
+    if (alreadyProcessed) {
+      throw new BaseException(OrderErrorCode.ORDER_REFUND_ALREADY_PROCESSED);
+    }
+  }
+
   private Order getSellerOrder(UUID orderId, UUID storeId) {
     return orderPersistencePort
         .findByIdAndStoreId(orderId, storeId)
+        .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
+  }
+
+  private Order getSellerOrderForUpdate(UUID orderId, UUID storeId) {
+    return orderPersistencePort
+        .findByIdAndStoreIdForUpdate(orderId, storeId)
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
   }
 

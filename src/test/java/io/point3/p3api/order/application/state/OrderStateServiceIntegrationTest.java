@@ -31,12 +31,15 @@ import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
 import io.point3.p3api.payment.infrastructure.persistence.RefundJpaRepository;
 import io.point3.p3api.store.domain.entity.Store;
+import io.point3.p3api.store.domain.entity.StoreRefundPolicy;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreRefundPolicyJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
 import io.point3.p3api.user.domain.type.UserRole;
 import io.point3.p3api.user.infrastructure.persistence.UserJpaRepository;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,6 +63,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private StoreJpaRepository storeJpaRepository;
+
+  @Autowired
+  private StoreRefundPolicyJpaRepository storeRefundPolicyJpaRepository;
 
   @Autowired
   private InquiryJpaRepository inquiryJpaRepository;
@@ -229,6 +235,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     User buyer = saveUser(UserRole.BUYER, prefix + "-buyer");
     Store store = storeJpaRepository.saveAndFlush(
         Store.create(seller.getId(), "주문 테스트 스토어 " + prefix, "order-test-" + UUID.randomUUID()));
+    storeRefundPolicyJpaRepository.saveAndFlush(StoreRefundPolicy.create(store.getId(), 0, 100, 0));
     Inquiry inquiry =
         inquiryJpaRepository.saveAndFlush(Inquiry.create(store.getId(), buyer.getId()));
     OrderConfirmation confirmation = orderConfirmationJpaRepository.saveAndFlush(
@@ -258,7 +265,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         "초코 케이크 1호",
         "딸기 토핑",
         41000,
-        Instant.parse("2026-09-01T04:00:00Z"),
+        Instant.now().plus(7, ChronoUnit.DAYS),
         "주문 테스트 스토어",
         "{\"answers\":[{\"label\":\"메뉴명\","
             + "\"selectedOptions\":[{\"label\":\"초코 케이크\",\"price\":0}]}]}",

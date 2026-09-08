@@ -57,6 +57,11 @@ public class OrderPersistenceAdapter implements OrderPersistencePort {
   }
 
   @Override
+  public Optional<Order> findByIdAndStoreIdForUpdate(UUID orderId, UUID storeId) {
+    return orderJpaRepository.findByIdAndStoreIdForUpdate(orderId, storeId);
+  }
+
+  @Override
   public Optional<Order> findByPaymentAttemptId(UUID paymentAttemptId) {
     return orderJpaRepository.findByPaymentAttemptId(paymentAttemptId);
   }

@@ -20,6 +20,7 @@ class RefundTest {
 
     refund.complete(completedAt);
 
+    assertEquals(100, refund.getRefundRate());
     assertEquals(RefundStatus.COMPLETED, refund.getStatus());
     assertEquals(completedAt, refund.getCompletedAt());
   }
@@ -30,5 +31,26 @@ class RefundTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> Refund.create(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), -1, null));
+  }
+
+  @Test
+  @DisplayName("정책 환불률을 기록하고 처리 상태로 전환한다")
+  void recordsRefundRateAndStartsProcessing() {
+    Refund refund = Refund.create(
+        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 30_400, 80, "구매자 요청");
+
+    refund.startProcessing();
+
+    assertEquals(80, refund.getRefundRate());
+    assertEquals(RefundStatus.PROCESSING, refund.getStatus());
+  }
+
+  @Test
+  @DisplayName("유효 범위를 벗어난 환불률은 기록할 수 없다")
+  void rejectsInvalidRefundRate() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> Refund.create(
+            UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 38_000, 101, null));
   }
 }

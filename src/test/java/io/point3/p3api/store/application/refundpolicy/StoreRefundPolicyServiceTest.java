@@ -24,9 +24,8 @@ class StoreRefundPolicyServiceTest {
   private final StorePersistencePort storePersistencePort = mock(StorePersistencePort.class);
   private final StoreRefundPolicyPersistencePort refundPolicyPersistencePort =
       mock(StoreRefundPolicyPersistencePort.class);
-  private final StoreRefundPolicyService service =
-      new StoreRefundPolicyService(
-          storePersistencePort, refundPolicyPersistencePort, new StoreRefundPolicyTextFormatter());
+  private final StoreRefundPolicyService service = new StoreRefundPolicyService(
+      storePersistencePort, refundPolicyPersistencePort, new StoreRefundPolicyTextFormatter());
 
   @Test
   void replacesPoliciesInRequestOrder() {
@@ -46,9 +45,7 @@ class StoreRefundPolicyServiceTest {
     assertEquals(
         List.of(new StoreRefundPolicyResult.Rule(7, 100), new StoreRefundPolicyResult.Rule(5, 80)),
         result.rules());
-    assertEquals(
-        "픽업일 7일 전까지 100% 환불, 픽업일 5일 전까지 80% 환불",
-        store.getCancellationRefundPolicy());
+    assertEquals("픽업일 7일 전까지 100% 환불\n픽업일 5일 전까지 80% 환불", store.getCancellationRefundPolicy());
     verify(storePersistencePort).save(store);
   }
 

@@ -35,5 +35,6 @@ public record InquiryChatDetail(
         inquiry.getCreatedAt());
   }
 
-  public record Participant(UUID userId, String name, String profileImageDeliveryUrl) {}
+  public record Participant(
+      UUID userId, String name, String phoneNumber, String profileImageDeliveryUrl) {}
 }

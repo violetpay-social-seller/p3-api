@@ -67,6 +67,9 @@ public class InquiryChatDetailQueryService implements InquiryChatDetailQueryUseC
 
   private InquiryChatDetail.Participant participant(User user) {
     return new InquiryChatDetail.Participant(
-        user.getId(), user.getName(), profileImageDeliveryService.resolve(user));
+        user.getId(),
+        user.getName(),
+        user.getPhoneNumber(),
+        profileImageDeliveryService.resolve(user));
   }
 }

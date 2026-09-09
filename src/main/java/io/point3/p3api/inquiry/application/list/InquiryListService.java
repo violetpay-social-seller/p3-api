@@ -180,7 +180,10 @@ public class InquiryListService implements InquiryListUseCase {
         inquiry,
         store,
         new InquiryChatDetail.Participant(
-            buyer.getId(), buyer.getName(), profileImageDeliveryUrlByUserId.get(buyer.getId())),
+            buyer.getId(),
+            buyer.getName(),
+            buyer.getPhoneNumber(),
+            profileImageDeliveryUrlByUserId.get(buyer.getId())),
         null,
         inquiry.getSellerLastReadAt(),
         inquiry.getBuyerLastReadAt());

@@ -95,6 +95,7 @@ public class PublicStoreQueryService implements PublicStoreQueryUseCase {
         businessHoursTextFormatter.format(
             weeklyPickupSettingPersistencePort.findAllByStoreId(store.getId())),
         store.getAddress(),
+        store.getCancellationRefundPolicy(),
         publicImages);
   }
 

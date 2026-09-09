@@ -16,6 +16,7 @@ public record PublicStoreResponse(
     String snsLinks,
     String businessHours,
     String address,
+    String cancellationRefundPolicy,
     List<PublicRepresentativeImageResponse> representativeImages) {
 
   public PublicStoreResponse {
@@ -35,6 +36,7 @@ public record PublicStoreResponse(
         result.snsLinks(),
         result.businessHours(),
         result.address(),
+        result.cancellationRefundPolicy(),
         result.representativeImages().stream()
             .map(PublicRepresentativeImageResponse::from)
             .toList());

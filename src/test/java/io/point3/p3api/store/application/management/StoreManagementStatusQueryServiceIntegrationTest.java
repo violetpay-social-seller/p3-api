@@ -9,9 +9,9 @@ import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.store.application.StoreService;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
-import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.refundpolicy.command.UpdateStoreRefundPolicyCommand;
 import io.point3.p3api.store.application.refundpolicy.update.StoreRefundPolicyUpdateUseCase;
+import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.domain.entity.StoreNotice;
@@ -115,12 +115,7 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
   void completesStoreInfoAfterSavingRefundPolicy() {
     StoreResult store = createStore();
     weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
-        store.id(),
-        DayOfWeek.MONDAY,
-        LocalTime.of(10, 0),
-        LocalTime.of(18, 0),
-        null,
-        true)));
+        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), null, true)));
 
     assertFalse(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
 
@@ -138,16 +133,15 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
   void doesNotCompleteStoreInfoWithoutDescription() {
     StoreResult store = createStore(null);
     weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
-        store.id(),
-        DayOfWeek.MONDAY,
-        LocalTime.of(10, 0),
-        LocalTime.of(18, 0),
-        null,
-        true)));
+        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), null, true)));
     storeRefundPolicyUpdateUseCase.updateRefundPolicy(new UpdateStoreRefundPolicyCommand(
         store.id(), List.of(new UpdateStoreRefundPolicyCommand.Rule(7, 100))));
 
-    assertFalse(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
+    var status = storeManagementStatusQueryService.getStatus(store.id());
+
+    assertFalse(status.items().storeInfo());
+    assertFalse(status.canActivate());
+    assertTrue(status.activationBlockedReasons().contains("STORE_INFORMATION_REQUIRED"));
   }
 
   private StoreNotice notice(UUID storeId, StoreNoticeType type, String content) {

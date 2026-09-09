@@ -43,6 +43,11 @@ public enum StoreErrorCode implements ErrorCode {
       "Profile asset not found",
       HttpStatus.NOT_FOUND,
       "/errors/store/profile-asset-not-found"),
+  STORE_INFORMATION_REQUIRED(
+      "STORE_INFORMATION_REQUIRED_400",
+      "Store information is incomplete",
+      HttpStatus.BAD_REQUEST,
+      "/errors/store/information-required"),
   ACTIVE_ORDER_FORM_REQUIRED(
       "ACTIVE_ORDER_FORM_REQUIRED_400",
       "At least one active order form is required",

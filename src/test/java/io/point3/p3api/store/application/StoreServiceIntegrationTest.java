@@ -15,30 +15,28 @@ import io.point3.p3api.exception.code.AssetErrorCode;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
-import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.businesshours.StoreBusinessHoursService;
 import io.point3.p3api.store.application.businesshours.command.UpdateStoreBusinessHoursCommand;
-import io.point3.p3api.store.application.setting.StoreSettingService;
-import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
+import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.representative.RepresentativeImageService;
 import io.point3.p3api.store.application.representative.command.CreateRepresentativeImageCommand;
 import io.point3.p3api.store.application.representative.command.UpdateRepresentativeImageCommand;
 import io.point3.p3api.store.application.representative.result.RepresentativeImageResult;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.StoreSettingService;
+import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.CompleteAccountRegistrationCommand;
-import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
+import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
-import io.point3.p3api.store.domain.entity.StoreOperationSetting;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
-import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
@@ -84,9 +82,6 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderFormTemplateJpaRepository orderFormTemplateJpaRepository;
-
-  @Autowired
-  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
 
   @Autowired
   private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
@@ -225,7 +220,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
     createRepresentativeImage(store.id(), seller.getId(), 0);
     createRepresentativeImage(store.id(), seller.getId(), 1);
     createRepresentativeImage(store.id(), seller.getId(), 2);
-    prepareOperationSettingAndSettlementAccount(store.id());
+    prepareStoreInfoAndSettlementAccount(store.id());
 
     BaseException exception = assertThrows(
         BaseException.class,
@@ -415,15 +410,14 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         Arrays.stream(StoreNoticeType.values())
             .map(type -> StoreNotice.create(storeId, type, "안내"))
             .toList());
-    prepareOperationSettingAndSettlementAccount(storeId);
+    prepareStoreInfoAndSettlementAccount(storeId);
   }
 
-  private void prepareOperationSettingAndSettlementAccount(UUID storeId) {
-    storeOperationSettingJpaRepository.saveAndFlush(
-        StoreOperationSetting.create(storeId, 60, "주문 전 안내", 0));
+  private void prepareStoreInfoAndSettlementAccount(UUID storeId) {
     storeWeeklyPickupSettingJpaRepository.saveAndFlush(StoreWeeklyPickupSetting.create(
         storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true));
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
+    store.updateCancellationRefundPolicy("픽업 7일 전 100% 환불");
     store.markSettlementAccountInputCompleted(Instant.now());
     storeJpaRepository.saveAndFlush(store);
   }

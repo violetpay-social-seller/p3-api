@@ -5,20 +5,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.asset.domain.entity.Asset;
+import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
 import io.point3.p3api.orderform.domain.entity.OrderFormTemplate;
 import io.point3.p3api.orderform.infrastructure.persistence.OrderFormTemplateJpaRepository;
 import io.point3.p3api.store.application.create.CreateStoreCommand;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
+import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
-import io.point3.p3api.store.domain.entity.StoreOperationSetting;
+import io.point3.p3api.store.domain.entity.StoreRepresentativeImage;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
-import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
@@ -48,9 +50,6 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
   private StoreJpaRepository storeJpaRepository;
 
   @Autowired
-  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
-
-  @Autowired
   private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
 
   @Autowired
@@ -58,6 +57,12 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private UserJpaRepository userJpaRepository;
+
+  @Autowired
+  private AssetJpaRepository assetJpaRepository;
+
+  @Autowired
+  private RepresentativeImagePersistencePort representativeImagePersistencePort;
 
   @Test
   @DisplayName("5개 공지 중 하나라도 미작성되면 활성화를 거절하고 모두 작성되면 통과시킨다")
@@ -77,11 +82,21 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
 
   private void prepareOtherActivationConditions(UUID storeId) {
     orderFormTemplateJpaRepository.saveAndFlush(OrderFormTemplate.create(storeId, "기본 주문서"));
-    storeOperationSettingJpaRepository.saveAndFlush(
-        StoreOperationSetting.create(storeId, 60, "레거시 공지", 0));
     storeWeeklyPickupSettingJpaRepository.saveAndFlush(StoreWeeklyPickupSetting.create(
         storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true));
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
+    for (int sortOrder = 0; sortOrder < 3; sortOrder++) {
+      Asset asset = assetJpaRepository.saveAndFlush(Asset.create(
+          UUID.randomUUID(),
+          store.getOwnerUserId(),
+          "representative-" + sortOrder + ".png",
+          "image/png",
+          1024,
+          "representative/" + UUID.randomUUID() + ".png"));
+      representativeImagePersistencePort.save(
+          StoreRepresentativeImage.create(storeId, asset.getId(), sortOrder));
+    }
+    store.updateCancellationRefundPolicy("픽업 7일 전 100% 환불");
     store.markSettlementAccountInputCompleted(Instant.now());
     storeJpaRepository.saveAndFlush(store);
   }

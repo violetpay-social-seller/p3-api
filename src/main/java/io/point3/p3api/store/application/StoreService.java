@@ -9,15 +9,14 @@ import io.point3.p3api.store.application.create.StoreCreateUseCase;
 import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
-import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
 import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.application.slug.StoreSlugGenerator;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
 import io.point3.p3api.store.application.update.CompleteAccountRegistrationCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
-import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
+import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import java.util.UUID;
@@ -35,7 +34,6 @@ public class StoreService
 
   private final StorePersistencePort storePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
-  private final RepresentativeImagePersistencePort representativeImagePersistencePort;
   private final StoreActivationValidator storeActivationValidator;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
   private final StoreBusinessHoursTextFormatter businessHoursTextFormatter;
@@ -160,14 +158,7 @@ public class StoreService
   }
 
   private void validateCanActive(Store store) {
-    validateRepresentativeImageReady(store.getId());
     storeActivationValidator.validate(store);
-  }
-
-  private void validateRepresentativeImageReady(UUID storeId) {
-    if (representativeImagePersistencePort.findActiveByStoreId(storeId).size() < 3) {
-      throw new BaseException(StoreErrorCode.REPRESENTATIVE_IMAGE_MINIMUM_REQUIRED);
-    }
   }
 
   private void validateProfileAsset(UUID profileAssetId, UUID ownerUserId) {

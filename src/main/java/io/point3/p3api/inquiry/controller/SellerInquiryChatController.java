@@ -8,8 +8,8 @@ import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.chat.SellerInquiryChatUseCase;
 import io.point3.p3api.inquiry.controller.response.ChatTimelinePageResponse;
-import io.point3.p3api.inquiry.controller.response.InquiryChatDetailResponse;
 import io.point3.p3api.inquiry.controller.response.InquiryStorePolicyResponse;
+import io.point3.p3api.inquiry.controller.response.SellerInquiryChatDetailResponse;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +27,12 @@ public class SellerInquiryChatController {
   private final SellerInquiryChatUseCase sellerInquiryChatUseCase;
 
   @GetMapping
-  public ApiResponse<InquiryChatDetailResponse> getDetail(
+  public ApiResponse<SellerInquiryChatDetailResponse> getDetail(
       @PathVariable UUID inquiryId,
       @Authenticated CurrentUser currentUser,
       @CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(
-        InquiryChatDetailResponse.from(sellerInquiryChatUseCase.getDetail(inquiryId, storeId)));
+    return ApiResponse.ok(SellerInquiryChatDetailResponse.from(
+        sellerInquiryChatUseCase.getDetail(inquiryId, storeId)));
   }
 
   @GetMapping("/events")

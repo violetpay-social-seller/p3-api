@@ -9,8 +9,7 @@ public class StoreRefundPolicyTextFormatter {
 
   public String format(List<UpdateStoreRefundPolicyCommand.Rule> rules) {
     return rules.stream()
-        .map(rule -> "픽업일 " + rule.daysBeforePickup() + "일 전까지 "
-            + rule.refundRate() + "% 환불")
-        .collect(java.util.stream.Collectors.joining(", "));
+        .map(rule -> "픽업일 " + rule.daysBeforePickup() + "일 전까지 " + rule.refundRate() + "% 환불")
+        .collect(java.util.stream.Collectors.joining("\n"));
   }
 }

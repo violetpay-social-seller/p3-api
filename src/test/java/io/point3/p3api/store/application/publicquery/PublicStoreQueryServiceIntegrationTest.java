@@ -66,6 +66,7 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
     saveVariant(profileAsset, "processed/profile_640.webp");
     StoreResult store = createStore(seller.getId(), profileAsset.getId());
     saveWeeklyPickupSettings(store.id());
+    saveCancellationRefundPolicy(store.id());
     activate(store.id());
 
     Asset readyRepresentativeAsset = saveAsset(seller.getId(), "original/ready.png");
@@ -92,6 +93,7 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
         "https://assets.example.test/processed/ready_640.webp",
         result.representativeImages().getFirst().variants().getFirst().deliveryUrl());
     assertEquals("화~일 9:00~20:00 · 월 휴무 · 휴게시간 12:00~13:00", result.businessHours());
+    assertEquals("픽업일 7일 전까지 100% 환불\n픽업일 5일 전까지 80% 환불", result.cancellationRefundPolicy());
   }
 
   private User saveSeller() {
@@ -121,6 +123,12 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
   private void activate(UUID storeId) {
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
     store.active();
+    storeJpaRepository.saveAndFlush(store);
+  }
+
+  private void saveCancellationRefundPolicy(UUID storeId) {
+    Store store = storeJpaRepository.findById(storeId).orElseThrow();
+    store.updateCancellationRefundPolicy("픽업일 7일 전까지 100% 환불\n픽업일 5일 전까지 80% 환불");
     storeJpaRepository.saveAndFlush(store);
   }
 

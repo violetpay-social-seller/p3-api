@@ -15,6 +15,7 @@ public record PublicStoreResult(
     String snsLinks,
     String businessHours,
     String address,
+    String cancellationRefundPolicy,
     List<PublicRepresentativeImageResult> representativeImages) {
 
   public PublicStoreResult {

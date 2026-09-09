@@ -4,10 +4,12 @@ import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.store.application.publicquery.PublicStoreListQuery;
 import io.point3.p3api.store.application.publicquery.PublicStoreQueryUseCase;
+import io.point3.p3api.store.application.notice.query.StoreNoticeQueryUseCase;
 import io.point3.p3api.store.application.setting.availability.StoreOrderSettingAvailabilityQueryUseCase;
 import io.point3.p3api.store.controller.response.PublicRepresentativeImageResponse;
 import io.point3.p3api.store.controller.response.PublicStorePageResponse;
 import io.point3.p3api.store.controller.response.PublicStoreResponse;
+import io.point3.p3api.store.controller.response.StoreNoticeResponse;
 import io.point3.p3api.store.controller.response.StoreOrderSettingAvailabilityResponse;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicStoreController {
 
   private final PublicStoreQueryUseCase publicStoreQueryUseCase;
+  private final StoreNoticeQueryUseCase storeNoticeQueryUseCase;
   private final StoreOrderSettingAvailabilityQueryUseCase availabilityQueryUseCase;
 
   @GetMapping
@@ -60,5 +63,11 @@ public class PublicStoreController {
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
     return ApiResponse.ok(StoreOrderSettingAvailabilityResponse.from(
         availabilityQueryUseCase.getAvailability(storeId, from, to)));
+  }
+
+  @GetMapping("/{slug}/notices")
+  public ApiResponse<StoreNoticeResponse> getNotices(
+      @PathVariable String slug, @CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(StoreNoticeResponse.from(storeNoticeQueryUseCase.getNotices(storeId)));
   }
 }

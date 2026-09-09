@@ -90,6 +90,14 @@
         {
           "name": "P3_JUSO_SEARCH_API_KEY",
           "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_JUSO_SEARCH_API_KEY"
+        },
+        {
+          "name": "P3_POINT3_CLIENT_ID",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_POINT3_CLIENT_ID"
+        },
+        {
+          "name": "P3_POINT3_API_TOKEN",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_POINT3_API_TOKEN"
         }
       ],
       "logConfiguration": {

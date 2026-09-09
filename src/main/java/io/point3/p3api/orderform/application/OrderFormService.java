@@ -267,7 +267,7 @@ public class OrderFormService
           copyText(node, accepted, "placeholder");
           copyText(node, accepted, "helperText");
         }
-        case SELECT -> {}
+        case SELECT -> copyText(node, accepted, "helperText");
       }
       return accepted.isEmpty() ? null : objectMapper.writeValueAsString(accepted);
     } catch (JsonProcessingException exception) {

@@ -201,10 +201,7 @@ public class PaymentQueryService
   }
 
   private boolean isActiveAttempt(PaymentAttempt paymentAttempt, Instant now) {
-    boolean activeStatus = paymentAttempt.getStatus() == PaymentAttemptStatus.READY
-        || paymentAttempt.getStatus() == PaymentAttemptStatus.IN_PROGRESS;
-
-    return activeStatus && !now.isAfter(paymentAttempt.getExpiresAt());
+    return paymentAttempt.isActive(now);
   }
 
   private PaymentCtaResult paymentCtaResult(

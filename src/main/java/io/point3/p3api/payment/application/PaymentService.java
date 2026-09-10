@@ -80,6 +80,18 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
         .findById(command.buyerUserId())
         .orElseThrow(() -> new BaseException(CommonErrorCode.UNAUTHORIZED));
 
+    Optional<PaymentAttempt> activePaymentAttempt = findActivePaymentAttempt(command);
+    if (activePaymentAttempt.isPresent()) {
+      PaymentAttempt paymentAttempt = activePaymentAttempt.get();
+      log.info(
+          "Reuse active payment attempt. confirmationId={} ,paymentAttemptId={} ,status={} ,expiresAt={}",
+          paymentAttempt.getConfirmationId(),
+          paymentAttempt.getId(),
+          paymentAttempt.getStatus(),
+          paymentAttempt.getExpiresAt());
+      return buildPreparation(paymentAttempt, payer.getPayerId(), confirmation.getMenuName());
+    }
+
     Point3PaymentSession session = createPoint3Session(confirmation);
 
     if (session.amount() != confirmation.getAmount()) {
@@ -175,7 +187,7 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
 
   private OrderConfirmation getConfirmation(UUID inquiryId, UUID confirmationId) {
     OrderConfirmation confirmation = orderConfirmationPersistencePort
-        .findById(confirmationId)
+        .findByIdForUpdate(confirmationId)
         .orElseThrow(
             () -> new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_NOT_FOUND));
 
@@ -184,6 +196,15 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
     }
 
     return confirmation;
+  }
+
+  private Optional<PaymentAttempt> findActivePaymentAttempt(PreparePaymentCommand command) {
+    Instant now = Instant.now(clock);
+
+    return paymentAttemptPersistencePort.findAllByConfirmationId(command.confirmationId()).stream()
+        .filter(paymentAttempt -> paymentAttempt.getPayerUserId().equals(command.buyerUserId()))
+        .filter(paymentAttempt -> paymentAttempt.isActive(now))
+        .findFirst();
   }
 
   private Point3PaymentSession createPoint3Session(OrderConfirmation confirmation) {

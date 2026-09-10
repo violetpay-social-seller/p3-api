@@ -64,6 +64,9 @@ public class Store {
   @Column(name = "address", length = 255)
   private String address;
 
+  @Column(name = "detail_address", length = 100)
+  private String detailAddress;
+
   @Column(name = "settlement_account_status", nullable = false, length = 30)
   private String settlementAccountStatus;
 
@@ -134,6 +137,31 @@ public class Store {
 
   public void updateCancellationRefundPolicy(String cancellationRefundPolicy) {
     this.cancellationRefundPolicy = cancellationRefundPolicy;
+  }
+
+  public void initializeLocation(String address, String detailAddress) {
+    if (this.address != null || this.detailAddress != null) {
+      throw new IllegalStateException("Store location is already initialized");
+    }
+    this.address = normalizeAddressPart(address);
+    this.detailAddress = normalizeAddressPart(detailAddress);
+  }
+
+  public String getFullAddress() {
+    if (address == null) {
+      return null;
+    }
+    if (detailAddress == null) {
+      return address;
+    }
+    return address + " " + detailAddress;
+  }
+
+  private static String normalizeAddressPart(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    return value.trim().replaceAll("\\s+", " ");
   }
 
   public void markSettlementAccountInputCompleted(Instant registeredAt) {

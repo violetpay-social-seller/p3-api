@@ -33,6 +33,9 @@ public class SellerOnboarding {
   @Column(name = "address", nullable = false, length = 255)
   private String address;
 
+  @Column(name = "detail_address", length = 100)
+  private String detailAddress;
+
   @Column(name = "sns_link", length = 500)
   private String snsLink;
 
@@ -58,23 +61,54 @@ public class SellerOnboarding {
   private Instant updatedAt;
 
   private SellerOnboarding(
-      UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLink) {
+      UUID applicantUserId,
+      String storeName,
+      String phoneNumber,
+      String address,
+      String detailAddress,
+      String snsLink) {
     this.applicantUserId = applicantUserId;
     this.storeName = storeName;
     this.phoneNumber = phoneNumber;
-    this.address = address;
+    this.address = normalize(address);
+    this.detailAddress = normalize(detailAddress);
     this.snsLink = snsLink;
     this.status = SellerOnboardingStatus.PENDING;
   }
 
   public static SellerOnboarding create(
       UUID applicantUserId, String storeName, String phoneNumber, String address, String snsLink) {
+    return create(applicantUserId, storeName, phoneNumber, address, null, snsLink);
+  }
+
+  public static SellerOnboarding create(
+      UUID applicantUserId,
+      String storeName,
+      String phoneNumber,
+      String address,
+      String detailAddress,
+      String snsLink) {
     Objects.requireNonNull(applicantUserId, "applicantUserId");
     Objects.requireNonNull(storeName, "storeName");
     Objects.requireNonNull(phoneNumber, "phoneNumber");
     Objects.requireNonNull(address, "address");
 
-    return new SellerOnboarding(applicantUserId, storeName, phoneNumber, address, snsLink);
+    return new SellerOnboarding(
+        applicantUserId, storeName, phoneNumber, address, detailAddress, snsLink);
+  }
+
+  public String getFullAddress() {
+    if (detailAddress == null) {
+      return address;
+    }
+    return address + " " + detailAddress;
+  }
+
+  private static String normalize(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+    return value.trim().replaceAll("\\s+", " ");
   }
 
   public void hold(UUID reviewerId, String reason, Instant reviewedAt) {

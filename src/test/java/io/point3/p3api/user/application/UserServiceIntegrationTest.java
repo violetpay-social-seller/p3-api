@@ -134,6 +134,7 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
     assertNull(result.profileImageDeliveryUrl());
     assertEquals("조회 사용자", result.name());
     assertEquals(UserRole.SELLER, result.role());
+    assertEquals(user.getCreatedAt(), result.createdAt());
     assertEquals("SELLER_HOME", result.nextRoute());
   }
 
@@ -156,6 +157,7 @@ class UserServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(updatedEmail, result.email());
     assertEquals("변경 이름", result.name());
     assertNull(result.profileAssetId());
+    assertEquals(user.getCreatedAt(), result.createdAt());
     assertEquals("BUYER_HOME", result.nextRoute());
   }
 

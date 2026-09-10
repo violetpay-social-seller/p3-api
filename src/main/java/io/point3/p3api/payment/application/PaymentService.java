@@ -36,8 +36,6 @@ import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.user.application.port.UserPersistencePort;
 import io.point3.p3api.user.domain.entity.User;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -226,9 +224,9 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
   private PaymentPreparationResult buildPreparation(
       PaymentAttempt paymentAttempt, String payerId, String orderName) {
     String authnState = paymentAttempt.getId().toString();
-    String entryPath = payerId == null ? "/regist" : "/login";
-    String authenticationUrl =
-        buildAuthenticationUrl(entryPath, paymentAttempt.getPoint3SessionId(), payerId, authnState);
+    String entryPath = "/";
+    String authenticationUrl = Point3AuthenticationUrlFactory.build(
+        point3Properties, paymentAttempt.getPoint3SessionId(), payerId);
 
     return new PaymentPreparationResult(
         paymentAttempt.getId(),
@@ -243,28 +241,6 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
         authenticationUrl,
         point3Properties.paymentOrigin(),
         paymentAttempt.getExpiresAt());
-  }
-
-  private String buildAuthenticationUrl(
-      String entryPath, String sessionId, String payerId, String authnState) {
-    StringBuilder url = new StringBuilder(point3Properties.authBaseUrl())
-        .append(entryPath)
-        .append("?client_id=")
-        .append(encode(point3Properties.clientId()))
-        .append("&session_id=")
-        .append(encode(sessionId))
-        .append("&state=")
-        .append(encode(authnState));
-
-    if (payerId != null) {
-      url.append("&payer_id=").append(encode(payerId));
-    }
-
-    return url.toString();
-  }
-
-  private String encode(String value) {
-    return URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 
   private void validateCaptureMessage(CapturePaymentCommand command) {

@@ -23,7 +23,7 @@ public record SellerOnboardingDetailResult(
         sellerOnboarding.getApplicantUserId(),
         sellerOnboarding.getStoreName(),
         sellerOnboarding.getPhoneNumber(),
-        sellerOnboarding.getAddress(),
+        sellerOnboarding.getFullAddress(),
         sellerOnboarding.getSnsLink(),
         sellerOnboarding.getStatus(),
         sellerOnboarding.getRejectionReason(),

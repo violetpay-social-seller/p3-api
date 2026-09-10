@@ -52,8 +52,7 @@ public class StoreService
         command.description(),
         command.contact(),
         command.contactVisible(),
-        command.snsLinks(),
-        null);
+        command.snsLinks());
     store.initializeLocation(command.address(), command.detailAddress());
     store.updatePickupSettings(command.pickupSettings());
 
@@ -77,8 +76,7 @@ public class StoreService
         command.description(),
         command.contact(),
         command.contactVisible(),
-        command.snsLinks(),
-        command.address());
+        command.snsLinks());
     store.updatePickupSettings(command.pickupSettings());
 
     return toResult(store);

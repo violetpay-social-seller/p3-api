@@ -111,8 +111,7 @@ public class Store {
       String description,
       String contact,
       boolean contactVisible,
-      String snsLinks,
-      String address) {
+      String snsLinks) {
     Objects.requireNonNull(name, "name");
 
     this.name = name;
@@ -120,7 +119,6 @@ public class Store {
     this.contact = contact;
     this.contactVisible = contactVisible;
     this.snsLinks = snsLinks;
-    this.address = address;
   }
 
   public void updatePickupSettings(String pickupSettings) {

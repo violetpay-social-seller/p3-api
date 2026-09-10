@@ -25,7 +25,7 @@ public record OperatorOnboardingResult(
         onboarding.getApplicantUserId(),
         onboarding.getStoreName(),
         onboarding.getPhoneNumber(),
-        onboarding.getAddress(),
+        onboarding.getFullAddress(),
         onboarding.getSnsLink(),
         onboarding.getStatus(),
         onboarding.getRejectionReason(),

@@ -369,8 +369,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         true,
         "{\"instagram\":\"https://instagram.com/p3bakery\"}",
         "{\"mon\":\"10:00-18:00\"}",
-        "{\"leadTimeDays\":3}",
-        "서울특별시 중구");
+        "{\"leadTimeDays\":3}");
   }
 
   private RepresentativeImageResult createRepresentativeImage(

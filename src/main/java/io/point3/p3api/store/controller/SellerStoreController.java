@@ -202,8 +202,7 @@ public class SellerStoreController {
         request.contactVisible(),
         request.snsLinks(),
         request.businessHours(),
-        request.pickupSettings(),
-        request.address());
+        request.pickupSettings());
   }
 
   private String publicStoreUrl(String slug) {

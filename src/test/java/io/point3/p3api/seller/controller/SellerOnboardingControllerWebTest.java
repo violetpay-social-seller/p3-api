@@ -123,6 +123,37 @@ class SellerOnboardingControllerWebTest {
   }
 
   @Test
+  @DisplayName("재신청은 인스타그램 ID 형식 snsLink를 허용한다")
+  void reappliesOnboardingWithInstagramUsername() throws Exception {
+    UUID onboardingId = UUID.randomUUID();
+    when(sellerOnboardingReapplicationUseCase.reapply(any()))
+        .thenReturn(new SellerOnboardingResult(
+            UUID.randomUUID(),
+            currentUser.userId(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            "wihada",
+            SellerOnboardingStatus.PENDING,
+            Instant.parse("2026-08-22T00:00:00Z")));
+
+    mockMvc
+        .perform(post("/seller/onboardings/{onboardingId}/resubmissions", onboardingId)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "storeName": "P3 베이커리",
+                  "phoneNumber": "010-1234-5678",
+                  "address": "서울특별시 중구",
+                  "detailAddress": "101호",
+                  "snsLink": "@wihada"
+                }
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true));
+  }
+
+  @Test
   @DisplayName("유효한 입점 신청 요청은 PENDING 상태를 반환한다")
   void createsOnboarding() throws Exception {
     UUID onboardingId = UUID.randomUUID();
@@ -141,7 +172,7 @@ class SellerOnboardingControllerWebTest {
             "P3 베이커리",
             "010-1234-5678",
             "서울특별시 중구",
-            "https://instagram.com/p3bakery",
+            "p3bakery",
             SellerOnboardingStatus.PENDING,
             Instant.parse("2026-08-21T00:00:00Z")));
 
@@ -159,6 +190,61 @@ class SellerOnboardingControllerWebTest {
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.id").value(onboardingId.toString()))
         .andExpect(jsonPath("$.data.status").value("PENDING"));
+  }
+
+  @Test
+  @DisplayName("입점 신청은 인스타그램 ID 형식 snsLink를 허용한다")
+  void createsOnboardingWithInstagramUsername() throws Exception {
+    UUID onboardingId = UUID.randomUUID();
+    when(jwtCommandExtractor.extractRegistration(any(), eq(UserRole.SELLER), eq("010-1234-5678")))
+        .thenReturn(CompleteRegistrationCommand.of(
+            "cognito-sub",
+            "seller@example.com",
+            "카카오 닉네임",
+            UserRole.SELLER,
+            "010-1234-5678",
+            SignupProvider.KAKAO));
+    when(sellerOnboardingSubmissionUseCase.submit(any()))
+        .thenReturn(new SellerOnboardingResult(
+            onboardingId,
+            UUID.randomUUID(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            "wihada.cake",
+            SellerOnboardingStatus.PENDING,
+            Instant.parse("2026-08-21T00:00:00Z")));
+
+    mockMvc
+        .perform(
+            post("/seller/onboardings").contentType(MediaType.APPLICATION_JSON).content("""
+                {
+                  "storeName": "P3 베이커리",
+                  "phoneNumber": "010-1234-5678",
+                  "address": "서울특별시 중구",
+                  "snsLink": "@wihada.cake"
+                }
+                """))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.success").value(true))
+        .andExpect(jsonPath("$.data.status").value("PENDING"));
+  }
+
+  @Test
+  @DisplayName("입점 신청은 인스타그램 ID가 아닌 snsLink를 거절한다")
+  void rejectsInvalidSnsLink() throws Exception {
+    mockMvc
+        .perform(
+            post("/seller/onboardings").contentType(MediaType.APPLICATION_JSON).content("""
+                {
+                  "storeName": "P3 베이커리",
+                  "phoneNumber": "010-1234-5678",
+                  "address": "서울특별시 중구",
+                  "snsLink": "wihada/cake"
+                }
+                """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.success").value(false));
   }
 
   @Test

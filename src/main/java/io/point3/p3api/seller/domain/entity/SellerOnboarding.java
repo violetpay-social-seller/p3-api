@@ -72,7 +72,7 @@ public class SellerOnboarding {
     this.phoneNumber = phoneNumber;
     this.address = normalize(address);
     this.detailAddress = normalize(detailAddress);
-    this.snsLink = snsLink;
+    this.snsLink = normalizeInstagramUsername(snsLink);
     this.status = SellerOnboardingStatus.PENDING;
   }
 
@@ -109,6 +109,22 @@ public class SellerOnboarding {
       return null;
     }
     return value.trim().replaceAll("\\s+", " ");
+  }
+
+  private static String normalizeInstagramUsername(String value) {
+    if (value == null || value.isBlank()) {
+      return null;
+    }
+
+    String normalized = value.trim();
+    if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+      normalized =
+          normalized.replaceFirst("^https?://(www\\.)?instagram\\.com/", "").replaceFirst("/$", "");
+    }
+    if (normalized.startsWith("@")) {
+      normalized = normalized.substring(1);
+    }
+    return normalized;
   }
 
   public void hold(UUID reviewerId, String reason, Instant reviewedAt) {

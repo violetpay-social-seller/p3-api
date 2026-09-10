@@ -18,5 +18,8 @@ public record SellerOnboardingCreateRequest(
     @Size(max = 100) String detailAddress,
 
     @Size(max = 500)
-    @Pattern(regexp = "^https?://[^\\s]+$", message = "snsLink must be a valid HTTP or HTTPS URL")
+    @Pattern(
+        regexp =
+            "^\\s*$|^\\s*@?[A-Za-z0-9._]{1,30}\\s*$|^\\s*https?://(www\\.)?instagram\\.com/@?[A-Za-z0-9._]{1,30}/?\\s*$",
+        message = "snsLink must be a valid Instagram username or profile URL")
     String snsLink) {}

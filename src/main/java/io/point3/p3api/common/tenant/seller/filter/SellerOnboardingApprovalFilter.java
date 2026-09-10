@@ -24,6 +24,7 @@ public class SellerOnboardingApprovalFilter extends OncePerRequestFilter {
 
   private static final String SELLER_PREFIX = "/seller/";
   private static final String SELLER_ONBOARDINGS_PATH = "/seller/onboardings";
+  private static final String SELLER_STORE_LOCATION_SEARCH_PATH = "/seller/store/locations/search";
 
   private final CurrentUserRender currentUserRender;
   private final SellerOnboardingApprovalProvider sellerOnboardingApprovalProvider;
@@ -34,7 +35,8 @@ public class SellerOnboardingApprovalFilter extends OncePerRequestFilter {
     String path = request.getRequestURI();
     return !path.startsWith(SELLER_PREFIX)
         || path.equals(SELLER_ONBOARDINGS_PATH)
-        || path.startsWith(SELLER_ONBOARDINGS_PATH + "/");
+        || path.startsWith(SELLER_ONBOARDINGS_PATH + "/")
+        || ("GET".equals(request.getMethod()) && path.equals(SELLER_STORE_LOCATION_SEARCH_PATH));
   }
 
   @Override

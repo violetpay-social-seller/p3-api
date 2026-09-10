@@ -14,8 +14,8 @@ public record Point3Properties(
 
   public Point3Properties {
     apiBaseUrl = normalizeBaseUrl(apiBaseUrl, "https://api.point3.io");
-    authBaseUrl = normalizeBaseUrl(authBaseUrl, "https://pay.point3.io");
-    paymentOrigin = normalizeBaseUrl(paymentOrigin, "https://pay.point3.io");
+    authBaseUrl = normalizeBaseUrl(authBaseUrl, "https://auth.point3.io");
+    paymentOrigin = normalizeBaseUrl(paymentOrigin, "https://widget.point3.io");
     clientId = clientId == null ? "" : clientId;
     apiToken = apiToken == null ? "" : apiToken;
     sessionTtl = sessionTtl == null ? Duration.ofHours(24) : sessionTtl;

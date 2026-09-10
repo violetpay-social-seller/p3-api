@@ -105,7 +105,7 @@ import org.springframework.transaction.annotation.Transactional;
     properties = {
       "p3.point3.client-id=test-client",
       "p3.point3.auth-base-url=https://auth.point3.test",
-      "p3.point3.payment-origin=https://pay.point3.test"
+      "p3.point3.payment-origin=https://widget.point3.test"
     })
 class PaymentServiceIntegrationTest extends IntegrationTestSupport {
 
@@ -307,8 +307,12 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals("test-client", result.clientId());
     assertEquals("주문서 payment-prepare", result.orderName());
     assertEquals(result.orderName(), point3PaymentPort.lastProductName());
-    assertEquals("/regist", result.entryPath());
+    assertEquals("/", result.entryPath());
     assertFalse(result.authenticationUrl().contains("payer_id="));
+    assertFalse(result.authenticationUrl().contains("session_id="));
+    assertFalse(result.authenticationUrl().contains("state="));
+    assertTrue(result.authenticationUrl().contains("redirect_uri="));
+    assertTrue(result.authenticationUrl().contains("sessionId="));
     assertEquals(PaymentAttemptStatus.READY, paymentAttempt.getStatus());
     assertEquals(result.sessionId(), paymentAttempt.getPoint3SessionId());
     assertEquals(result.expiresAt(), paymentAttempt.getExpiresAt());
@@ -316,7 +320,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("저장된 payerId가 있으면 결제 준비 응답은 login 진입 값을 반환한다")
+  @DisplayName("저장된 payerId가 있으면 인증 URL에 payer_id를 포함한다")
   void preparesWithPayerId() {
     Fixture fixture = prepareFixture("payment-login");
     fixture.buyer().connectPayer("payer-saved");
@@ -332,17 +336,16 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
         confirmation.orderConfirmation().id(),
         fixture.buyer().getId()));
 
-    assertEquals("/login", result.entryPath());
+    assertEquals("/", result.entryPath());
     assertEquals("payer-saved", result.payerId());
     assertEquals("test-client", result.clientId());
     assertEquals("주문서 payment-login", result.orderName());
     assertEquals("test-client", result.authnClientId());
-    assertEquals("https://pay.point3.test", result.point3PaymentOrigin());
+    assertEquals("https://widget.point3.test", result.point3PaymentOrigin());
     assertEquals(
-        "https://auth.point3.test/login?client_id=test-client&session_id="
+        "https://auth.point3.test/?client_id=test-client&redirect_uri="
+            + "https%3A%2F%2Fwidget.point3.test%2F&sessionId="
             + result.sessionId()
-            + "&state="
-            + result.authnState()
             + "&payer_id=payer-saved",
         result.authenticationUrl());
   }

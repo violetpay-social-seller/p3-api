@@ -59,6 +59,7 @@ class SellerStoreLocationControllerWebTest {
       mock(SellerProfileImageUpdateUseCase.class);
 
   private MockMvc mockMvc;
+  private MockMvc locationSearchMockMvc;
 
   @BeforeEach
   void setUp() {
@@ -82,15 +83,18 @@ class SellerStoreLocationControllerWebTest {
         .setCustomArgumentResolvers(
             new CurrentStoreIdArgumentResolver(), new CurrentSellerArgumentResolver())
         .build();
+    locationSearchMockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setControllerAdvice(new GlobalExceptionHandler())
+        .build();
   }
 
   @Test
-  void searchesStoreLocations() throws Exception {
+  void searchesStoreLocationsWithoutRegisteredSeller() throws Exception {
     when(storeLocationSearchUseCase.search(any()))
         .thenReturn(List.of(new StoreLocationResult(
             "강남역센트럴푸르지오시티", "서울특별시 강남구 테헤란로 123", "서울특별시 강남구 역삼동 123-45", "06234")));
 
-    mockMvc
+    locationSearchMockMvc
         .perform(get("/seller/store/locations/search").param("query", "테헤란로 123"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
@@ -108,7 +112,7 @@ class SellerStoreLocationControllerWebTest {
   void returnsEmptyItemsWhenSearchHasNoResults() throws Exception {
     when(storeLocationSearchUseCase.search(any())).thenReturn(List.of());
 
-    mockMvc
+    locationSearchMockMvc
         .perform(get("/seller/store/locations/search").param("query", "없는주소"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
@@ -117,13 +121,13 @@ class SellerStoreLocationControllerWebTest {
 
   @Test
   void rejectsBlankShortAndOverlongQuery() throws Exception {
-    mockMvc
+    locationSearchMockMvc
         .perform(get("/seller/store/locations/search").param("query", " "))
         .andExpect(status().isBadRequest());
-    mockMvc
+    locationSearchMockMvc
         .perform(get("/seller/store/locations/search").param("query", "역"))
         .andExpect(status().isBadRequest());
-    mockMvc
+    locationSearchMockMvc
         .perform(get("/seller/store/locations/search").param("query", "a".repeat(101)))
         .andExpect(status().isBadRequest());
   }

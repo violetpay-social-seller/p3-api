@@ -44,9 +44,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -191,6 +193,11 @@ public class PaymentService implements PaymentPrepareUseCase, PaymentCaptureUseC
           confirmation.getMenuName(),
           confirmation.getStoreNameSnapshot());
     } catch (Point3PaymentException e) {
+      log.warn(
+          "Point3 payment session creation failed. confirmationId={} ,failureCode={} ,message={}",
+          confirmation.getId(),
+          e.getFailureCode(),
+          e.getMessage());
       throw new BaseException(PaymentErrorCode.PAYMENT_EXTERNAL_UNAVAILABLE);
     }
   }

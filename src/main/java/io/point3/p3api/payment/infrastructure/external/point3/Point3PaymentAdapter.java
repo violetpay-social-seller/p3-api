@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class Point3PaymentAdapter implements Point3PaymentPort {
 
+  private static final int MAX_FAILURE_BODY_LENGTH = 1_000;
+
   private final Point3Properties point3Properties;
   private final ObjectMapper objectMapper;
   private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -33,7 +35,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
     if (response.statusCode() != 200) {
       throw new Point3PaymentException(
-          "POINT3_SESSION_CREATE_" + response.statusCode(), "Point3 session creation failed");
+          "POINT3_SESSION_CREATE_" + response.statusCode(),
+          failureMessage("Point3 session creation failed", response));
     }
 
     CreatePaymentSessionResponse session =
@@ -56,7 +59,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
     if (response.statusCode() != 200) {
       throw new Point3PaymentException(
-          "POINT3_CAPTURE_" + response.statusCode(), "Point3 capture failed");
+          "POINT3_CAPTURE_" + response.statusCode(),
+          failureMessage("Point3 capture failed", response));
     }
 
     CapturePaymentResponse capture =
@@ -71,7 +75,8 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
 
     if (response.statusCode() != 200) {
       throw new Point3PaymentException(
-          "POINT3_SESSION_GET_" + response.statusCode(), "Point3 session lookup failed");
+          "POINT3_SESSION_GET_" + response.statusCode(),
+          failureMessage("Point3 session lookup failed", response));
     }
 
     PaymentSessionResponse session =
@@ -149,6 +154,19 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
     } catch (IOException e) {
       throw new Point3PaymentException(failureCode, e.getMessage());
     }
+  }
+
+  private String failureMessage(String message, HttpResponse<String> response) {
+    String body = response.body();
+    if (body == null || body.isBlank()) {
+      return message + ". statusCode=" + response.statusCode() + " body=<empty>";
+    }
+
+    String normalized = body.replaceAll("\\s+", " ").trim();
+    String truncated = normalized.length() <= MAX_FAILURE_BODY_LENGTH
+        ? normalized
+        : normalized.substring(0, MAX_FAILURE_BODY_LENGTH) + "...";
+    return message + ". statusCode=" + response.statusCode() + " body=" + truncated;
   }
 
   private record CreatePaymentSessionRequest(

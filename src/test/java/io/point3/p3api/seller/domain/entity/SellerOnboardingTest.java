@@ -26,12 +26,41 @@ class SellerOnboardingTest {
   }
 
   @Test
+  @DisplayName("인스타그램 ID는 @를 제거해 저장한다")
+  void normalizesInstagramUsername() {
+    SellerOnboarding onboarding = SellerOnboarding.create(
+        UUID.randomUUID(),
+        "테스트 스토어",
+        "010-1234-5678",
+        "서울특별시 서대문구",
+        null,
+        " @wihada.cake ");
+
+    assertEquals("wihada.cake", onboarding.getSnsLink());
+  }
+
+  @Test
+  @DisplayName("인스타그램 프로필 URL은 username만 저장한다")
+  void normalizesInstagramProfileUrl() {
+    SellerOnboarding onboarding = SellerOnboarding.create(
+        UUID.randomUUID(),
+        "테스트 스토어",
+        "010-1234-5678",
+        "서울특별시 서대문구",
+        null,
+        "https://instagram.com/wihada");
+
+    assertEquals("wihada", onboarding.getSnsLink());
+  }
+
+  @Test
   @DisplayName("상세주소가 없으면 기본주소만 전체 주소로 반환한다")
   void returnsBaseAddressWithoutDetailAddress() {
     SellerOnboarding onboarding = SellerOnboarding.create(
         UUID.randomUUID(), "테스트 스토어", "010-1234-5678", "서울특별시 서대문구 연희로 12길", null, null);
 
     assertNull(onboarding.getDetailAddress());
+    assertNull(onboarding.getSnsLink());
     assertEquals("서울특별시 서대문구 연희로 12길", onboarding.getFullAddress());
   }
 }

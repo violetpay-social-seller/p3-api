@@ -64,7 +64,7 @@ class SellerOnboardingReviewServiceTest {
     assertEquals(onboarding.getApplicantUserId(), command.ownerUserId());
     assertEquals(onboarding.getStoreName(), command.name());
     assertEquals(onboarding.getPhoneNumber(), command.contact());
-    assertEquals("\"https://instagram.com/p3\"", command.snsLinks());
+    assertEquals("\"p3\"", command.snsLinks());
     assertEquals(onboarding.getAddress(), command.address());
     Assertions.assertFalse(command.contactVisible());
   }
@@ -157,7 +157,7 @@ class SellerOnboardingReviewServiceTest {
     when(onboarding.getApplicantUserId()).thenReturn(UUID.randomUUID());
     when(onboarding.getStoreName()).thenReturn("P3 베이커리");
     when(onboarding.getPhoneNumber()).thenReturn("010-1234-5678");
-    when(onboarding.getSnsLink()).thenReturn("https://instagram.com/p3");
+    when(onboarding.getSnsLink()).thenReturn("p3");
     when(onboarding.getAddress()).thenReturn("서울특별시 중구");
     return onboarding;
   }

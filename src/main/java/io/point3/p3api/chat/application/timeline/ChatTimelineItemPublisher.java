@@ -26,6 +26,11 @@ public class ChatTimelineItemPublisher {
     return save(ChatTimelineItem.orderFormSubmission(inquiryId, buyerUserId, submissionId));
   }
 
+  public ChatTimelineItem publishOrderFormRevisionRequest(
+      UUID inquiryId, UUID sellerUserId, UUID submissionId) {
+    return save(ChatTimelineItem.orderFormRevisionRequest(inquiryId, sellerUserId, submissionId));
+  }
+
   public ChatTimelineItem publishOrderConfirmation(
       UUID inquiryId, UUID senderUserId, UUID orderConfirmationId) {
     return save(ChatTimelineItem.orderConfirmation(inquiryId, senderUserId, orderConfirmationId));

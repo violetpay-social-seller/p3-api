@@ -61,9 +61,17 @@ public class InquiryListService implements InquiryListUseCase {
   @Transactional(readOnly = true)
   public List<InquiryListItem> getBuyerInquiries(
       UUID buyerUserId, InquiryStatus status, boolean unreadOnly) {
-    return inquiryPersistencePort.findAllByBuyerUserId(buyerUserId).stream()
+    List<Inquiry> inquiries = inquiryPersistencePort.findAllByBuyerUserId(buyerUserId).stream()
         .filter(inquiry -> isBuyerListTarget(inquiry, status))
-        .map(inquiry -> toBuyerItem(inquiry, buyerUserId))
+        .toList();
+    Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId =
+        latestEventByInquiryId(inquiries);
+    Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId =
+        latestSubmissionByInquiryId(inquiries);
+
+    return inquiries.stream()
+        .map(inquiry ->
+            toBuyerItem(inquiry, buyerUserId, latestEventByInquiryId, latestSubmissionByInquiryId))
         .filter(item -> !unreadOnly || item.unreadCount() > 0)
         .sorted(byLatestEvent())
         .toList();
@@ -161,10 +169,20 @@ public class InquiryListService implements InquiryListUseCase {
     inquiryPersistencePort.purgeExpiredTrash(cutoff, now);
   }
 
-  private InquiryListItem toBuyerItem(Inquiry inquiry, UUID buyerUserId) {
+  private InquiryListItem toBuyerItem(
+      Inquiry inquiry,
+      UUID buyerUserId,
+      Map<UUID, InquiryListItem.LatestEvent> latestEventByInquiryId,
+      Map<UUID, InquiryListItem.LatestOrderFormSubmission> latestSubmissionByInquiryId) {
     InquiryChatDetail detail = inquiryChatDetailQueryUseCase.getBuyerDetail(inquiry);
     return toItem(
-        inquiry, buyerUserId, inquiry.getBuyerLastReadAt(), detail, inquiry.statusForBuyer());
+        inquiry,
+        buyerUserId,
+        inquiry.getBuyerLastReadAt(),
+        detail,
+        inquiry.statusForBuyer(),
+        latestEventByInquiryId.get(inquiry.getId()),
+        latestSubmissionByInquiryId.get(inquiry.getId()));
   }
 
   private InquiryListItem toSellerItem(
@@ -196,17 +214,6 @@ public class InquiryListService implements InquiryListUseCase {
         inquiry.statusForSeller(),
         latestEvent,
         latestSubmissionByInquiryId.get(inquiry.getId()));
-  }
-
-  private InquiryListItem toItem(
-      Inquiry inquiry,
-      UUID readerUserId,
-      Instant readAt,
-      InquiryChatDetail detail,
-      InquiryStatus status) {
-    Instant latestEventAt = chatTimelineItemPort.findLatestCreatedAt(inquiry.getId());
-    long unreadCount = chatTimelineItemPort.countUnread(inquiry.getId(), readerUserId, readAt);
-    return InquiryListItem.from(inquiry, detail, status, unreadCount, latestEventAt);
   }
 
   private InquiryListItem toItem(

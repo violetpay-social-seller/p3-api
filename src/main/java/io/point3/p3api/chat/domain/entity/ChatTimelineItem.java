@@ -62,6 +62,15 @@ public class ChatTimelineItem {
         inquiryId, senderUserId, ChatTimelineItemType.ORDER_FORM_SUBMISSION, orderFormSubmissionId);
   }
 
+  public static ChatTimelineItem orderFormRevisionRequest(
+      UUID inquiryId, UUID senderUserId, UUID orderFormSubmissionId) {
+    return create(
+        inquiryId,
+        senderUserId,
+        ChatTimelineItemType.ORDER_FORM_REVISION_REQUEST,
+        orderFormSubmissionId);
+  }
+
   public static ChatTimelineItem orderConfirmation(
       UUID inquiryId, UUID senderUserId, UUID orderConfirmationId) {
     return create(

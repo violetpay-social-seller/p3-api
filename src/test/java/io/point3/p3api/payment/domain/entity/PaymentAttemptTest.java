@@ -1,7 +1,9 @@
 package io.point3.p3api.payment.domain.entity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
 import java.time.Instant;
@@ -49,6 +51,30 @@ class PaymentAttemptTest {
             null,
             -1,
             Instant.parse("2026-08-25T01:00:00Z")));
+  }
+
+  @Test
+  @DisplayName("미만료 READY와 IN_PROGRESS 결제시도만 active 상태로 판단한다")
+  void checksActivePaymentAttempt() {
+    Instant now = Instant.parse("2026-08-25T00:00:00Z");
+    PaymentAttempt ready = paymentAttempt();
+    PaymentAttempt inProgress = paymentAttempt();
+    PaymentAttempt expired = PaymentAttempt.create(
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        "pymt_sess-" + UUID.randomUUID(),
+        null,
+        38000,
+        Instant.parse("2026-08-24T23:59:59Z"));
+    PaymentAttempt failed = paymentAttempt();
+
+    inProgress.startCapture();
+    failed.fail("POINT3_FAILED", now);
+
+    assertTrue(ready.isActive(now));
+    assertTrue(inProgress.isActive(now));
+    assertFalse(expired.isActive(now));
+    assertFalse(failed.isActive(now));
   }
 
   private PaymentAttempt paymentAttempt() {

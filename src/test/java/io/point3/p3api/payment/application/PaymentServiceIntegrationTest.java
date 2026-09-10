@@ -254,6 +254,37 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("미만료 결제시도가 있으면 결제 준비는 기존 세션 응답을 재사용한다")
+  void reusesActivePaymentAttempt() {
+    Fixture fixture = prepareFixture("payment-active-reuse");
+    SendOrderConfirmationResult confirmation = sendConfirmation(fixture);
+    orderConfirmationStateService.markBuyerViewed(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+
+    PaymentPreparationResult first = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
+    PaymentPreparationResult second = paymentPrepareUseCase.prepare(PreparePaymentCommand.of(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId()));
+    List<PaymentAttemptResult> attempts = paymentAttemptHistoryQueryUseCase.getBuyerPaymentAttempts(
+        fixture.inquiry().getId(),
+        confirmation.orderConfirmation().id(),
+        fixture.buyer().getId());
+
+    assertEquals(first.paymentAttemptId(), second.paymentAttemptId());
+    assertEquals(first.sessionId(), second.sessionId());
+    assertEquals(first.authenticationUrl(), second.authenticationUrl());
+    assertEquals(1, point3PaymentPort.createCount());
+    assertEquals(1, attempts.size());
+    assertEquals(PaymentAttemptStatus.READY, attempts.get(0).status());
+  }
+
+  @Test
   @DisplayName("결제 준비는 구매자 권한과 주문확인서 확인 여부를 검증하고 저장 금액으로 세션을 만든다")
   void preparesWithStoredAmount() {
     Fixture fixture = prepareFixture("payment-prepare");

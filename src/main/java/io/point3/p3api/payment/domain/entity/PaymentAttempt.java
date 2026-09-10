@@ -126,6 +126,14 @@ public class PaymentAttempt {
     return this.status == PaymentAttemptStatus.READY;
   }
 
+  public boolean isActive(Instant now) {
+    Objects.requireNonNull(now, "now");
+    boolean activeStatus = this.status == PaymentAttemptStatus.READY
+        || this.status == PaymentAttemptStatus.IN_PROGRESS;
+
+    return activeStatus && !now.isAfter(this.expiresAt);
+  }
+
   public boolean needsConfirmation() {
     return this.status == PaymentAttemptStatus.NEEDS_CONFIRMATION;
   }

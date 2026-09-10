@@ -29,6 +29,11 @@ public class OrderConfirmationPersistenceAdapter implements OrderConfirmationPer
   }
 
   @Override
+  public Optional<OrderConfirmation> findByIdForUpdate(UUID orderConfirmationId) {
+    return orderConfirmationJpaRepository.findByIdForUpdate(orderConfirmationId);
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public List<OrderConfirmation> findAllByInquiryId(UUID inquiryId) {
     return orderConfirmationJpaRepository.findAllByInquiryIdOrderByCreatedAtDesc(inquiryId);

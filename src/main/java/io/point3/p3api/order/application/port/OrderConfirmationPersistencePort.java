@@ -12,6 +12,8 @@ public interface OrderConfirmationPersistencePort {
 
   Optional<OrderConfirmation> findById(UUID orderConfirmationId);
 
+  Optional<OrderConfirmation> findByIdForUpdate(UUID orderConfirmationId);
+
   List<OrderConfirmation> findAllByInquiryId(UUID inquiryId);
 
   Optional<OrderConfirmation> findLatestByInquiryIdAndStatus(

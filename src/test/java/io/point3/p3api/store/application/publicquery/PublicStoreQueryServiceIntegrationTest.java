@@ -93,6 +93,7 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
         "https://assets.example.test/processed/ready_640.webp",
         result.representativeImages().getFirst().variants().getFirst().deliveryUrl());
     assertEquals("화~일 9:00~20:00 · 월 휴무 · 휴게시간 12:00~13:00", result.businessHours());
+    assertEquals("서울특별시 중구 101호", result.address());
     assertEquals("픽업일 7일 전까지 100% 환불\n픽업일 5일 전까지 80% 환불", result.cancellationRefundPolicy());
   }
 
@@ -117,7 +118,8 @@ class PublicStoreQueryServiceIntegrationTest extends IntegrationTestSupport {
         "{}",
         "{}",
         "{}",
-        "서울특별시 중구"));
+        "서울특별시 중구",
+        "101호"));
   }
 
   private void activate(UUID storeId) {

@@ -15,6 +15,8 @@ public record SellerOnboardingCreateRequest(
 
     @NotBlank @Size(max = 255) String address,
 
+    @Size(max = 100) String detailAddress,
+
     @Size(max = 500)
     @Pattern(regexp = "^https?://[^\\s]+$", message = "snsLink must be a valid HTTP or HTTPS URL")
     String snsLink) {}

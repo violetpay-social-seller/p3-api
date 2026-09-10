@@ -33,6 +33,7 @@ public class SellerOnboardingSubmissionService implements SellerOnboardingSubmis
         command.storeName(),
         command.phoneNumber(),
         command.address(),
+        command.detailAddress(),
         command.snsLink()));
   }
 }

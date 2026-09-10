@@ -57,6 +57,7 @@ public class SellerOnboardingController {
             request.storeName(),
             request.phoneNumber(),
             request.address(),
+            request.detailAddress(),
             request.snsLink()));
 
     return ApiResponse.ok(SellerOnboardingResponse.from(result));
@@ -76,6 +77,7 @@ public class SellerOnboardingController {
             request.storeName(),
             request.phoneNumber(),
             request.address(),
+            request.detailAddress(),
             request.snsLink()));
 
     return ApiResponse.ok(SellerOnboardingResponse.from(result));

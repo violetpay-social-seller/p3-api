@@ -12,5 +12,4 @@ public record StoreUpdateRequest(
     boolean contactVisible,
     String snsLinks,
     String businessHours,
-    String pickupSettings,
-    @Size(max = 255) String address) {}
+    String pickupSettings) {}

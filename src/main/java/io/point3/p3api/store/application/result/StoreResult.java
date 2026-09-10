@@ -39,7 +39,7 @@ public record StoreResult(
         businessHours,
         store.getPickupSettings(),
         store.getCancellationRefundPolicy(),
-        store.getAddress(),
+        store.getFullAddress(),
         store.getSettlementAccountStatus(),
         store.getSettlementAccountRegisteredAt(),
         store.getStatus(),

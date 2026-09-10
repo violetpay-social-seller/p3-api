@@ -119,6 +119,20 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("스토어 수정 후에도 입점 승인 시 설정한 위치를 유지한다")
+  void preservesStoreLocationOnUpdate() {
+    User seller = saveSeller();
+    StoreResult created = storeService.create(createStoreCommandWithDetailAddress(seller.getId()));
+
+    StoreResult updated = storeService.update(updateStoreCommand(created.id(), null));
+    Store persisted = storeJpaRepository.findById(created.id()).orElseThrow();
+
+    assertEquals("서울특별시 중구 101호", updated.address());
+    assertEquals("서울특별시 중구", persisted.getAddress());
+    assertEquals("101호", persisted.getDetailAddress());
+  }
+
+  @Test
   @DisplayName("계좌 등록 완료 처리는 스토어의 계좌 등록 상태와 완료 시각을 갱신한다")
   void completesAccountRegistration() {
     User seller = saveSeller();
@@ -369,8 +383,22 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         true,
         "{\"instagram\":\"https://instagram.com/p3bakery\"}",
         "{\"mon\":\"10:00-18:00\"}",
+        "{\"leadTimeDays\":3}");
+  }
+
+  private CreateStoreCommand createStoreCommandWithDetailAddress(UUID ownerUserId) {
+    return new CreateStoreCommand(
+        ownerUserId,
+        "P3 베이커리",
+        null,
+        "주문제작 케이크 스토어",
+        "010-1234-5678",
+        true,
+        "{\"instagram\":\"https://instagram.com/p3bakery\"}",
+        "{\"mon\":\"10:00-18:00\"}",
         "{\"leadTimeDays\":3}",
-        "서울특별시 중구");
+        "서울특별시 중구",
+        "101호");
   }
 
   private RepresentativeImageResult createRepresentativeImage(

@@ -37,7 +37,7 @@ public record OperatorStoreResult(
         store.getSnsLinks(),
         store.getBusinessHours(),
         store.getPickupSettings(),
-        store.getAddress(),
+        store.getFullAddress(),
         store.getSettlementAccountStatus(),
         store.getSettlementAccountRegisteredAt(),
         store.getStatus(),

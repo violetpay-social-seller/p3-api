@@ -40,6 +40,7 @@ class SellerOnboardingStatusServiceTest {
 
     assertEquals(onboardingId, result.id());
     assertEquals(SellerOnboardingStatus.REJECTED, result.status());
+    assertEquals("서울특별시 중구 101호", result.address());
     assertEquals("사업자 정보가 충분하지 않습니다.", result.rejectionReason());
   }
 
@@ -61,6 +62,7 @@ class SellerOnboardingStatusServiceTest {
 
     assertEquals(applicantUserId, result.applicantUserId());
     assertEquals(SellerOnboardingStatus.PENDING, result.status());
+    assertEquals("서울특별시 중구 101호", result.address());
   }
 
   @Test
@@ -86,12 +88,19 @@ class SellerOnboardingStatusServiceTest {
     SellerOnboarding onboarding = mock(SellerOnboarding.class);
     when(onboarding.getId()).thenReturn(onboardingId);
     when(onboarding.getStatus()).thenReturn(status);
+    when(onboarding.getFullAddress()).thenReturn("서울특별시 중구 101호");
     when(onboarding.getRejectionReason()).thenReturn("사업자 정보가 충분하지 않습니다.");
     return onboarding;
   }
 
   private ReapplySellerOnboardingCommand command(UUID onboardingId, UUID applicantUserId) {
     return ReapplySellerOnboardingCommand.from(
-        onboardingId, applicantUserId, "P3 베이커리", "010-1234-5678", "서울특별시 중구", null);
+        onboardingId,
+        applicantUserId,
+        "P3 베이커리",
+        "010-1234-5678",
+        "서울특별시 중구",
+        "101호",
+        null);
   }
 }

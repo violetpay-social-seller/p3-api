@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.point3.p3api.auth.infrastructure.web.Authenticated;
+import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
 import io.point3.p3api.store.application.businesshours.query.StoreBusinessHoursQueryUseCase;
@@ -29,6 +31,7 @@ import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.infrastructure.web.StoreWebProperties;
+import io.point3.p3api.user.domain.type.UserRole;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +73,8 @@ class SellerStoreLocationControllerWebTest {
         new StoreWebProperties("https://p3.example.test"));
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
-        .setCustomArgumentResolvers(new CurrentStoreIdArgumentResolver())
+        .setCustomArgumentResolvers(
+            new CurrentStoreIdArgumentResolver(), new CurrentSellerArgumentResolver())
         .build();
   }
 
@@ -183,6 +187,24 @@ class SellerStoreLocationControllerWebTest {
         NativeWebRequest webRequest,
         org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
       return UUID.randomUUID();
+    }
+  }
+
+  private static class CurrentSellerArgumentResolver implements HandlerMethodArgumentResolver {
+
+    @Override
+    public boolean supportsParameter(MethodParameter parameter) {
+      return parameter.hasParameterAnnotation(Authenticated.class)
+          && parameter.getParameterType().equals(CurrentUser.class);
+    }
+
+    @Override
+    public Object resolveArgument(
+        MethodParameter parameter,
+        ModelAndViewContainer mavContainer,
+        NativeWebRequest webRequest,
+        org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
+      return new CurrentUser(UUID.randomUUID(), "판매자", UserRole.SELLER);
     }
   }
 }

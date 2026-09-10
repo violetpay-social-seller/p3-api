@@ -48,7 +48,8 @@ public class SellerOnboardingReviewService implements SellerOnboardingReviewUseC
               : TextNode.valueOf(onboarding.getSnsLink()).toString(),
           null,
           null,
-          onboarding.getAddress()));
+          onboarding.getAddress(),
+          onboarding.getDetailAddress()));
     }
 
     return new SellerOnboardingReviewResult(

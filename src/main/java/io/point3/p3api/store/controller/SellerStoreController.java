@@ -1,5 +1,6 @@
 package io.point3.p3api.store.controller;
 
+import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
@@ -137,7 +138,8 @@ public class SellerStoreController {
 
   @GetMapping("/locations/search")
   public ApiResponse<StoreLocationSearchResponse> searchLocations(
-      @CurrentStoreId UUID storeId, @RequestParam String query) {
+      @Authenticated CurrentUser currentUser, @RequestParam String query) {
+    RoleGuard.requireSeller(currentUser);
     List<StoreLocationResult> results =
         storeLocationSearchUseCase.search(SearchStoreLocationCommand.of(query));
     return ApiResponse.ok(StoreLocationSearchResponse.from(results));
@@ -202,8 +204,7 @@ public class SellerStoreController {
         request.contactVisible(),
         request.snsLinks(),
         request.businessHours(),
-        request.pickupSettings(),
-        request.address());
+        request.pickupSettings());
   }
 
   private String publicStoreUrl(String slug) {

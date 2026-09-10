@@ -113,7 +113,8 @@ class SellerOnboardingControllerWebTest {
                 {
                   "storeName": "P3 베이커리",
                   "phoneNumber": "010-1234-5678",
-                  "address": "서울특별시 중구"
+                  "address": "서울특별시 중구",
+                  "detailAddress": "101호"
                 }
                 """))
         .andExpect(status().isOk())

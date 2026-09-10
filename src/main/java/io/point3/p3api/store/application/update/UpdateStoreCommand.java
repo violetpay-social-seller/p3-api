@@ -11,5 +11,4 @@ public record UpdateStoreCommand(
     boolean contactVisible,
     String snsLinks,
     String businessHours,
-    String pickupSettings,
-    String address) {}
+    String pickupSettings) {}

@@ -1,5 +1,6 @@
 package io.point3.p3api.payment.infrastructure.external.point3;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
@@ -172,16 +173,21 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   private record CreatePaymentSessionRequest(
       long amount, String productName, String displayMerchantName) {}
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record CreatePaymentSessionResponse(String id, long amount) {}
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record CapturePaymentResponse(String id, String status, CaptureOutcome outcome) {}
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record PaymentSessionResponse(String id, String status, CaptureOutcome outcome) {}
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record CaptureOutcome(String code) {}
 
   private record RefundRequest(
       long refundAmount, long refundTaxFreeAmount, long refundVat, String reason) {}
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record RefundResponse(String status) {}
 }

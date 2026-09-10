@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,6 +23,8 @@ import io.point3.p3api.store.application.location.command.SearchStoreLocationCom
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
 import io.point3.p3api.store.application.location.result.StoreLocationResult;
 import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
+import io.point3.p3api.store.application.profileimage.SellerProfileImageResult;
+import io.point3.p3api.store.application.profileimage.SellerProfileImageUpdateUseCase;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.refundpolicy.command.UpdateStoreRefundPolicyCommand;
 import io.point3.p3api.store.application.refundpolicy.query.StoreRefundPolicyQueryUseCase;
@@ -52,6 +55,8 @@ class SellerStoreLocationControllerWebTest {
       mock(StoreRefundPolicyQueryUseCase.class);
   private final StoreRefundPolicyUpdateUseCase storeRefundPolicyUpdateUseCase =
       mock(StoreRefundPolicyUpdateUseCase.class);
+  private final SellerProfileImageUpdateUseCase sellerProfileImageUpdateUseCase =
+      mock(SellerProfileImageUpdateUseCase.class);
 
   private MockMvc mockMvc;
 
@@ -70,6 +75,7 @@ class SellerStoreLocationControllerWebTest {
         storeRefundPolicyQueryUseCase,
         storeRefundPolicyUpdateUseCase,
         storeLocationSearchUseCase,
+        sellerProfileImageUpdateUseCase,
         new StoreWebProperties("https://p3.example.test"));
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
         .setControllerAdvice(new GlobalExceptionHandler())
@@ -170,6 +176,25 @@ class SellerStoreLocationControllerWebTest {
             .contentType("application/json")
             .content("{\"rules\":[]}"))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void updatesSellerProfileImage() throws Exception {
+    UUID profileAssetId = UUID.randomUUID();
+    when(sellerProfileImageUpdateUseCase.update(any()))
+        .thenReturn(new SellerProfileImageResult(
+            profileAssetId, "https://assets.example.test/profile.webp"));
+
+    mockMvc
+        .perform(patch("/seller/store/profile-image")
+            .contentType("application/json")
+            .content("{\"profileAssetId\":\"" + profileAssetId + "\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.profileAssetId").value(profileAssetId.toString()))
+        .andExpect(jsonPath("$.data.profileImageDeliveryUrl")
+            .value("https://assets.example.test/profile.webp"));
+
+    verify(sellerProfileImageUpdateUseCase).update(any());
   }
 
   private static class CurrentStoreIdArgumentResolver implements HandlerMethodArgumentResolver {

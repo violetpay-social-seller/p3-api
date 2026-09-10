@@ -14,6 +14,8 @@ import io.point3.p3api.store.application.location.command.SearchStoreLocationCom
 import io.point3.p3api.store.application.location.query.StoreLocationSearchUseCase;
 import io.point3.p3api.store.application.location.result.StoreLocationResult;
 import io.point3.p3api.store.application.management.StoreManagementStatusQueryUseCase;
+import io.point3.p3api.store.application.profileimage.SellerProfileImageUpdateUseCase;
+import io.point3.p3api.store.application.profileimage.UpdateSellerProfileImageCommand;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.refundpolicy.query.StoreRefundPolicyQueryUseCase;
 import io.point3.p3api.store.application.refundpolicy.update.StoreRefundPolicyUpdateUseCase;
@@ -27,10 +29,12 @@ import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.controller.request.StoreBusinessHoursRequest;
 import io.point3.p3api.store.controller.request.StoreCreateRequest;
 import io.point3.p3api.store.controller.request.StoreDescriptionRequest;
+import io.point3.p3api.store.controller.request.StoreProfileImageRequest;
 import io.point3.p3api.store.controller.request.StoreRefundPolicyRequest;
 import io.point3.p3api.store.controller.request.StoreSettingRequest;
 import io.point3.p3api.store.controller.request.StoreStatusRequest;
 import io.point3.p3api.store.controller.request.StoreUpdateRequest;
+import io.point3.p3api.store.controller.response.SellerProfileImageResponse;
 import io.point3.p3api.store.controller.response.StoreBusinessHoursResponse;
 import io.point3.p3api.store.controller.response.StoreLocationSearchResponse;
 import io.point3.p3api.store.controller.response.StoreManagementStatusResponse;
@@ -70,6 +74,7 @@ public class SellerStoreController {
   private final StoreRefundPolicyQueryUseCase storeRefundPolicyQueryUseCase;
   private final StoreRefundPolicyUpdateUseCase storeRefundPolicyUpdateUseCase;
   private final StoreLocationSearchUseCase storeLocationSearchUseCase;
+  private final SellerProfileImageUpdateUseCase sellerProfileImageUpdateUseCase;
   private final StoreWebProperties storeWebProperties;
 
   @PostMapping
@@ -150,6 +155,16 @@ public class SellerStoreController {
       @CurrentStoreId UUID storeId, @Valid @RequestBody StoreUpdateRequest request) {
     StoreResult result = storeUpdateUseCase.update(toCommand(storeId, request));
     return ApiResponse.ok(StoreResponse.from(result));
+  }
+
+  @PatchMapping("/profile-image")
+  public ApiResponse<SellerProfileImageResponse> updateProfileImage(
+      @CurrentStoreId UUID storeId,
+      @Authenticated CurrentUser currentUser,
+      @RequestBody StoreProfileImageRequest request) {
+    return ApiResponse.ok(SellerProfileImageResponse.from(
+        sellerProfileImageUpdateUseCase.update(new UpdateSellerProfileImageCommand(
+            storeId, currentUser.userId(), request.profileAssetId()))));
   }
 
   @PutMapping("/description")

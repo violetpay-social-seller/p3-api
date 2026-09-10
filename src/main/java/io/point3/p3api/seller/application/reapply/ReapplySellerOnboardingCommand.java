@@ -18,8 +18,7 @@ public record ReapplySellerOnboardingCommand(
       String phoneNumber,
       String address,
       String snsLink) {
-    return from(
-        onboardingId, applicantUserId, storeName, phoneNumber, address, null, snsLink);
+    return from(onboardingId, applicantUserId, storeName, phoneNumber, address, null, snsLink);
   }
 
   public static ReapplySellerOnboardingCommand from(

@@ -30,7 +30,7 @@ public class StoreOrderSettingAvailabilityQueryService
     implements StoreOrderSettingAvailabilityQueryUseCase {
 
   private static final ZoneId KOREA_ZONE_ID = ZoneId.of("Asia/Seoul");
-  private static final long MAX_QUERY_DAYS = 31;
+  private static final long MAX_QUERY_DAYS = 366;
   private static final Set<OrderStatus> OCCUPYING_ORDER_STATUSES = Set.of(OrderStatus.PAID);
 
   private final StoreSettingQueryUseCase storeSettingQueryUseCase;

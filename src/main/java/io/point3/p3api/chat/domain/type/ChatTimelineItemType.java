@@ -3,6 +3,7 @@ package io.point3.p3api.chat.domain.type;
 public enum ChatTimelineItemType {
   MESSAGE,
   ORDER_FORM_SUBMISSION,
+  ORDER_FORM_REVISION_REQUEST,
   ORDER_CONFIRMATION,
   ORDER_CONFIRMATION_REVISION,
   PAYMENT_COMPLETED

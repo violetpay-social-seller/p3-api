@@ -38,24 +38,26 @@ class ChatTimelineItemPublisherTest {
     UUID senderUserId = UUID.randomUUID();
     publisher.publishMessage(inquiryId, senderUserId, UUID.randomUUID());
     publisher.publishOrderFormSubmission(inquiryId, senderUserId, UUID.randomUUID());
+    publisher.publishOrderFormRevisionRequest(inquiryId, senderUserId, UUID.randomUUID());
     publisher.publishOrderConfirmation(inquiryId, senderUserId, UUID.randomUUID());
     publisher.publishOrderConfirmationRevisionRequest(inquiryId, senderUserId, UUID.randomUUID());
     publisher.publishPaymentCompleted(inquiryId, senderUserId, UUID.randomUUID());
 
     ArgumentCaptor<ChatTimelineItem> itemCaptor =
         ArgumentCaptor.forClass(ChatTimelineItem.class);
-    verify(chatTimelineItemPort, times(5)).save(itemCaptor.capture());
+    verify(chatTimelineItemPort, times(6)).save(itemCaptor.capture());
     assertEquals(
         List.of(
             ChatTimelineItemType.MESSAGE,
             ChatTimelineItemType.ORDER_FORM_SUBMISSION,
+            ChatTimelineItemType.ORDER_FORM_REVISION_REQUEST,
             ChatTimelineItemType.ORDER_CONFIRMATION,
             ChatTimelineItemType.ORDER_CONFIRMATION_REVISION,
             ChatTimelineItemType.PAYMENT_COMPLETED),
         itemCaptor.getAllValues().stream().map(ChatTimelineItem::getType).toList());
-    verify(inquiryListChangeEventPublisher, times(5)).publishInquiryChanged(inquiryId);
+    verify(inquiryListChangeEventPublisher, times(6)).publishInquiryChanged(inquiryId);
     ArgumentCaptor<UUID> eventIdCaptor = ArgumentCaptor.forClass(UUID.class);
-    verify(chatTimelineRealtimeEventPublisher, times(5))
+    verify(chatTimelineRealtimeEventPublisher, times(6))
         .publishTimelineItemCreated(eventIdCaptor.capture());
     assertIterableEquals(eventIdCaptor.getAllValues(), eventIdCaptor.getAllValues().stream()
         .distinct()

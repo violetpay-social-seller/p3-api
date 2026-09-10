@@ -8,6 +8,7 @@ public record SubmitSellerOnboardingCommand(
     String storeName,
     String phoneNumber,
     String address,
+    String detailAddress,
     String snsLink) {
 
   public SubmitSellerOnboardingCommand {
@@ -20,7 +21,17 @@ public record SubmitSellerOnboardingCommand(
       String phoneNumber,
       String address,
       String snsLink) {
+    return of(registrationCommand, storeName, phoneNumber, address, null, snsLink);
+  }
+
+  public static SubmitSellerOnboardingCommand of(
+      CompleteRegistrationCommand registrationCommand,
+      String storeName,
+      String phoneNumber,
+      String address,
+      String detailAddress,
+      String snsLink) {
     return new SubmitSellerOnboardingCommand(
-        registrationCommand, storeName, phoneNumber, address, snsLink);
+        registrationCommand, storeName, phoneNumber, address, detailAddress, snsLink);
   }
 }

@@ -47,6 +47,7 @@ public class SellerOnboardingService
         command.storeName(),
         command.phoneNumber(),
         command.address(),
+        command.detailAddress(),
         command.snsLink());
 
     return SellerOnboardingResult.from(sellerOnboardingPersistencePort.save(sellerOnboarding));
@@ -88,6 +89,7 @@ public class SellerOnboardingService
         command.storeName(),
         command.phoneNumber(),
         command.address(),
+        command.detailAddress(),
         command.snsLink());
 
     return SellerOnboardingResult.from(sellerOnboardingPersistencePort.save(reapplication));

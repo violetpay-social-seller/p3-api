@@ -12,4 +12,31 @@ public record CreateStoreCommand(
     String snsLinks,
     String businessHours,
     String pickupSettings,
-    String address) {}
+    String address,
+    String detailAddress) {
+
+  public CreateStoreCommand(
+      UUID ownerUserId,
+      String name,
+      UUID profileAssetId,
+      String description,
+      String contact,
+      boolean contactVisible,
+      String snsLinks,
+      String businessHours,
+      String pickupSettings,
+      String address) {
+    this(
+        ownerUserId,
+        name,
+        profileAssetId,
+        description,
+        contact,
+        contactVisible,
+        snsLinks,
+        businessHours,
+        pickupSettings,
+        address,
+        null);
+  }
+}

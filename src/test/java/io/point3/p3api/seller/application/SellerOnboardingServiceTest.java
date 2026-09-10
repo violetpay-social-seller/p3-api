@@ -39,6 +39,7 @@ class SellerOnboardingServiceTest {
     ArgumentCaptor<SellerOnboarding> captor = ArgumentCaptor.forClass(SellerOnboarding.class);
     verify(sellerOnboardingPersistencePort).save(captor.capture());
     assertEquals(applicantUserId, captor.getValue().getApplicantUserId());
+    assertEquals("101호", captor.getValue().getDetailAddress());
     assertEquals(SellerOnboardingStatus.PENDING, captor.getValue().getStatus());
   }
 
@@ -60,6 +61,11 @@ class SellerOnboardingServiceTest {
 
   private CreateSellerOnboardingCommand command(UUID applicantUserId) {
     return CreateSellerOnboardingCommand.from(
-        applicantUserId, "P3 베이커리", "010-1234-5678", "서울특별시 중구", null);
+        applicantUserId,
+        "P3 베이커리",
+        "010-1234-5678",
+        "서울특별시 중구",
+        "101호",
+        null);
   }
 }

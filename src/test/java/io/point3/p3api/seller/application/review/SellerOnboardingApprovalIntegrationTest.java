@@ -40,7 +40,12 @@ class SellerOnboardingApprovalIntegrationTest extends IntegrationTestSupport {
     User operator = saveUser(UserRole.OPERATOR, "operator");
     SellerOnboarding onboarding =
         sellerOnboardingJpaRepository.saveAndFlush(SellerOnboarding.create(
-            seller.getId(), "P3 베이커리", "010-1234-5678", "서울특별시 중구", "https://instagram.com/p3"));
+            seller.getId(),
+            "P3 베이커리",
+            "010-1234-5678",
+            "서울특별시 중구",
+            "1층 101호",
+            "https://instagram.com/p3"));
 
     sellerOnboardingReviewUseCase.approve(
         ApproveSellerOnboardingCommand.from(onboarding.getId(), operator.getId()));
@@ -53,6 +58,8 @@ class SellerOnboardingApprovalIntegrationTest extends IntegrationTestSupport {
     assertEquals("010-1234-5678", store.getContact());
     assertEquals("\"https://instagram.com/p3\"", store.getSnsLinks());
     assertEquals("서울특별시 중구", store.getAddress());
+    assertEquals("1층 101호", store.getDetailAddress());
+    assertEquals("서울특별시 중구 1층 101호", store.getFullAddress());
     assertFalse(store.isContactVisible());
     assertEquals(StoreStatus.INACTIVE, store.getStatus());
   }

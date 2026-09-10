@@ -47,6 +47,7 @@ class SellerOnboardingSubmissionServiceTest {
     verify(sellerOnboardingCreateUseCase).create(captor.capture());
     assertEquals(userId, captor.getValue().applicantUserId());
     assertEquals("P3 베이커리", captor.getValue().storeName());
+    assertEquals("101호", captor.getValue().detailAddress());
   }
 
   @Test
@@ -80,6 +81,7 @@ class SellerOnboardingSubmissionServiceTest {
         "P3 베이커리",
         "010-1234-5678",
         "서울특별시 중구",
+        "101호",
         null);
   }
 

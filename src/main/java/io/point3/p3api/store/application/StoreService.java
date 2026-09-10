@@ -53,7 +53,8 @@ public class StoreService
         command.contact(),
         command.contactVisible(),
         command.snsLinks(),
-        command.address());
+        null);
+    store.initializeLocation(command.address(), command.detailAddress());
     store.updatePickupSettings(command.pickupSettings());
 
     return toResult(storePersistencePort.save(store));

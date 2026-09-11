@@ -92,6 +92,33 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
     assertEquals(LocalTime.of(10, 0), result.dates().get(2).pickupSlots().getFirst());
   }
 
+  @Test
+  @DisplayName("휴게시간은 주문 가능 슬롯에서 제외하고 종료 시각부터 다시 허용한다")
+  void excludesBreakTimeFromPickupSlots() {
+    LocalDate pickupDate = LocalDate.of(2026, 9, 11);
+    when(storeSettingQueryUseCase.getSetting(STORE_ID))
+        .thenReturn(new StoreSettingResult(
+            STORE_ID,
+            0,
+            0,
+            List.of(new StoreSettingResult.WeeklyPickupSetting(
+                pickupDate.getDayOfWeek(),
+                LocalTime.of(10, 0),
+                LocalTime.of(18, 0),
+                true,
+                LocalTime.of(12, 0),
+                LocalTime.of(13, 0))),
+            List.of()));
+
+    List<LocalTime> pickupSlots =
+        service.getAvailability(STORE_ID, pickupDate, pickupDate).dates().getFirst().pickupSlots();
+
+    assertTrue(pickupSlots.contains(LocalTime.of(11, 30)));
+    assertFalse(pickupSlots.contains(LocalTime.of(12, 0)));
+    assertFalse(pickupSlots.contains(LocalTime.of(12, 30)));
+    assertTrue(pickupSlots.contains(LocalTime.of(13, 0)));
+  }
+
   private static StoreSettingResult.WeeklyPickupSetting weeklySetting(DayOfWeek dayOfWeek) {
     return new StoreSettingResult.WeeklyPickupSetting(
         dayOfWeek, LocalTime.of(10, 0), LocalTime.of(18, 0), true, null, null);

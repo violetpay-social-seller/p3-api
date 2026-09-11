@@ -22,7 +22,6 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
-import io.point3.p3api.store.application.update.CompleteAccountRegistrationCommand;
 import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.controller.request.StoreBusinessHoursRequest;
@@ -169,13 +168,6 @@ public class SellerStoreController {
   public ApiResponse<StoreResponse> updateDescription(
       @CurrentStoreId UUID storeId, @Valid @RequestBody StoreDescriptionRequest request) {
     StoreResult result = storeUpdateUseCase.updateDescription(request.toCommand(storeId));
-    return ApiResponse.ok(StoreResponse.from(result));
-  }
-
-  @PostMapping("/account-registration/complete")
-  public ApiResponse<StoreResponse> completeAccountRegistration(@CurrentStoreId UUID storeId) {
-    StoreResult result = storeUpdateUseCase.completeAccountRegistration(
-        new CompleteAccountRegistrationCommand(storeId));
     return ApiResponse.ok(StoreResponse.from(result));
   }
 

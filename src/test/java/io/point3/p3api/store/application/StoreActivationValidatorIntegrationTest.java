@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
+import io.point3.p3api.account.domain.entity.SellerSettlementAccount;
+import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.exception.BaseException;
@@ -64,6 +67,9 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private RepresentativeImagePersistencePort representativeImagePersistencePort;
 
+  @Autowired
+  private SellerSettlementAccountPersistencePort sellerSettlementAccountPersistencePort;
+
   @Test
   @DisplayName("5개 공지 중 하나라도 미작성되면 활성화를 거절하고 모두 작성되면 통과시킨다")
   void requiresCompleteNoticesForActivation() {
@@ -97,8 +103,15 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
           StoreRepresentativeImage.create(storeId, asset.getId(), sortOrder));
     }
     store.updateCancellationRefundPolicy("픽업 7일 전 100% 환불");
-    store.markSettlementAccountInputCompleted(Instant.now());
     storeJpaRepository.saveAndFlush(store);
+    sellerSettlementAccountPersistencePort.save(SellerSettlementAccount.create(
+        storeId,
+        "004",
+        "encrypted-account-number",
+        "encrypted-account-holder",
+        AccountHolderType.BUSINESS,
+        "provider-transaction-id",
+        Instant.now()));
   }
 
   private List<StoreNotice> completeNotices(UUID storeId) {

@@ -41,6 +41,14 @@
 
 - `/p3/dev/api/POSTGRES_PASSWORD`
 - `/p3/dev/api/P3_INTERNAL_AUTH_TOKEN`
+- `/p3/dev/api/P3_ACCOUNT_ENCRYPTION_KEY`
+- `/p3/dev/api/P3_KFTC_CLIENT_ID`
+- `/p3/dev/api/P3_KFTC_CLIENT_SECRET`
+- `/p3/dev/api/P3_KFTC_USE_ORG_CODE`
+
+정산계좌 암호화 키는 32바이트 값을 Base64로 인코딩해 SecureString으로 저장한다. ECS에는 `P3_ACCOUNT_ENCRYPTION_KEY` Secret으로 연결하고 키 버전은 `P3_ACCOUNT_ENCRYPTION_KEY_VERSION=v1` 환경변수로 관리한다. 실제 계좌정보가 저장된 뒤에는 기존 키를 임의로 변경하지 않는다.
+
+금융결제원 계좌실명조회와 기관용 OAuth 요청은 `https://openapi.openbanking.or.kr`를 사용한다. Client ID, Client Secret과 이용기관 코드는 SSM SecureString에서 ECS Secret으로 주입하며 저장소와 로그에 실제 값을 기록하지 않는다.
 
 Point3 운영 연동값을 dev ECS에서 활성화할 때는 SSM SecureString으로 추가한 뒤 task definition의 `secrets`에 연결한다.
 

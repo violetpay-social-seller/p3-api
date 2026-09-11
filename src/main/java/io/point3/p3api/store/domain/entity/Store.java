@@ -162,12 +162,6 @@ public class Store {
     return value.trim().replaceAll("\\s+", " ");
   }
 
-  public void markSettlementAccountInputCompleted(Instant registeredAt) {
-    Objects.requireNonNull(registeredAt, "registeredAt");
-    this.settlementAccountStatus = "INPUT_COMPLETED";
-    this.settlementAccountRegisteredAt = registeredAt;
-  }
-
   public boolean isActive() {
     return this.status == StoreStatus.ACTIVE;
   }

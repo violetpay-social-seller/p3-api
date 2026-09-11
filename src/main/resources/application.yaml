@@ -42,6 +42,15 @@ p3:
       key: ${P3_ACCOUNT_ENCRYPTION_KEY:}
       key-version: ${P3_ACCOUNT_ENCRYPTION_KEY_VERSION:v1}
 
+  kftc:
+    auth-base-url: ${P3_KFTC_AUTH_BASE_URL:https://openapi.openbanking.or.kr}
+    api-base-url: ${P3_KFTC_API_BASE_URL:https://openapi.openbanking.or.kr}
+    client-id: ${P3_KFTC_CLIENT_ID:}
+    client-secret: ${P3_KFTC_CLIENT_SECRET:}
+    use-org-code: ${P3_KFTC_USE_ORG_CODE:}
+    request-timeout: ${P3_KFTC_REQUEST_TIMEOUT:PT3S}
+    token-refresh-skew: ${P3_KFTC_TOKEN_REFRESH_SKEW:PT30S}
+
   cors:
     allowed-origins: ${P3_CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

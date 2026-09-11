@@ -80,6 +80,14 @@
         {
           "name": "P3_ACCOUNT_ENCRYPTION_KEY_VERSION",
           "value": "v1"
+        },
+        {
+          "name": "P3_KFTC_AUTH_BASE_URL",
+          "value": "https://openapi.openbanking.or.kr"
+        },
+        {
+          "name": "P3_KFTC_API_BASE_URL",
+          "value": "https://openapi.openbanking.or.kr"
         }
       ],
       "secrets": [
@@ -106,6 +114,18 @@
         {
           "name": "P3_ACCOUNT_ENCRYPTION_KEY",
           "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_ACCOUNT_ENCRYPTION_KEY"
+        },
+        {
+          "name": "P3_KFTC_CLIENT_ID",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_KFTC_CLIENT_ID"
+        },
+        {
+          "name": "P3_KFTC_CLIENT_SECRET",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_KFTC_CLIENT_SECRET"
+        },
+        {
+          "name": "P3_KFTC_USE_ORG_CODE",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:851563824752:parameter/p3/dev/api/P3_KFTC_USE_ORG_CODE"
         }
       ],
       "logConfiguration": {

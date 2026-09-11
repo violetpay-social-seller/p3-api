@@ -26,9 +26,6 @@ public class StoreOperationSetting {
   @Column(name = "lead_time_minutes", nullable = false)
   private int leadTimeMinutes;
 
-  @Column(name = "pre_order_notice", columnDefinition = "text")
-  private String preOrderNotice;
-
   @Column(name = "cancellation_cutoff_days", nullable = false)
   private int cancellationCutoffDays;
 
@@ -40,25 +37,21 @@ public class StoreOperationSetting {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  private StoreOperationSetting(
-      UUID storeId, int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
+  private StoreOperationSetting(UUID storeId, int leadTimeMinutes, int cancellationCutoffDays) {
     this.storeId = storeId;
     this.leadTimeMinutes = leadTimeMinutes;
-    this.preOrderNotice = preOrderNotice;
     this.cancellationCutoffDays = cancellationCutoffDays;
   }
 
   public static StoreOperationSetting create(
-      UUID storeId, int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
+      UUID storeId, int leadTimeMinutes, int cancellationCutoffDays) {
     Objects.requireNonNull(storeId, "storeId");
 
-    return new StoreOperationSetting(
-        storeId, leadTimeMinutes, preOrderNotice, cancellationCutoffDays);
+    return new StoreOperationSetting(storeId, leadTimeMinutes, cancellationCutoffDays);
   }
 
-  public void update(int leadTimeMinutes, String preOrderNotice, int cancellationCutoffDays) {
+  public void update(int leadTimeMinutes, int cancellationCutoffDays) {
     this.leadTimeMinutes = leadTimeMinutes;
-    this.preOrderNotice = preOrderNotice;
     this.cancellationCutoffDays = cancellationCutoffDays;
   }
 }

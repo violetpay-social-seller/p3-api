@@ -67,12 +67,8 @@ public class StoreSettingService implements StoreSettingUpdateUseCase, StoreSett
     StoreOperationSetting setting = storeOperationSettingPersistencePort
         .findByStoreId(command.storeId())
         .orElseGet(() -> StoreOperationSetting.create(
-            command.storeId(),
-            command.leadTimeMinutes(),
-            command.preOrderNotice(),
-            command.cancellationCutoffDays()));
-    setting.update(
-        command.leadTimeMinutes(), command.preOrderNotice(), command.cancellationCutoffDays());
+            command.storeId(), command.leadTimeMinutes(), command.cancellationCutoffDays()));
+    setting.update(command.leadTimeMinutes(), command.cancellationCutoffDays());
     return storeOperationSettingPersistencePort.save(setting);
   }
 

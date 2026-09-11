@@ -543,7 +543,6 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     storeSettingService.update(new UpdateStoreSettingCommand(
         storeId,
         0,
-        "주문 전 공지",
         0,
         java.util.Arrays.stream(DayOfWeek.values())
             .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(

@@ -10,6 +10,7 @@ import io.point3.p3api.store.application.delete.StoreDeleteUseCase;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.query.StoreQueryUseCase;
 import io.point3.p3api.store.application.result.StoreResult;
+import io.point3.p3api.store.application.setting.port.StoreOperationSettingPersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPersistencePort;
 import io.point3.p3api.store.application.slug.StoreSlugGenerator;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
@@ -18,6 +19,7 @@ import io.point3.p3api.store.application.update.StoreUpdateUseCase;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.domain.entity.Store;
+import io.point3.p3api.store.domain.entity.StoreOperationSetting;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +33,13 @@ public class StoreService
     implements StoreCreateUseCase, StoreQueryUseCase, StoreUpdateUseCase, StoreDeleteUseCase {
 
   private static final int MAX_SLUG_SUFFIX_ATTEMPTS = 100;
+  private static final int DEFAULT_LEAD_TIME_MINUTES = 2 * 24 * 60;
+  private static final int DEFAULT_CANCELLATION_CUTOFF_DAYS = 2;
 
   private final StorePersistencePort storePersistencePort;
   private final AssetPersistencePort assetPersistencePort;
   private final StoreActivationValidator storeActivationValidator;
+  private final StoreOperationSettingPersistencePort storeOperationSettingPersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
   private final StoreBusinessHoursTextFormatter businessHoursTextFormatter;
 
@@ -56,7 +61,10 @@ public class StoreService
     store.initializeLocation(command.address(), command.detailAddress());
     store.updatePickupSettings(command.pickupSettings());
 
-    return toResult(storePersistencePort.save(store));
+    Store saved = storePersistencePort.save(store);
+    saveDefaultOperationSetting(saved.getId());
+
+    return toResult(saved);
   }
 
   @Override
@@ -158,6 +166,11 @@ public class StoreService
 
   private void validateCanActive(Store store) {
     storeActivationValidator.validate(store);
+  }
+
+  private void saveDefaultOperationSetting(UUID storeId) {
+    storeOperationSettingPersistencePort.save(StoreOperationSetting.create(
+        storeId, DEFAULT_LEAD_TIME_MINUTES, DEFAULT_CANCELLATION_CUTOFF_DAYS));
   }
 
   private void validateProfileAsset(UUID profileAssetId, UUID ownerUserId) {

@@ -32,11 +32,13 @@ import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreNotice;
+import io.point3.p3api.store.domain.entity.StoreOperationSetting;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import io.point3.p3api.store.domain.type.StoreNoticeType;
 import io.point3.p3api.store.domain.type.StoreRepresentativeImageStatus;
 import io.point3.p3api.store.domain.type.StoreStatus;
 import io.point3.p3api.store.infrastructure.persistence.StoreJpaRepository;
+import io.point3.p3api.store.infrastructure.persistence.StoreOperationSettingJpaRepository;
 import io.point3.p3api.store.infrastructure.persistence.StoreWeeklyPickupSettingJpaRepository;
 import io.point3.p3api.user.domain.entity.User;
 import io.point3.p3api.user.domain.type.SignupProvider;
@@ -87,6 +89,9 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   private StoreWeeklyPickupSettingJpaRepository storeWeeklyPickupSettingJpaRepository;
 
   @Autowired
+  private StoreOperationSettingJpaRepository storeOperationSettingJpaRepository;
+
+  @Autowired
   private StoreNoticePersistencePort storeNoticePersistencePort;
 
   @Test
@@ -100,6 +105,19 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         () -> storeService.create(createStoreCommand(seller.getId(), "다른 베이커리")));
 
     assertEquals(StoreErrorCode.STORE_ALREADY_EXISTS, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("스토어 생성은 기본 운영 설정을 함께 저장한다")
+  void createsDefaultOperationSetting() {
+    User seller = saveSeller();
+
+    StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
+
+    StoreOperationSetting setting =
+        storeOperationSettingJpaRepository.findById(store.id()).orElseThrow();
+    assertEquals(2880, setting.getLeadTimeMinutes());
+    assertEquals(2, setting.getCancellationCutoffDays());
   }
 
   @Test
@@ -300,7 +318,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("스토어 설정 수정은 무제한 주문 수량을 허용하고 영업시간 캐시를 갱신한다")
+  @DisplayName("스토어 설정 수정은 영업시간 캐시를 갱신한다")
   void updatesBusinessHoursWhenStoreSettingsChange() {
     User seller = saveSeller();
     StoreResult store = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
@@ -308,7 +326,6 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
     storeSettingService.update(new UpdateStoreSettingCommand(
         store.id(),
         60,
-        "주문 전 안내",
         0,
         List.of(
             weeklyPickupSetting(DayOfWeek.MONDAY, false),

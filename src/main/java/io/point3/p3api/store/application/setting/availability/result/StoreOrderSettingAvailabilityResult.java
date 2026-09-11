@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record StoreOrderSettingAvailabilityResult(
-    UUID storeId,
-    String preOrderNotice,
-    int cancellationCutoffDays,
-    List<StoreOrderSettingDateAvailabilityResult> dates) {
+    UUID storeId, int cancellationCutoffDays, List<StoreOrderSettingDateAvailabilityResult> dates) {
 
   public StoreOrderSettingAvailabilityResult {
     dates = List.copyOf(dates);
@@ -17,7 +14,7 @@ public record StoreOrderSettingAvailabilityResult(
   public static StoreOrderSettingAvailabilityResult from(
       StoreSettingResult setting, List<StoreOrderSettingDateAvailabilityResult> dates) {
     return new StoreOrderSettingAvailabilityResult(
-        setting.storeId(), setting.preOrderNotice(), setting.cancellationCutoffDays(), dates);
+        setting.storeId(), setting.cancellationCutoffDays(), dates);
   }
 
   @Override

@@ -10,7 +10,6 @@ import java.util.UUID;
 public record StoreSettingResponse(
     UUID storeId,
     int leadTimeMinutes,
-    String preOrderNotice,
     int cancellationCutoffDays,
     List<WeeklyPickupSettingResponse> weeklyPickupSettings,
     List<LocalDate> holidays) {
@@ -24,7 +23,6 @@ public record StoreSettingResponse(
     return new StoreSettingResponse(
         result.storeId(),
         result.leadTimeMinutes(),
-        result.preOrderNotice(),
         result.cancellationCutoffDays(),
         result.weeklyPickupSettings().stream()
             .map(WeeklyPickupSettingResponse::from)

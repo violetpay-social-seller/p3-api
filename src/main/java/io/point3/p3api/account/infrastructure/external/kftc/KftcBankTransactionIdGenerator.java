@@ -2,6 +2,7 @@ package io.point3.p3api.account.infrastructure.external.kftc;
 
 import io.point3.p3api.account.application.port.AccountRealNameVerificationException;
 import java.security.SecureRandom;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -13,6 +14,7 @@ public class KftcBankTransactionIdGenerator {
   private final KftcProperties properties;
   private final SecureRandom random;
 
+  @Autowired
   public KftcBankTransactionIdGenerator(KftcProperties properties) {
     this(properties, new SecureRandom());
   }

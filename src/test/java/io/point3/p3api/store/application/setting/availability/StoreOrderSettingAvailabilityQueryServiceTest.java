@@ -1,7 +1,9 @@
 package io.point3.p3api.store.application.setting.availability;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -9,11 +11,16 @@ import static org.mockito.Mockito.when;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
+import io.point3.p3api.store.application.setting.availability.result.StoreOrderSettingAvailabilityResult;
 import io.point3.p3api.store.application.setting.result.StoreSettingResult;
+import java.time.DayOfWeek;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,5 +62,39 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
 
     assertEquals(CommonErrorCode.INVALID_INPUT, exception.getErrorCode());
     verifyNoInteractions(storeSettingQueryUseCase);
+  }
+
+  @Test
+  @DisplayName("2일 리드타임은 48시간이 아니라 모레 날짜의 모든 슬롯을 허용한다")
+  void usesCalendarDayLeadTime() {
+    Clock afternoonClock = Clock.fixed(Instant.parse("2026-09-10T05:30:00Z"), KOREA_ZONE_ID);
+    StoreOrderSettingAvailabilityQueryService calendarDayService =
+        new StoreOrderSettingAvailabilityQueryService(
+            storeSettingQueryUseCase,
+            new StoreOrderSettingAvailabilityCalculator(),
+            afternoonClock);
+    when(storeSettingQueryUseCase.getSetting(STORE_ID))
+        .thenReturn(new StoreSettingResult(
+            STORE_ID,
+            2880,
+            null,
+            0,
+            Arrays.stream(DayOfWeek.values())
+                .map(StoreOrderSettingAvailabilityQueryServiceTest::weeklySetting)
+                .toList(),
+            List.of()));
+
+    StoreOrderSettingAvailabilityResult result = calendarDayService.getAvailability(
+        STORE_ID, LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 12));
+
+    assertFalse(result.dates().get(0).available());
+    assertFalse(result.dates().get(1).available());
+    assertTrue(result.dates().get(2).available());
+    assertEquals(LocalTime.of(10, 0), result.dates().get(2).pickupSlots().getFirst());
+  }
+
+  private static StoreSettingResult.WeeklyPickupSetting weeklySetting(DayOfWeek dayOfWeek) {
+    return new StoreSettingResult.WeeklyPickupSetting(
+        dayOfWeek, LocalTime.of(10, 0), LocalTime.of(18, 0), true, null, null);
   }
 }

@@ -10,8 +10,6 @@ public record StoreOrderSettingDateAvailabilityResult(
     boolean available,
     boolean holiday,
     List<LocalTime> pickupSlots,
-    Integer dailyOrderCapacity,
-    Integer remainingOrderCapacity,
     Instant cancellationCutoffAt) {
 
   public StoreOrderSettingDateAvailabilityResult {
@@ -23,17 +21,9 @@ public record StoreOrderSettingDateAvailabilityResult(
       boolean available,
       boolean holiday,
       List<LocalTime> pickupSlots,
-      Integer dailyOrderCapacity,
-      Integer remainingOrderCapacity,
       Instant cancellationCutoffAt) {
     return new StoreOrderSettingDateAvailabilityResult(
-        date,
-        available,
-        holiday,
-        pickupSlots,
-        dailyOrderCapacity,
-        remainingOrderCapacity,
-        cancellationCutoffAt);
+        date, available, holiday, pickupSlots, cancellationCutoffAt);
   }
 
   @Override

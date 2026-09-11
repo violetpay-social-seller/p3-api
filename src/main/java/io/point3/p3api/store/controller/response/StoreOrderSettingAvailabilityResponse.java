@@ -37,8 +37,6 @@ public record StoreOrderSettingAvailabilityResponse(
       boolean available,
       boolean holiday,
       List<LocalTime> pickupSlots,
-      Integer dailyOrderCapacity,
-      Integer remainingOrderCapacity,
       Instant cancellationCutoffAt) {
 
     public DateAvailabilityResponse {
@@ -52,8 +50,6 @@ public record StoreOrderSettingAvailabilityResponse(
           availability.available(),
           availability.holiday(),
           availability.pickupSlots(),
-          availability.dailyOrderCapacity(),
-          availability.remainingOrderCapacity(),
           availability.cancellationCutoffAt());
     }
 

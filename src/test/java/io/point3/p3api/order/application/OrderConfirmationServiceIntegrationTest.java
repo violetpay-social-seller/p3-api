@@ -501,7 +501,7 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
         0,
         java.util.Arrays.stream(DayOfWeek.values())
             .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
-                day, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true))
+                day, LocalTime.of(10, 0), LocalTime.of(18, 0), true))
             .toList(),
         List.of()));
   }

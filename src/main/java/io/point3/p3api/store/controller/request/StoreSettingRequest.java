@@ -46,20 +46,13 @@ public record StoreSettingRequest(
       @NotNull DayOfWeek dayOfWeek,
       @NotNull LocalTime startTime,
       @NotNull LocalTime endTime,
-      @Min(1) Integer dailyOrderCapacity,
       boolean enabled,
       LocalTime breakStartTime,
       LocalTime breakEndTime) {
 
     private UpdateStoreSettingCommand.WeeklyPickupSetting toCommand() {
       return new UpdateStoreSettingCommand.WeeklyPickupSetting(
-          dayOfWeek,
-          startTime,
-          endTime,
-          dailyOrderCapacity,
-          enabled,
-          breakStartTime,
-          breakEndTime);
+          dayOfWeek, startTime, endTime, enabled, breakStartTime, breakEndTime);
     }
   }
 }

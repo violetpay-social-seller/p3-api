@@ -57,7 +57,6 @@ public record StoreSettingResult(
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      Integer dailyOrderCapacity,
       boolean enabled,
       LocalTime breakStartTime,
       LocalTime breakEndTime) {
@@ -67,7 +66,6 @@ public record StoreSettingResult(
           setting.getDayOfWeek(),
           setting.getStartTime(),
           setting.getEndTime(),
-          setting.getDailyOrderCapacity(),
           setting.isEnabled(),
           setting.getBreakStartTime(),
           setting.getBreakEndTime());

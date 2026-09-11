@@ -40,7 +40,6 @@ class StoreBusinessHoursTextFormatterTest {
         dayOfWeek,
         LocalTime.of(9, 0),
         LocalTime.of(20, 0),
-        10,
         LocalTime.of(12, 0),
         LocalTime.of(13, 0),
         enabled);

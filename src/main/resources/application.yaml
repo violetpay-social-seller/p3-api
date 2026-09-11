@@ -37,6 +37,11 @@ management:
         enabled: true
 
 p3:
+  account:
+    encryption:
+      key: ${P3_ACCOUNT_ENCRYPTION_KEY:}
+      key-version: ${P3_ACCOUNT_ENCRYPTION_KEY_VERSION:v1}
+
   cors:
     allowed-origins: ${P3_CORS_ALLOWED_ORIGINS:http://localhost:3000}
 

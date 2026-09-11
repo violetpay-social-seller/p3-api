@@ -1,6 +1,7 @@
 package io.point3.p3api.payment.controller.response;
 
 import io.point3.p3api.payment.application.result.RefundResult;
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import java.time.Instant;
 import java.util.UUID;
@@ -14,6 +15,12 @@ public record RefundResponse(
     int refundRate,
     String reason,
     RefundStatus status,
+    RefundOutcome outcome,
+    boolean retryable,
+    String providerRefundId,
+    String failureCode,
+    String failureMessage,
+    String failureDetails,
     Instant createdAt,
     Instant completedAt) {
 
@@ -27,6 +34,12 @@ public record RefundResponse(
         result.refundRate(),
         result.reason(),
         result.status(),
+        result.outcome(),
+        result.retryable(),
+        result.providerRefundId(),
+        result.failureCode(),
+        result.failureMessage(),
+        result.failureDetails(),
         result.createdAt(),
         result.completedAt());
   }

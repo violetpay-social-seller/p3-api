@@ -49,6 +49,8 @@ import io.point3.p3api.payment.application.capture.CapturePaymentCommand;
 import io.point3.p3api.payment.application.capture.PaymentCaptureUseCase;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
+import io.point3.p3api.payment.application.port.Point3RefundStatusResult;
 import io.point3.p3api.payment.application.prepare.PaymentPrepareUseCase;
 import io.point3.p3api.payment.application.prepare.PreparePaymentCommand;
 import io.point3.p3api.payment.application.query.PaymentAttemptHistoryQueryUseCase;
@@ -864,9 +866,20 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
     }
 
     @Override
-    public io.point3.p3api.payment.application.port.Point3RefundResult refund(
+    public Point3RefundResult refund(
         String sessionId, long amount, String reason, String idempotencyKey) {
-      return new io.point3.p3api.payment.application.port.Point3RefundResult(true, null);
+      return Point3RefundResult.completed("ref-test");
+    }
+
+    @Override
+    public Point3RefundStatusResult getRefundStatus(String sessionId) {
+      return new Point3RefundStatusResult(
+          sessionId, "fullyRefunded", 0, false, List.of(Point3RefundResult.completed("ref-test")));
+    }
+
+    @Override
+    public Point3RefundStatusResult resumeRefund(String sessionId) {
+      return getRefundStatus(sessionId);
     }
 
     void nextCaptureStatus(Point3CaptureResult.Status nextCaptureStatus) {

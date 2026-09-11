@@ -3,6 +3,7 @@ package io.point3.p3api.payment.domain.entity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import java.time.Instant;
 import java.util.UUID;
@@ -43,6 +44,27 @@ class RefundTest {
 
     assertEquals(80, refund.getRefundRate());
     assertEquals(RefundStatus.PROCESSING, refund.getStatus());
+  }
+
+  @Test
+  @DisplayName("처리 중 환불의 기존 Point3 실패 원인은 다음 조회 응답에 원인이 없어도 보존한다")
+  void preservesProcessingFailureCauseWhenNextProviderResultHasNoFailure() {
+    Refund refund = Refund.create(
+        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 30_400, 80, "구매자 요청");
+    refund.startProcessing();
+    refund.keepProcessing(
+        "ref-processing",
+        "REFUND_TEMPORARY_UNAVAILABLE",
+        "환불 결과가 아직 확정되지 않았습니다.",
+        "{\"refundEntryId\":\"ref-processing\"}");
+
+    refund.keepProcessing("ref-processing", null, null, null);
+
+    assertEquals(RefundStatus.PROCESSING, refund.getStatus());
+    assertEquals(RefundOutcome.PROCESSING, refund.getOutcome());
+    assertEquals("REFUND_TEMPORARY_UNAVAILABLE", refund.getFailureCode());
+    assertEquals("환불 결과가 아직 확정되지 않았습니다.", refund.getFailureMessage());
+    assertEquals("{\"refundEntryId\":\"ref-processing\"}", refund.getFailureDetails());
   }
 
   @Test

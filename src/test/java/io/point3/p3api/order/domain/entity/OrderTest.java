@@ -58,6 +58,31 @@ class OrderTest {
   }
 
   @Test
+  @DisplayName("구매자 환불 요청은 주문을 환불 요청 상태로 변경한다")
+  void requestsRefund() {
+    Order order = createOrder();
+    Instant requestedAt = Instant.parse("2026-08-30T04:30:00Z");
+
+    order.requestRefund("픽업 일정 변경", requestedAt);
+
+    assertEquals(OrderStatus.REFUND_REQUESTED, order.getStatus());
+    assertEquals("픽업 일정 변경", order.getRefundReason());
+    assertEquals(requestedAt, order.getRefundRequestedAt());
+  }
+
+  @Test
+  @DisplayName("환불 완료는 환불 요청 주문을 환불 완료 상태로 변경한다")
+  void refundsRequestedOrder() {
+    Order order = createOrder();
+    order.requestRefund("픽업 일정 변경", Instant.parse("2026-08-30T04:30:00Z"));
+
+    order.refund("판매자 환불 처리");
+
+    assertEquals(OrderStatus.REFUNDED, order.getStatus());
+    assertEquals("판매자 환불 처리", order.getRefundReason());
+  }
+
+  @Test
   @DisplayName("음수 결제 금액의 주문은 생성할 수 없다")
   void rejectsNegativePaidAmount() {
     assertThrows(
@@ -73,5 +98,19 @@ class OrderTest {
             "초코 시트",
             -1,
             Instant.parse("2026-08-30T04:30:00Z")));
+  }
+
+  private Order createOrder() {
+    return Order.create(
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        UUID.randomUUID(),
+        "P3-20260830-" + UUID.randomUUID().toString().replace("-", "").substring(0, 8),
+        "초코 케이크",
+        "초코 시트",
+        38000,
+        Instant.parse("2026-08-30T04:30:00Z"));
   }
 }

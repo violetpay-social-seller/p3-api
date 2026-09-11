@@ -9,10 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record StoreOrderSettingAvailabilityResponse(
-    UUID storeId,
-    String preOrderNotice,
-    int cancellationCutoffDays,
-    List<DateAvailabilityResponse> dates) {
+    UUID storeId, int cancellationCutoffDays, List<DateAvailabilityResponse> dates) {
 
   public StoreOrderSettingAvailabilityResponse {
     dates = List.copyOf(dates);
@@ -22,7 +19,6 @@ public record StoreOrderSettingAvailabilityResponse(
       StoreOrderSettingAvailabilityResult result) {
     return new StoreOrderSettingAvailabilityResponse(
         result.storeId(),
-        result.preOrderNotice(),
         result.cancellationCutoffDays(),
         result.dates().stream().map(DateAvailabilityResponse::from).toList());
   }

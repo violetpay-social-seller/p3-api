@@ -13,7 +13,6 @@ import java.util.UUID;
 public record StoreSettingResult(
     UUID storeId,
     int leadTimeMinutes,
-    String preOrderNotice,
     int cancellationCutoffDays,
     List<WeeklyPickupSetting> weeklyPickupSettings,
     List<LocalDate> holidays) {
@@ -24,7 +23,7 @@ public record StoreSettingResult(
   }
 
   public static StoreSettingResult empty(UUID storeId) {
-    return new StoreSettingResult(storeId, 0, null, 0, List.of(), List.of());
+    return new StoreSettingResult(storeId, 0, 0, List.of(), List.of());
   }
 
   public static StoreSettingResult from(
@@ -34,7 +33,6 @@ public record StoreSettingResult(
     return new StoreSettingResult(
         setting.getStoreId(),
         setting.getLeadTimeMinutes(),
-        setting.getPreOrderNotice(),
         setting.getCancellationCutoffDays(),
         weeklyPickupSettings.stream()
             .sorted(Comparator.comparing(StoreWeeklyPickupSetting::getDayOfWeek))

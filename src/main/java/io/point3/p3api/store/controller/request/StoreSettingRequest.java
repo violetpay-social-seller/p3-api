@@ -12,7 +12,6 @@ import java.util.UUID;
 
 public record StoreSettingRequest(
     @Min(0) int leadTimeMinutes,
-    String preOrderNotice,
     @Min(0) int cancellationCutoffDays,
     @NotNull List<@Valid WeeklyPickupSettingRequest> weeklyPickupSettings,
     @NotNull List<LocalDate> holidays) {
@@ -26,7 +25,6 @@ public record StoreSettingRequest(
     return new UpdateStoreSettingCommand(
         storeId,
         leadTimeMinutes,
-        preOrderNotice,
         cancellationCutoffDays,
         weeklyPickupSettings.stream().map(WeeklyPickupSettingRequest::toCommand).toList(),
         holidays);

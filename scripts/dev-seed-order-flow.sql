@@ -392,14 +392,12 @@ INSERT INTO store_gallery_items (
 INSERT INTO store_operation_settings (
   store_id,
   lead_time_minutes,
-  pre_order_notice,
   cancellation_cutoff_days,
   created_at,
   updated_at
 ) VALUES (
   '11111111-1111-4111-8111-111111111111',
   2880,
-  'Submit after checking pickup time and design details.',
   2,
   '2026-09-03 09:09:00+09',
   '2026-09-03 09:09:00+09'

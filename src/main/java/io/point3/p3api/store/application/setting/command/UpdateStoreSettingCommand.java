@@ -9,7 +9,6 @@ import java.util.UUID;
 public record UpdateStoreSettingCommand(
     UUID storeId,
     int leadTimeMinutes,
-    String preOrderNotice,
     int cancellationCutoffDays,
     List<WeeklyPickupSetting> weeklyPickupSettings,
     List<LocalDate> holidays) {

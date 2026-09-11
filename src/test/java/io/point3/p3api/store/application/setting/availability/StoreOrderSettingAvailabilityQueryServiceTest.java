@@ -77,7 +77,6 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
         .thenReturn(new StoreSettingResult(
             STORE_ID,
             2880,
-            null,
             0,
             Arrays.stream(DayOfWeek.values())
                 .map(StoreOrderSettingAvailabilityQueryServiceTest::weeklySetting)

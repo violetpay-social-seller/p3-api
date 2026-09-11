@@ -1,10 +1,12 @@
 package io.point3.p3api.store.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
+import io.point3.p3api.account.domain.entity.SellerSettlementAccount;
+import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.asset.domain.entity.Asset;
 import io.point3.p3api.asset.infrastructure.persistence.AssetJpaRepository;
 import io.point3.p3api.assetvariant.domain.entity.AssetVariant;
@@ -27,7 +29,6 @@ import io.point3.p3api.store.application.result.StoreResult;
 import io.point3.p3api.store.application.setting.StoreSettingService;
 import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.store.application.update.ChangeStoreStatusCommand;
-import io.point3.p3api.store.application.update.CompleteAccountRegistrationCommand;
 import io.point3.p3api.store.application.update.UpdateStoreCommand;
 import io.point3.p3api.store.application.update.UpdateStoreDescriptionCommand;
 import io.point3.p3api.store.domain.entity.Store;
@@ -94,6 +95,9 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private StoreNoticePersistencePort storeNoticePersistencePort;
 
+  @Autowired
+  private SellerSettlementAccountPersistencePort sellerSettlementAccountPersistencePort;
+
   @Test
   @DisplayName("스토어 생성은 실제 저장소에서 판매자 1명당 1개 제약을 검증한다")
   void rejectsDuplicateStoreForSameOwner() {
@@ -148,21 +152,6 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals("서울특별시 중구 101호", updated.address());
     assertEquals("서울특별시 중구", persisted.getAddress());
     assertEquals("101호", persisted.getDetailAddress());
-  }
-
-  @Test
-  @DisplayName("계좌 등록 완료 처리는 스토어의 계좌 등록 상태와 완료 시각을 갱신한다")
-  void completesAccountRegistration() {
-    User seller = saveSeller();
-    StoreResult created = storeService.create(createStoreCommand(seller.getId(), "P3 베이커리"));
-
-    StoreResult updated = storeService.completeAccountRegistration(
-        new CompleteAccountRegistrationCommand(created.id()));
-    Store persisted = storeJpaRepository.findById(created.id()).orElseThrow();
-
-    assertEquals("INPUT_COMPLETED", updated.settlementAccountStatus());
-    assertEquals("INPUT_COMPLETED", persisted.getSettlementAccountStatus());
-    assertNotNull(persisted.getSettlementAccountRegisteredAt());
   }
 
   @Test
@@ -463,8 +452,15 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), true));
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
     store.updateCancellationRefundPolicy("픽업 7일 전 100% 환불");
-    store.markSettlementAccountInputCompleted(Instant.now());
     storeJpaRepository.saveAndFlush(store);
+    sellerSettlementAccountPersistencePort.save(SellerSettlementAccount.create(
+        storeId,
+        "004",
+        "encrypted-account-number",
+        "encrypted-account-holder",
+        AccountHolderType.BUSINESS,
+        "provider-transaction-id",
+        Instant.now()));
   }
 
   private void saveWeeklyPickupSettings(UUID storeId) {

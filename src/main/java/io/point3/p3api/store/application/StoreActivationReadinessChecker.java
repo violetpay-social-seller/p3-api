@@ -1,5 +1,6 @@
 package io.point3.p3api.store.application;
 
+import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
 import io.point3.p3api.orderform.application.port.OrderFormPersistencePort;
 import io.point3.p3api.store.application.notice.port.StoreNoticePersistencePort;
 import io.point3.p3api.store.application.representative.port.RepresentativeImagePersistencePort;
@@ -13,12 +14,11 @@ import org.springframework.stereotype.Component;
 public class StoreActivationReadinessChecker {
 
   private static final int MINIMUM_REPRESENTATIVE_IMAGE_COUNT = 3;
-  private static final String SETTLEMENT_ACCOUNT_INPUT_COMPLETED = "INPUT_COMPLETED";
-
   private final OrderFormPersistencePort orderFormPersistencePort;
   private final StoreNoticePersistencePort storeNoticePersistencePort;
   private final StoreWeeklyPickupSettingPersistencePort weeklyPickupSettingPersistencePort;
   private final RepresentativeImagePersistencePort representativeImagePersistencePort;
+  private final SellerSettlementAccountPersistencePort sellerSettlementAccountPersistencePort;
 
   public StoreActivationReadiness check(Store store) {
     boolean enabledPickupSetting =
@@ -35,7 +35,7 @@ public class StoreActivationReadinessChecker {
         storeNoticePersistencePort.hasCompleteNotices(store.getId()),
         representativeImagePersistencePort.findActiveByStoreId(store.getId()).size()
             >= MINIMUM_REPRESENTATIVE_IMAGE_COUNT,
-        SETTLEMENT_ACCOUNT_INPUT_COMPLETED.equals(store.getSettlementAccountStatus()));
+        sellerSettlementAccountPersistencePort.existsByStoreId(store.getId()));
   }
 
   private boolean hasText(String value) {

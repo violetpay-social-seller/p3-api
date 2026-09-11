@@ -1,9 +1,14 @@
 package io.point3.p3api.local;
 
+import io.point3.p3api.account.application.port.SensitiveDataCipher;
+import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
+import io.point3.p3api.account.domain.entity.SellerSettlementAccount;
+import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.common.web.response.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,9 +30,16 @@ public class LocalScenarioCleanupController {
   private static final UUID MISSING_ID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
   private final NamedParameterJdbcTemplate jdbcTemplate;
+  private final SellerSettlementAccountPersistencePort settlementAccountPersistencePort;
+  private final SensitiveDataCipher sensitiveDataCipher;
 
-  public LocalScenarioCleanupController(DataSource dataSource) {
+  public LocalScenarioCleanupController(
+      DataSource dataSource,
+      SellerSettlementAccountPersistencePort settlementAccountPersistencePort,
+      SensitiveDataCipher sensitiveDataCipher) {
     this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    this.settlementAccountPersistencePort = settlementAccountPersistencePort;
+    this.sensitiveDataCipher = sensitiveDataCipher;
   }
 
   @PostMapping("/reset")
@@ -94,17 +106,46 @@ public class LocalScenarioCleanupController {
   @PostMapping("/store/settlement-account/complete")
   public ApiResponse<SettlementAccountResponse> completeSettlementAccount(
       @Valid @RequestBody SettlementAccountRequest request) {
-    int affectedRows = jdbcTemplate.update("""
-        update stores
-        set settlement_account_status = 'INPUT_COMPLETED',
-            settlement_account_registered_at = now(),
-            updated_at = now()
-        where owner_user_id = (
-          select id from users where cognito_sub = :cognitoSub
-        )
-        """, Map.of("cognitoSub", request.cognitoSub()));
+    List<UUID> storeIds =
+        jdbcTemplate.queryForList("""
+            select stores.id
+            from stores
+            join users on users.id = stores.owner_user_id
+            where users.cognito_sub = :cognitoSub
+            """, Map.of("cognitoSub", request.cognitoSub()), UUID.class);
+    if (storeIds.isEmpty()) {
+      return ApiResponse.ok(new SettlementAccountResponse(0));
+    }
 
-    return ApiResponse.ok(new SettlementAccountResponse(affectedRows));
+    UUID storeId = storeIds.getFirst();
+    SellerSettlementAccount account = settlementAccountPersistencePort
+        .findByStoreId(storeId)
+        .map(existing -> replaceLocalSettlementAccount(existing))
+        .orElseGet(() -> createLocalSettlementAccount(storeId));
+    settlementAccountPersistencePort.save(account);
+    return ApiResponse.ok(new SettlementAccountResponse(1));
+  }
+
+  private SellerSettlementAccount createLocalSettlementAccount(UUID storeId) {
+    return SellerSettlementAccount.create(
+        storeId,
+        "004",
+        sensitiveDataCipher.encrypt("123456789012"),
+        sensitiveDataCipher.encrypt("로컬 판매자"),
+        AccountHolderType.PERSONAL,
+        "local-scenario-settlement-account",
+        Instant.now());
+  }
+
+  private SellerSettlementAccount replaceLocalSettlementAccount(SellerSettlementAccount account) {
+    account.replaceVerifiedAccount(
+        "004",
+        sensitiveDataCipher.encrypt("123456789012"),
+        sensitiveDataCipher.encrypt("로컬 판매자"),
+        AccountHolderType.PERSONAL,
+        "local-scenario-settlement-account",
+        Instant.now());
+    return account;
   }
 
   private List<UUID> findUserIds(List<String> cognitoSubs) {

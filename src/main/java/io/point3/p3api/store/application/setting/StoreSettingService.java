@@ -2,8 +2,8 @@ package io.point3.p3api.store.application.setting;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.StoreErrorCode;
-import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.businesshours.StoreBusinessHoursTextFormatter;
+import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.setting.command.UpdateStoreSettingCommand;
 import io.point3.p3api.store.application.setting.port.StoreHolidayPersistencePort;
 import io.point3.p3api.store.application.setting.port.StoreOperationSettingPersistencePort;
@@ -11,9 +11,9 @@ import io.point3.p3api.store.application.setting.port.StoreWeeklyPickupSettingPe
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.result.StoreSettingResult;
 import io.point3.p3api.store.application.setting.update.StoreSettingUpdateUseCase;
+import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreHoliday;
 import io.point3.p3api.store.domain.entity.StoreOperationSetting;
-import io.point3.p3api.store.domain.entity.Store;
 import io.point3.p3api.store.domain.entity.StoreWeeklyPickupSetting;
 import java.util.List;
 import java.util.UUID;
@@ -85,7 +85,6 @@ public class StoreSettingService implements StoreSettingUpdateUseCase, StoreSett
             setting.dayOfWeek(),
             setting.startTime(),
             setting.endTime(),
-            setting.dailyOrderCapacity(),
             setting.breakStartTime(),
             setting.breakEndTime(),
             setting.enabled()))

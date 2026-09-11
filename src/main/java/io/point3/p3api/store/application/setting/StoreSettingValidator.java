@@ -38,7 +38,6 @@ public class StoreSettingValidator {
           || !isHalfHourly(setting.startTime())
           || !isHalfHourly(setting.endTime())
           || !setting.startTime().isBefore(setting.endTime())
-          || (setting.dailyOrderCapacity() != null && setting.dailyOrderCapacity() <= 0)
           || !hasValidBreakTime(setting)) {
         throw new BaseException(CommonErrorCode.INVALID_INPUT);
       }

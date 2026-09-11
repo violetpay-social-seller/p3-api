@@ -115,7 +115,7 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
   void completesStoreInfoAfterSavingRefundPolicy() {
     StoreResult store = createStore();
     weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
-        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), null, true)));
+        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), true)));
 
     assertFalse(storeManagementStatusQueryService.getStatus(store.id()).items().storeInfo());
 
@@ -133,7 +133,7 @@ class StoreManagementStatusQueryServiceIntegrationTest extends IntegrationTestSu
   void doesNotCompleteStoreInfoWithoutDescription() {
     StoreResult store = createStore(null);
     weeklyPickupSettingPersistencePort.saveAll(List.of(StoreWeeklyPickupSetting.create(
-        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), null, true)));
+        store.id(), DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), true)));
     storeRefundPolicyUpdateUseCase.updateRefundPolicy(new UpdateStoreRefundPolicyCommand(
         store.id(), List.of(new UpdateStoreRefundPolicyCommand.Rule(7, 100))));
 

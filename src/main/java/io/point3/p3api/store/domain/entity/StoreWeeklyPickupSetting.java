@@ -42,9 +42,6 @@ public class StoreWeeklyPickupSetting {
   @Column(name = "end_time", nullable = false)
   private LocalTime endTime;
 
-  @Column(name = "daily_order_capacity")
-  private Integer dailyOrderCapacity;
-
   @Column(name = "break_start_time")
   private LocalTime breakStartTime;
 
@@ -67,7 +64,6 @@ public class StoreWeeklyPickupSetting {
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      Integer dailyOrderCapacity,
       LocalTime breakStartTime,
       LocalTime breakEndTime,
       boolean enabled) {
@@ -75,7 +71,6 @@ public class StoreWeeklyPickupSetting {
     this.dayOfWeek = dayOfWeek;
     this.startTime = startTime;
     this.endTime = endTime;
-    this.dailyOrderCapacity = dailyOrderCapacity;
     this.breakStartTime = breakStartTime;
     this.breakEndTime = breakEndTime;
     this.enabled = enabled;
@@ -86,7 +81,6 @@ public class StoreWeeklyPickupSetting {
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      Integer dailyOrderCapacity,
       LocalTime breakStartTime,
       LocalTime breakEndTime,
       boolean enabled) {
@@ -100,7 +94,6 @@ public class StoreWeeklyPickupSetting {
         dayOfWeek,
         startTime,
         endTime,
-        dailyOrderCapacity,
         breakStartTime,
         breakEndTime,
         enabled);
@@ -111,8 +104,7 @@ public class StoreWeeklyPickupSetting {
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      Integer dailyOrderCapacity,
       boolean enabled) {
-    return create(storeId, dayOfWeek, startTime, endTime, dailyOrderCapacity, null, null, enabled);
+    return create(storeId, dayOfWeek, startTime, endTime, null, null, enabled);
   }
 }

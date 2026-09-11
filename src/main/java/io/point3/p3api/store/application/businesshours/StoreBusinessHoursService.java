@@ -37,16 +37,16 @@ public class StoreBusinessHoursService
   @Transactional(readOnly = true)
   public StoreBusinessHoursResult getBusinessHours(UUID storeId) {
     requireStore(storeId);
-    List<StoreWeeklyPickupSetting> openSettings = weeklyPickupSettingPersistencePort
-        .findAllByStoreId(storeId).stream()
-        .filter(StoreWeeklyPickupSetting::isEnabled)
-        .toList();
+    List<StoreWeeklyPickupSetting> openSettings =
+        weeklyPickupSettingPersistencePort.findAllByStoreId(storeId).stream()
+            .filter(StoreWeeklyPickupSetting::isEnabled)
+            .toList();
     if (openSettings.isEmpty()) {
       return new StoreBusinessHoursResult(List.of(), null, null, null, null);
     }
     StoreWeeklyPickupSetting reference = openSettings.getFirst();
-    boolean hasDifferentHours = openSettings.stream().anyMatch(setting ->
-        !setting.getStartTime().equals(reference.getStartTime())
+    boolean hasDifferentHours = openSettings.stream()
+        .anyMatch(setting -> !setting.getStartTime().equals(reference.getStartTime())
             || !setting.getEndTime().equals(reference.getEndTime())
             || !java.util.Objects.equals(setting.getBreakStartTime(), reference.getBreakStartTime())
             || !java.util.Objects.equals(setting.getBreakEndTime(), reference.getBreakEndTime()));
@@ -54,7 +54,10 @@ public class StoreBusinessHoursService
       throw new BaseException(CommonErrorCode.INVALID_INPUT);
     }
     return new StoreBusinessHoursResult(
-        openSettings.stream().map(StoreWeeklyPickupSetting::getDayOfWeek).sorted().toList(),
+        openSettings.stream()
+            .map(StoreWeeklyPickupSetting::getDayOfWeek)
+            .sorted()
+            .toList(),
         reference.getStartTime(),
         reference.getEndTime(),
         reference.getBreakStartTime(),
@@ -65,10 +68,10 @@ public class StoreBusinessHoursService
   public StoreBusinessHoursResult updateBusinessHours(UpdateStoreBusinessHoursCommand command) {
     validate(command);
     Store store = requireStore(command.storeId());
-    Map<DayOfWeek, StoreWeeklyPickupSetting> existing = weeklyPickupSettingPersistencePort
-        .findAllByStoreId(command.storeId()).stream()
-        .collect(java.util.stream.Collectors.toMap(
-            StoreWeeklyPickupSetting::getDayOfWeek, Function.identity()));
+    Map<DayOfWeek, StoreWeeklyPickupSetting> existing =
+        weeklyPickupSettingPersistencePort.findAllByStoreId(command.storeId()).stream()
+            .collect(java.util.stream.Collectors.toMap(
+                StoreWeeklyPickupSetting::getDayOfWeek, Function.identity()));
     EnumSet<DayOfWeek> openDays = EnumSet.copyOf(command.openDays());
     List<StoreWeeklyPickupSetting> replacements = java.util.Arrays.stream(DayOfWeek.values())
         .map(day -> replacement(command, day, existing.get(day), openDays.contains(day)))
@@ -98,7 +101,6 @@ public class StoreBusinessHoursService
           day,
           command.startTime(),
           command.endTime(),
-          existing == null ? null : existing.getDailyOrderCapacity(),
           command.breakStartTime(),
           command.breakEndTime(),
           true);
@@ -108,17 +110,19 @@ public class StoreBusinessHoursService
         day,
         existing == null ? command.startTime() : existing.getStartTime(),
         existing == null ? command.endTime() : existing.getEndTime(),
-        existing == null ? null : existing.getDailyOrderCapacity(),
         existing == null ? command.breakStartTime() : existing.getBreakStartTime(),
         existing == null ? command.breakEndTime() : existing.getBreakEndTime(),
         false);
   }
 
   private void validate(UpdateStoreBusinessHoursCommand command) {
-    if (command.storeId() == null || command.openDays().isEmpty()
+    if (command.storeId() == null
+        || command.openDays().isEmpty()
         || command.openDays().stream().distinct().count() != command.openDays().size()
-        || command.startTime() == null || command.endTime() == null
-        || !isHalfHourly(command.startTime()) || !isHalfHourly(command.endTime())
+        || command.startTime() == null
+        || command.endTime() == null
+        || !isHalfHourly(command.startTime())
+        || !isHalfHourly(command.endTime())
         || !command.startTime().isBefore(command.endTime())
         || !hasValidBreakTime(command)) {
       throw new BaseException(CommonErrorCode.INVALID_INPUT);
@@ -126,9 +130,14 @@ public class StoreBusinessHoursService
   }
 
   private boolean hasValidBreakTime(UpdateStoreBusinessHoursCommand command) {
-    if (command.breakStartTime() == null && command.breakEndTime() == null) return true;
-    if (command.breakStartTime() == null || command.breakEndTime() == null) return false;
-    return isHalfHourly(command.breakStartTime()) && isHalfHourly(command.breakEndTime())
+    if (command.breakStartTime() == null && command.breakEndTime() == null) {
+      return true;
+    }
+    if (command.breakStartTime() == null || command.breakEndTime() == null) {
+      return false;
+    }
+    return isHalfHourly(command.breakStartTime())
+        && isHalfHourly(command.breakEndTime())
         && command.breakStartTime().isBefore(command.breakEndTime())
         && !command.breakStartTime().isBefore(command.startTime())
         && !command.breakEndTime().isAfter(command.endTime());
@@ -139,7 +148,8 @@ public class StoreBusinessHoursService
   }
 
   private Store requireStore(UUID storeId) {
-    return storePersistencePort.findById(storeId)
+    return storePersistencePort
+        .findById(storeId)
         .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
   }
 }

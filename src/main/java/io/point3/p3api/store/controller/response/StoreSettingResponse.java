@@ -46,7 +46,6 @@ public record StoreSettingResponse(
       DayOfWeek dayOfWeek,
       LocalTime startTime,
       LocalTime endTime,
-      Integer dailyOrderCapacity,
       boolean enabled,
       LocalTime breakStartTime,
       LocalTime breakEndTime) {
@@ -57,7 +56,6 @@ public record StoreSettingResponse(
           setting.dayOfWeek(),
           setting.startTime(),
           setting.endTime(),
-          setting.dailyOrderCapacity(),
           setting.enabled(),
           setting.breakStartTime(),
           setting.breakEndTime());

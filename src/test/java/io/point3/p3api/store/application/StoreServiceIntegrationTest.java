@@ -443,7 +443,7 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
 
   private void prepareStoreInfoAndSettlementAccount(UUID storeId) {
     storeWeeklyPickupSettingJpaRepository.saveAndFlush(StoreWeeklyPickupSetting.create(
-        storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true));
+        storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), true));
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
     store.updateCancellationRefundPolicy("픽업 7일 전 100% 환불");
     store.markSettlementAccountInputCompleted(Instant.now());
@@ -468,7 +468,6 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         dayOfWeek,
         LocalTime.of(9, 0),
         LocalTime.of(20, 0),
-        10,
         LocalTime.of(12, 0),
         LocalTime.of(13, 0),
         enabled);
@@ -480,7 +479,6 @@ class StoreServiceIntegrationTest extends IntegrationTestSupport {
         dayOfWeek,
         LocalTime.of(9, 0),
         LocalTime.of(20, 0),
-        null,
         enabled,
         LocalTime.of(12, 0),
         LocalTime.of(13, 0));

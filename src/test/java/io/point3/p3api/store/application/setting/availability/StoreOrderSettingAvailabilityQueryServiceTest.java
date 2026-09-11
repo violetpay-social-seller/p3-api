@@ -8,16 +8,12 @@ import static org.mockito.Mockito.when;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.CommonErrorCode;
-import io.point3.p3api.order.application.port.OrderPersistencePort;
-import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.store.application.setting.query.StoreSettingQueryUseCase;
 import io.point3.p3api.store.application.setting.result.StoreSettingResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,11 +27,9 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
 
   private final StoreSettingQueryUseCase storeSettingQueryUseCase =
       mock(StoreSettingQueryUseCase.class);
-  private final OrderPersistencePort orderPersistencePort = mock(OrderPersistencePort.class);
   private final StoreOrderSettingAvailabilityQueryService service =
       new StoreOrderSettingAvailabilityQueryService(
           storeSettingQueryUseCase,
-          orderPersistencePort,
           new StoreOrderSettingAvailabilityCalculator(),
           CLOCK);
 
@@ -46,12 +40,6 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
     LocalDate to = LocalDate.of(2027, 9, 10);
     when(storeSettingQueryUseCase.getSetting(STORE_ID))
         .thenReturn(StoreSettingResult.empty(STORE_ID));
-    when(orderPersistencePort.countByStoreIdAndPickupAtBetween(
-            STORE_ID,
-            from.atStartOfDay(KOREA_ZONE_ID).toInstant(),
-            to.plusDays(1).atStartOfDay(KOREA_ZONE_ID).toInstant(),
-            Set.of(OrderStatus.PAID)))
-        .thenReturn(List.of());
 
     assertEquals(366, service.getAvailability(STORE_ID, from, to).dates().size());
   }
@@ -66,6 +54,6 @@ class StoreOrderSettingAvailabilityQueryServiceTest {
         assertThrows(BaseException.class, () -> service.getAvailability(STORE_ID, from, to));
 
     assertEquals(CommonErrorCode.INVALID_INPUT, exception.getErrorCode());
-    verifyNoInteractions(storeSettingQueryUseCase, orderPersistencePort);
+    verifyNoInteractions(storeSettingQueryUseCase);
   }
 }

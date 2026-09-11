@@ -83,7 +83,7 @@ class StoreActivationValidatorIntegrationTest extends IntegrationTestSupport {
   private void prepareOtherActivationConditions(UUID storeId) {
     orderFormTemplateJpaRepository.saveAndFlush(OrderFormTemplate.create(storeId, "기본 주문서"));
     storeWeeklyPickupSettingJpaRepository.saveAndFlush(StoreWeeklyPickupSetting.create(
-        storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), 10, true));
+        storeId, DayOfWeek.MONDAY, LocalTime.of(10, 0), LocalTime.of(18, 0), true));
     Store store = storeJpaRepository.findById(storeId).orElseThrow();
     for (int sortOrder = 0; sortOrder < 3; sortOrder++) {
       Asset asset = assetJpaRepository.saveAndFlush(Asset.create(

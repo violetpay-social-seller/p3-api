@@ -21,8 +21,8 @@ public record OrderResponse(
     long paidAmount,
     Instant pickupAt,
     OrderStatus status,
-    Instant cancelRequestedAt,
-    String cancelReason,
+    Instant refundRequestedAt,
+    String refundReason,
     Instant createdAt,
     Instant updatedAt) {
 
@@ -48,8 +48,8 @@ public record OrderResponse(
         result.paidAmount(),
         result.pickupAt(),
         result.status(),
-        result.cancelRequestedAt(),
-        result.cancelReason(),
+        result.refundRequestedAt(),
+        result.refundReason(),
         result.createdAt(),
         result.updatedAt());
   }

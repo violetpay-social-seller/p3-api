@@ -3,7 +3,9 @@ package io.point3.p3api.payment.infrastructure.external.point3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.point3.p3api.payment.application.port.Point3RefundResult;
 import io.point3.p3api.payment.application.result.Point3CaptureResult;
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,5 +57,35 @@ class Point3PaymentAdapterTest {
 
     assertEquals("pymt_sess-test", id.invoke(response));
     assertEquals(10000L, amount.invoke(response));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "SETTLEMENT_DEADLINE_EXCEEDED, MANUAL_REQUIRED",
+    "EOB_WINDOW_BLOCKED, RETRYABLE",
+    "REFUND_TEMPORARY_UNAVAILABLE, PROCESSING",
+    "REFUND_AMOUNT_EXCEEDED, FAILED"
+  })
+  void mapsPoint3RefundErrorCode(String code, RefundOutcome expectedOutcome) {
+    String responseBody =
+        """
+        {
+          "result": {
+            "code": "${code}",
+            "message": "message",
+            "details": {
+              "paymentSessionId": "pymt_sess-test",
+              "refundEntryId": "ref-test"
+            }
+          }
+        }
+        """
+            .replace("${code}", code);
+    Point3RefundResult result = Point3PaymentAdapter.toRefundFailureResult(
+        409, responseBody);
+
+    assertEquals(expectedOutcome, result.outcome());
+    assertEquals(code, result.failureCode());
+    assertEquals("ref-test", result.providerRefundId());
   }
 }

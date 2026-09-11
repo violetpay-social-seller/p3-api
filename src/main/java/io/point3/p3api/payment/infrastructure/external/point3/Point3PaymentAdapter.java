@@ -1,10 +1,12 @@
 package io.point3.p3api.payment.infrastructure.external.point3;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
 import io.point3.p3api.payment.application.port.Point3RefundResult;
+import io.point3.p3api.payment.application.port.Point3RefundStatusResult;
 import io.point3.p3api.payment.application.result.Point3CaptureResult;
 import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.payment.config.Point3Properties;
@@ -13,6 +15,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -89,17 +92,75 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
   public Point3RefundResult refund(
       String sessionId, long amount, String reason, String idempotencyKey) {
     RefundRequest refund = new RefundRequest(amount, 0, amount * 10 / 110, reason);
-    HttpResponse<String> response = send(
-        post("/refunds/v1/" + sessionId)
-            .header("Idempotency-Key", idempotencyKey)
-            .POST(body(refund))
-            .build(),
-        "POINT3_REFUND");
+    HttpResponse<String> response;
+    try {
+      response = send(
+          post("/refunds/v1/" + sessionId)
+              .header("Idempotency-Key", idempotencyKey)
+              .POST(body(refund))
+              .build(),
+          "POINT3_REFUND");
+    } catch (Point3PaymentException exception) {
+      return Point3RefundResult.processing(
+          null, exception.getFailureCode(), exception.getMessage(), null);
+    }
     if (response.statusCode() != 200) {
-      return new Point3RefundResult(false, "POINT3_REFUND_" + response.statusCode());
+      return toRefundFailureResult(response.statusCode(), response.body());
     }
     RefundResponse result = read(response.body(), RefundResponse.class, "POINT3_REFUND_PARSE");
-    return new Point3RefundResult("completed".equals(result.status()), result.status());
+    return toRefundResult(result.id(), result.status(), null);
+  }
+
+  @Override
+  public Point3RefundStatusResult getRefundStatus(String sessionId) {
+    return getRefundStatus(
+        get("/refunds/v1/" + sessionId).GET().build(), "POINT3_REFUND_STATUS_GET", sessionId);
+  }
+
+  @Override
+  public Point3RefundStatusResult resumeRefund(String sessionId) {
+    return getRefundStatus(
+        post("/refunds/v1/" + sessionId + "/resume")
+            .POST(HttpRequest.BodyPublishers.noBody())
+            .build(),
+        "POINT3_REFUND_RESUME",
+        sessionId);
+  }
+
+  private Point3RefundStatusResult getRefundStatus(
+      HttpRequest request, String failureCode, String sessionId) {
+    HttpResponse<String> response;
+    try {
+      response = send(request, failureCode);
+    } catch (Point3PaymentException exception) {
+      return new Point3RefundStatusResult(
+          sessionId,
+          "processing",
+          0,
+          false,
+          List.of(Point3RefundResult.processing(
+              null, exception.getFailureCode(), exception.getMessage(), null)));
+    }
+    if (response.statusCode() != 200) {
+      return new Point3RefundStatusResult(
+          sessionId,
+          "processing",
+          0,
+          false,
+          List.of(toRefundFailureResult(response.statusCode(), response.body())));
+    }
+
+    RefundStatusResponse result =
+        read(response.body(), RefundStatusResponse.class, failureCode + "_PARSE");
+    List<Point3RefundResult> refunds = result.refunds().stream()
+        .map(refund -> toRefundResult(refund.id(), refund.status(), refund.failure()))
+        .toList();
+    return new Point3RefundStatusResult(
+        result.paymentSessionId(),
+        result.status(),
+        result.refundableAmount(),
+        result.canCreateRefund(),
+        refunds);
   }
 
   private HttpRequest.Builder post(String path) {
@@ -128,6 +189,92 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
       case "failed", "expired" -> Point3CaptureResult.Status.FAILED;
       default -> Point3CaptureResult.Status.PROCESSING;
     };
+  }
+
+  static Point3RefundResult toRefundFailureResult(int statusCode, String body) {
+    Point3Error error = parsePoint3Error(body);
+    String failureCode = error.code() == null ? "POINT3_REFUND_" + statusCode : error.code();
+    return classifyRefundFailure(
+        statusCode, error.refundEntryId(), failureCode, error.message(), error.details());
+  }
+
+  private static Point3RefundResult classifyRefundFailure(
+      int statusCode,
+      String providerRefundId,
+      String failureCode,
+      String failureMessage,
+      String failureDetails) {
+    String code = failureCode == null ? "POINT3_REFUND_" + statusCode : failureCode;
+    return switch (code) {
+      case "SETTLEMENT_DEADLINE_EXCEEDED" ->
+        Point3RefundResult.manualRequired(providerRefundId, code, failureMessage, failureDetails);
+      case "EOB_WINDOW_BLOCKED" ->
+        Point3RefundResult.retryable(providerRefundId, code, failureMessage, failureDetails);
+      case "REFUND_TEMPORARY_UNAVAILABLE" ->
+        Point3RefundResult.processing(providerRefundId, code, failureMessage, failureDetails);
+      default -> {
+        if (statusCode >= 500) {
+          yield Point3RefundResult.processing(
+              providerRefundId, code, failureMessage, failureDetails);
+        }
+        yield Point3RefundResult.failed(providerRefundId, code, failureMessage, failureDetails);
+      }
+    };
+  }
+
+  private static Point3RefundResult toRefundResult(
+      String providerRefundId, String status, RefundFailure failure) {
+    if ("completed".equals(status)) {
+      return Point3RefundResult.completed(providerRefundId);
+    }
+    if ("processing".equals(status)) {
+      return Point3RefundResult.processing(
+          providerRefundId,
+          failure == null ? null : failure.code(),
+          failure == null ? null : failure.message(),
+          null);
+    }
+    if (failure != null) {
+      return classifyRefundFailure(422, providerRefundId, failure.code(), failure.message(), null);
+    }
+    return Point3RefundResult.failed(providerRefundId, status, null, null);
+  }
+
+  private static Point3Error parsePoint3Error(String body) {
+    if (body == null || body.isBlank()) {
+      return new Point3Error(null, null, null, null);
+    }
+    try {
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode root = mapper.readTree(body);
+      JsonNode result = root.path("result");
+      String code = text(result.path("code"));
+      if (code == null) {
+        code = text(root.path("code"));
+      }
+      String message = text(result.path("message"));
+      if (message == null) {
+        message = text(root.path("message"));
+      }
+      JsonNode detailsNode = result.path("details");
+      if (detailsNode.isMissingNode() || detailsNode.isNull()) {
+        detailsNode = root.path("details");
+      }
+      String details = detailsNode.isMissingNode() || detailsNode.isNull()
+          ? null
+          : mapper.writeValueAsString(detailsNode);
+      String refundEntryId = text(detailsNode.path("refundEntryId"));
+      return new Point3Error(code, message, details, refundEntryId);
+    } catch (IOException exception) {
+      return new Point3Error(null, body, null, null);
+    }
+  }
+
+  private static String text(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return null;
+    }
+    return node.asText();
   }
 
   private HttpRequest.BodyPublisher body(Object body) {
@@ -189,5 +336,25 @@ public class Point3PaymentAdapter implements Point3PaymentPort {
       long refundAmount, long refundTaxFreeAmount, long refundVat, String reason) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  private record RefundResponse(String status) {}
+  private record RefundResponse(String id, String status) {}
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private record RefundStatusResponse(
+      String paymentSessionId,
+      String status,
+      long refundableAmount,
+      boolean canCreateRefund,
+      List<RefundEntryResponse> refunds) {
+    private RefundStatusResponse {
+      refunds = refunds == null ? List.of() : List.copyOf(refunds);
+    }
+  }
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private record RefundEntryResponse(String id, String status, RefundFailure failure) {}
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private record RefundFailure(String code, String message) {}
+
+  private record Point3Error(String code, String message, String details, String refundEntryId) {}
 }

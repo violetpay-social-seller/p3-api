@@ -59,8 +59,7 @@ public class SellerDashboardService implements SellerDashboardQueryUseCase {
         weekOrders.size(),
         orderPersistencePort.countByStoreIdAndStatus(command.storeId(), OrderStatus.PAID),
         orderPersistencePort.countByStoreIdAndStatuses(
-            command.storeId(),
-            List.of(OrderStatus.CANCEL_REQUESTED, OrderStatus.REFUND_PROCESSING)),
+            command.storeId(), List.of(OrderStatus.REFUND_REQUESTED)),
         countUnanswered(command),
         todayOrders.stream()
             .map(order -> OrderCalendarOrderResult.from(order, KOREA_ZONE))

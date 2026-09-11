@@ -291,7 +291,7 @@ public class OperatorManagementService implements OperatorManagementUseCase {
             "paidAmount",
             "pickupAt",
             "status",
-            "cancelRequestedAt",
+            "refundRequestedAt",
             "createdAt"),
         orders.stream()
             .map(order -> List.of(
@@ -302,7 +302,7 @@ public class OperatorManagementService implements OperatorManagementUseCase {
                 value(order.paidAmount()),
                 value(order.pickupAt()),
                 value(order.status()),
-                value(order.cancelRequestedAt()),
+                value(order.refundRequestedAt()),
                 value(order.createdAt())))
             .toList());
   }

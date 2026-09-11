@@ -19,8 +19,8 @@ public record OrderResult(
     long paidAmount,
     Instant pickupAt,
     OrderStatus status,
-    Instant cancelRequestedAt,
-    String cancelReason,
+    Instant refundRequestedAt,
+    String refundReason,
     Instant createdAt,
     Instant updatedAt) {
   public static OrderResult from(Order order) {
@@ -41,8 +41,8 @@ public record OrderResult(
         order.getPaidAmount(),
         order.getPickupAt(),
         order.getStatus(),
-        order.getCancelRequestedAt(),
-        order.getCancelReason(),
+        order.getRefundRequestedAt(),
+        order.getRefundReason(),
         order.getCreatedAt(),
         order.getUpdatedAt());
   }

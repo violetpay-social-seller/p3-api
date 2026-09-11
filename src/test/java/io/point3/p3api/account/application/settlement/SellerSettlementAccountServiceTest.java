@@ -66,7 +66,7 @@ class SellerSettlementAccountServiceTest {
         ArgumentCaptor.forClass(AccountRealNameVerificationRequest.class);
     verify(verificationPort).verify(requestCaptor.capture());
     assertEquals("900102", requestCaptor.getValue().accountHolderInfo());
-    assertEquals(" ", requestCaptor.getValue().accountHolderInfoType());
+    assertEquals("1", requestCaptor.getValue().accountHolderInfoType());
 
     ArgumentCaptor<SellerSettlementAccount> accountCaptor =
         ArgumentCaptor.forClass(SellerSettlementAccount.class);
@@ -102,6 +102,7 @@ class SellerSettlementAccountServiceTest {
     ArgumentCaptor<AccountRealNameVerificationRequest> requestCaptor =
         ArgumentCaptor.forClass(AccountRealNameVerificationRequest.class);
     verify(verificationPort).verify(requestCaptor.capture());
+    assertEquals("2", requestCaptor.getValue().accountHolderInfoType());
     assertEquals("1234567890", requestCaptor.getValue().accountHolderInfo());
   }
 

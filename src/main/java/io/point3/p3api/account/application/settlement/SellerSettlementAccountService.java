@@ -26,7 +26,8 @@ public class SellerSettlementAccountService
         SellerSettlementAccountQueryUseCase,
         SettlementBankQueryUseCase {
 
-  private static final String DEFAULT_HOLDER_INFO_TYPE = " ";
+  private static final String PERSONAL_HOLDER_INFO_TYPE = "1";
+  private static final String BUSINESS_HOLDER_INFO_TYPE = "2";
   private static final DateTimeFormatter BIRTH_DATE_FORMAT = DateTimeFormatter.ofPattern("yyMMdd");
 
   private final SellerSettlementAccountPersistencePort persistencePort;
@@ -46,7 +47,7 @@ public class SellerSettlementAccountService
           bank.code(),
           accountNumber.value(),
           accountHolderName,
-          DEFAULT_HOLDER_INFO_TYPE,
+          holderInfoType(command.holderType()),
           holderInfo));
     } catch (AccountRealNameVerificationException exception) {
       throw toBaseException(exception);
@@ -147,6 +148,13 @@ public class SellerSettlementAccountService
       }
     }
     throw new BaseException(AccountErrorCode.SETTLEMENT_ACCOUNT_INPUT_INVALID);
+  }
+
+  private String holderInfoType(AccountHolderType holderType) {
+    return switch (holderType) {
+      case PERSONAL -> PERSONAL_HOLDER_INFO_TYPE;
+      case BUSINESS -> BUSINESS_HOLDER_INFO_TYPE;
+    };
   }
 
   private String requireText(String value) {

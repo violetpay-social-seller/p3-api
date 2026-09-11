@@ -12,4 +12,8 @@ public interface Point3PaymentPort {
   Point3CaptureResult getSession(String sessionId);
 
   Point3RefundResult refund(String sessionId, long amount, String reason, String idempotencyKey);
+
+  Point3RefundStatusResult getRefundStatus(String sessionId);
+
+  Point3RefundStatusResult resumeRefund(String sessionId);
 }

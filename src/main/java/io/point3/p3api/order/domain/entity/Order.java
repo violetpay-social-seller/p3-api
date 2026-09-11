@@ -68,11 +68,11 @@ public class Order {
   @Column(name = "status", nullable = false, length = 30)
   private OrderStatus status;
 
-  @Column(name = "cancel_requested_at")
-  private Instant cancelRequestedAt;
+  @Column(name = "refund_requested_at")
+  private Instant refundRequestedAt;
 
-  @Column(name = "cancel_reason", columnDefinition = "text")
-  private String cancelReason;
+  @Column(name = "refund_reason", columnDefinition = "text")
+  private String refundReason;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -179,33 +179,33 @@ public class Order {
     this.status = OrderStatus.PICKED_UP;
   }
 
-  public void requestCancel(String cancelReason, Instant requestedAt) {
-    Objects.requireNonNull(cancelReason, "cancelReason");
+  public void requestRefund(String refundReason, Instant requestedAt) {
+    Objects.requireNonNull(refundReason, "refundReason");
     Objects.requireNonNull(requestedAt, "requestedAt");
-    if (cancelReason.isBlank()) {
-      throw new IllegalArgumentException("cancelReason must not be blank");
+    if (refundReason.isBlank()) {
+      throw new IllegalArgumentException("refundReason must not be blank");
     }
 
     ensureStatus(OrderStatus.PAID);
-    this.status = OrderStatus.CANCEL_REQUESTED;
-    this.cancelReason = cancelReason;
-    this.cancelRequestedAt = requestedAt;
+    this.status = OrderStatus.REFUND_REQUESTED;
+    this.refundReason = refundReason;
+    this.refundRequestedAt = requestedAt;
   }
 
-  public void refund(String cancelReason) {
-    Objects.requireNonNull(cancelReason, "cancelReason");
-    if (cancelReason.isBlank()) {
-      throw new IllegalArgumentException("cancelReason must not be blank");
+  public void refund(String refundReason) {
+    Objects.requireNonNull(refundReason, "refundReason");
+    if (refundReason.isBlank()) {
+      throw new IllegalArgumentException("refundReason must not be blank");
     }
 
     validateRefundable();
 
     this.status = OrderStatus.REFUNDED;
-    this.cancelReason = cancelReason;
+    this.refundReason = refundReason;
   }
 
   public void validateRefundable() {
-    if (this.status != OrderStatus.PAID && this.status != OrderStatus.CANCEL_REQUESTED) {
+    if (this.status != OrderStatus.REFUND_REQUESTED) {
       throw new IllegalStateException("Order status transition is not allowed");
     }
   }

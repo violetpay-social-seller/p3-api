@@ -40,7 +40,9 @@ class ChatTimelineRealtimeEventHandlerTest {
         "ORDER_FORM_REVISION_REQUEST",
         "ORDER_CONFIRMATION",
         "ORDER_CONFIRMATION_REVISION",
-        "PAYMENT_COMPLETED"
+        "PAYMENT_COMPLETED",
+        "ORDER_REFUND_REQUESTED",
+        "ORDER_REFUND_COMPLETED"
       })
   @DisplayName("CTA 타임라인 항목을 열린 채팅방 topic payload로 발행한다")
   void publishesCtaTimelineItem(ChatTimelineItemType type) {

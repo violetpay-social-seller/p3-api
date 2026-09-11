@@ -1,5 +1,6 @@
 package io.point3.p3api.payment.domain.entity;
 
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +17,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "refunds")
@@ -49,12 +52,32 @@ public class Refund {
   @Column(name = "status", nullable = false, length = 30)
   private RefundStatus status;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "outcome", nullable = false, length = 30)
+  private RefundOutcome outcome;
+
+  @Column(name = "provider_refund_id", length = 128)
+  private String providerRefundId;
+
+  @Column(name = "failure_code", length = 100)
+  private String failureCode;
+
+  @Column(name = "failure_message", columnDefinition = "text")
+  private String failureMessage;
+
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(name = "failure_details", columnDefinition = "jsonb")
+  private String failureDetails;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 
   @Column(name = "completed_at")
   private Instant completedAt;
+
+  @Column(name = "failed_at")
+  private Instant failedAt;
 
   private Refund(
       UUID orderId,
@@ -70,6 +93,7 @@ public class Refund {
     this.refundRate = refundRate;
     this.reason = reason;
     this.status = RefundStatus.REQUESTED;
+    this.outcome = RefundOutcome.PROCESSING;
   }
 
   public static Refund create(
@@ -103,15 +127,78 @@ public class Refund {
       throw new IllegalStateException("Refund status transition is not allowed");
     }
     status = RefundStatus.PROCESSING;
+    outcome = RefundOutcome.PROCESSING;
+    clearFailure();
   }
 
   public void complete(Instant completedAt) {
+    complete(null, completedAt);
+  }
+
+  public void complete(String providerRefundId, Instant completedAt) {
     Objects.requireNonNull(completedAt, "completedAt");
     this.status = RefundStatus.COMPLETED;
+    this.outcome = RefundOutcome.COMPLETED;
+    if (providerRefundId != null && !providerRefundId.isBlank()) {
+      this.providerRefundId = providerRefundId;
+    }
     this.completedAt = completedAt;
+    this.failedAt = null;
+    clearFailure();
+  }
+
+  public void keepProcessing(
+      String providerRefundId, String failureCode, String failureMessage, String failureDetails) {
+    this.status = RefundStatus.PROCESSING;
+    this.outcome = RefundOutcome.PROCESSING;
+    recordProviderResult(providerRefundId, failureCode, failureMessage, failureDetails);
   }
 
   public void fail() {
+    fail(RefundOutcome.FAILED, null, null, null, null, Instant.now());
+  }
+
+  public void fail(
+      RefundOutcome outcome,
+      String providerRefundId,
+      String failureCode,
+      String failureMessage,
+      String failureDetails,
+      Instant failedAt) {
+    if (outcome == RefundOutcome.COMPLETED || outcome == RefundOutcome.PROCESSING) {
+      throw new IllegalArgumentException("outcome must be a failed outcome");
+    }
+    Objects.requireNonNull(failedAt, "failedAt");
     this.status = RefundStatus.FAILED;
+    this.outcome = outcome;
+    this.failedAt = failedAt;
+    recordProviderResult(providerRefundId, failureCode, failureMessage, failureDetails);
+  }
+
+  public boolean isRetryableFailure() {
+    return status == RefundStatus.FAILED && outcome == RefundOutcome.RETRYABLE;
+  }
+
+  private void recordProviderResult(
+      String providerRefundId, String failureCode, String failureMessage, String failureDetails) {
+    if (providerRefundId != null && !providerRefundId.isBlank()) {
+      this.providerRefundId = providerRefundId;
+    }
+    if (failureCode != null) {
+      this.failureCode = failureCode;
+      this.failureMessage = failureMessage;
+      this.failureDetails = failureDetails;
+      return;
+    }
+    if (failureMessage != null || failureDetails != null) {
+      this.failureMessage = failureMessage;
+      this.failureDetails = failureDetails;
+    }
+  }
+
+  private void clearFailure() {
+    this.failureCode = null;
+    this.failureMessage = null;
+    this.failureDetails = null;
   }
 }

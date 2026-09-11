@@ -10,8 +10,9 @@ import io.point3.p3api.order.application.query.order.OrderQueryUseCase;
 import io.point3.p3api.order.application.query.order.SellerOrderListQuery;
 import io.point3.p3api.order.application.state.CompleteOrderPickupCommand;
 import io.point3.p3api.order.application.state.OrderStateUseCase;
+import io.point3.p3api.order.application.state.RefreshOrderRefundCommand;
 import io.point3.p3api.order.application.state.RefundOrderCommand;
-import io.point3.p3api.order.application.state.RequestOrderCancelCommand;
+import io.point3.p3api.order.application.state.RequestOrderRefundCommand;
 import io.point3.p3api.order.controller.request.OrderCancelRequest;
 import io.point3.p3api.order.controller.request.SellerOrderRefundRequest;
 import io.point3.p3api.order.controller.response.OrderCalendarResponse;
@@ -56,14 +57,14 @@ public class OrderController {
         OrderDetailResponse.from(orderQueryUseCase.getBuyerOrder(orderId, currentUser.userId())));
   }
 
-  @PostMapping("/orders/{orderId}/cancel-request")
-  public ApiResponse<OrderResponse> requestCancel(
+  @PostMapping({"/orders/{orderId}/cancel-request", "/orders/{orderId}/refund-request"})
+  public ApiResponse<OrderResponse> requestRefund(
       @PathVariable UUID orderId,
       @Authenticated CurrentUser currentUser,
       @Valid @RequestBody OrderCancelRequest request) {
     RoleGuard.requireBuyer(currentUser);
-    return ApiResponse.ok(OrderResponse.from(orderStateUseCase.requestCancel(
-        RequestOrderCancelCommand.of(orderId, currentUser.userId(), request.reason()))));
+    return ApiResponse.ok(OrderResponse.from(orderStateUseCase.requestRefund(
+        RequestOrderRefundCommand.of(orderId, currentUser.userId(), request.reason()))));
   }
 
   @GetMapping("/seller/orders")
@@ -127,6 +128,16 @@ public class OrderController {
     RoleGuard.requireSeller(currentUser);
     return ApiResponse.ok(OrderDetailResponse.from(orderStateUseCase.refund(
         RefundOrderCommand.of(orderId, storeId, currentUser.userId(), refundReason(request)))));
+  }
+
+  @PostMapping("/seller/orders/{orderId}/refund/refresh")
+  public ApiResponse<OrderDetailResponse> refreshRefund(
+      @PathVariable UUID orderId,
+      @CurrentStoreId UUID storeId,
+      @Authenticated CurrentUser currentUser) {
+    RoleGuard.requireSeller(currentUser);
+    return ApiResponse.ok(OrderDetailResponse.from(orderStateUseCase.refreshRefund(
+        RefreshOrderRefundCommand.of(orderId, storeId, currentUser.userId()))));
   }
 
   private String refundReason(SellerOrderRefundRequest request) {

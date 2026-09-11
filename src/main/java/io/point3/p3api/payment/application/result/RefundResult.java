@@ -1,6 +1,7 @@
 package io.point3.p3api.payment.application.result;
 
 import io.point3.p3api.payment.domain.entity.Refund;
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import java.time.Instant;
 import java.util.UUID;
@@ -14,8 +15,15 @@ public record RefundResult(
     int refundRate,
     String reason,
     RefundStatus status,
+    RefundOutcome outcome,
+    boolean retryable,
+    String providerRefundId,
+    String failureCode,
+    String failureMessage,
+    String failureDetails,
     Instant createdAt,
-    Instant completedAt) {
+    Instant completedAt,
+    Instant failedAt) {
 
   public static RefundResult from(Refund refund) {
     return new RefundResult(
@@ -27,7 +35,14 @@ public record RefundResult(
         refund.getRefundRate(),
         refund.getReason(),
         refund.getStatus(),
+        refund.getOutcome(),
+        refund.isRetryableFailure(),
+        refund.getProviderRefundId(),
+        refund.getFailureCode(),
+        refund.getFailureMessage(),
+        refund.getFailureDetails(),
         refund.getCreatedAt(),
-        refund.getCompletedAt());
+        refund.getCompletedAt(),
+        refund.getFailedAt());
   }
 }

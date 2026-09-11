@@ -72,7 +72,7 @@ class SellerDashboardServiceIntegrationTest extends IntegrationTestSupport {
     Order earlyOrder = saveOrder(fixture, 100_000, "2026-08-10T01:00:00Z", "2026-08-24T15:30:00Z");
     Order cancelOrder = saveOrder(fixture, 50_000, "2026-08-20T01:00:00Z", "2026-08-25T01:00:00Z");
     Order weekOrder = saveOrder(fixture, 20_000, "2026-08-22T01:00:00Z", "2026-08-26T01:00:00Z");
-    cancelOrder.requestCancel("구매자 취소 요청", Instant.parse("2026-08-25T02:00:00Z"));
+    cancelOrder.requestRefund("구매자 취소 요청", Instant.parse("2026-08-25T02:00:00Z"));
     orderJpaRepository.saveAndFlush(cancelOrder);
     saveCompletedRefund(fixture, earlyOrder, 20_000, "2026-08-21T01:00:00Z");
     saveOrder(fixture, 70_000, "2026-07-31T14:59:59Z", "2026-08-27T01:00:00Z");

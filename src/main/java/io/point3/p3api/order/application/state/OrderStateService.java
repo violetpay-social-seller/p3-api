@@ -1,5 +1,6 @@
 package io.point3.p3api.order.application.state;
 
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
@@ -26,11 +27,13 @@ import io.point3.p3api.payment.application.port.PaymentAttemptPersistencePort;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
 import io.point3.p3api.payment.application.port.Point3RefundResult;
+import io.point3.p3api.payment.application.port.Point3RefundStatusResult;
 import io.point3.p3api.payment.application.port.RefundPersistencePort;
 import io.point3.p3api.payment.application.result.PaymentAttemptResult;
 import io.point3.p3api.payment.application.result.RefundResult;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
 import io.point3.p3api.payment.domain.entity.Refund;
+import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.store.application.port.StorePersistencePort;
 import io.point3.p3api.store.application.refundpolicy.port.StoreRefundPolicyPersistencePort;
@@ -63,6 +66,7 @@ public class OrderStateService implements OrderStateUseCase {
   private final NotificationCreateUseCase notificationCreateUseCase;
   private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
   private final OrderReferenceAssetDeliveryService orderReferenceAssetDeliveryService;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
 
   @Override
   public OrderResult pickUp(CompleteOrderPickupCommand command) {
@@ -79,7 +83,7 @@ public class OrderStateService implements OrderStateUseCase {
   }
 
   @Override
-  public OrderResult requestCancel(RequestOrderCancelCommand command) {
+  public OrderResult requestRefund(RequestOrderRefundCommand command) {
     Order order = orderPersistencePort
         .findByIdAndBuyerUserId(command.orderId(), command.buyerUserId())
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
@@ -88,8 +92,10 @@ public class OrderStateService implements OrderStateUseCase {
         order,
         command.buyerUserId(),
         command.reason(),
-        () -> order.requestCancel(command.reason(), Instant.now(clock)));
-    notifySellerCancelRequested(order);
+        () -> order.requestRefund(command.reason(), Instant.now(clock)));
+    notifySellerRefundRequested(order);
+    chatTimelineItemPublisher.publishOrderRefundRequested(
+        order.getInquiryId(), command.buyerUserId(), order.getId());
 
     return toResult(order);
   }
@@ -97,7 +103,10 @@ public class OrderStateService implements OrderStateUseCase {
   @Override
   public OrderDetailResult refund(RefundOrderCommand command) {
     Order order = getSellerOrderForUpdate(command.orderId(), command.storeId());
-    validateNoExistingRefund(order.getId());
+    OrderDetailResult existingResult = handleExistingRefund(order, command.sellerUserId());
+    if (existingResult != null) {
+      return existingResult;
+    }
     validateRefundable(order);
     Instant requestedAt = Instant.now(clock);
     var calculation = orderRefundPolicyCalculator.calculate(
@@ -121,31 +130,50 @@ public class OrderStateService implements OrderStateUseCase {
       completeRefund(order, refund, command, requestedAt);
       return toDetail(order);
     }
-    try {
-      Point3RefundResult result = point3PaymentPort.refund(
-          paymentAttempt.getPoint3SessionId(),
-          refund.getAmount(),
-          command.reason(),
-          refund.getId().toString());
-      if (result.completed()) {
-        completeRefund(order, refund, command, Instant.now(clock));
-      } else {
-        refund.fail();
-      }
-    } catch (Point3PaymentException exception) {
-      refund.fail();
-    }
+    Point3RefundResult result = requestPoint3Refund(paymentAttempt, refund, command.reason());
+    applyRefundResult(order, refund, command.sellerUserId(), command.reason(), result);
     refundPersistencePort.save(refund);
-    notifyBuyerRefundResult(order, refund.getStatus());
+
+    return toDetail(order);
+  }
+
+  @Override
+  public OrderDetailResult refreshRefund(RefreshOrderRefundCommand command) {
+    Order order = getSellerOrderForUpdate(command.orderId(), command.storeId());
+    Refund refund = refundPersistencePort.findAllByOrderId(order.getId()).stream()
+        .filter(item -> item.getStatus() == RefundStatus.PROCESSING)
+        .findFirst()
+        .orElse(null);
+    if (refund == null) {
+      return toDetail(order);
+    }
+    PaymentAttempt paymentAttempt = paymentAttemptPersistencePort
+        .findById(order.getPaymentAttemptId())
+        .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
+    Point3RefundResult result = refreshPoint3Refund(paymentAttempt, refund);
+    applyRefundResult(order, refund, command.sellerUserId(), refund.getReason(), result);
+    refundPersistencePort.save(refund);
 
     return toDetail(order);
   }
 
   private void completeRefund(
       Order order, Refund refund, RefundOrderCommand command, Instant completedAt) {
-    changeStatus(
-        order, command.sellerUserId(), command.reason(), () -> order.refund(command.reason()));
-    refund.complete(completedAt);
+    completeRefund(order, refund, command.sellerUserId(), command.reason(), null, completedAt);
+  }
+
+  private void completeRefund(
+      Order order,
+      Refund refund,
+      UUID changedBy,
+      String reason,
+      String providerRefundId,
+      Instant completedAt) {
+    changeStatus(order, changedBy, reason, () -> order.refund(reason));
+    refund.complete(providerRefundId, completedAt);
+    notifyBuyerRefundCompleted(order);
+    chatTimelineItemPublisher.publishOrderRefundCompleted(
+        order.getInquiryId(), changedBy, order.getId());
   }
 
   private void validateRefundable(Order order) {
@@ -156,11 +184,98 @@ public class OrderStateService implements OrderStateUseCase {
     }
   }
 
-  private void validateNoExistingRefund(UUID orderId) {
-    boolean alreadyProcessed = refundPersistencePort.findAllByOrderId(orderId).stream()
-        .anyMatch(refund -> refund.getStatus() != RefundStatus.FAILED);
-    if (alreadyProcessed) {
+  private OrderDetailResult handleExistingRefund(Order order, UUID sellerUserId) {
+    List<Refund> refunds = refundPersistencePort.findAllByOrderId(order.getId());
+    Refund latest = refunds.stream().findFirst().orElse(null);
+    if (latest == null || latest.isRetryableFailure()) {
+      return null;
+    }
+    if (latest.getStatus() == RefundStatus.PROCESSING) {
+      PaymentAttempt paymentAttempt = paymentAttemptPersistencePort
+          .findById(order.getPaymentAttemptId())
+          .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_ATTEMPT_NOT_FOUND));
+      Point3RefundResult result = refreshPoint3Refund(paymentAttempt, latest);
+      applyRefundResult(order, latest, sellerUserId, latest.getReason(), result);
+      refundPersistencePort.save(latest);
+      return toDetail(order);
+    }
+    if (latest.getStatus() == RefundStatus.COMPLETED) {
       throw new BaseException(OrderErrorCode.ORDER_REFUND_ALREADY_PROCESSED);
+    }
+    return toDetail(order);
+  }
+
+  private Point3RefundResult requestPoint3Refund(
+      PaymentAttempt paymentAttempt, Refund refund, String reason) {
+    try {
+      return point3PaymentPort.refund(
+          paymentAttempt.getPoint3SessionId(),
+          refund.getAmount(),
+          reason,
+          refund.getId().toString());
+    } catch (Point3PaymentException exception) {
+      return Point3RefundResult.processing(
+          null, exception.getFailureCode(), exception.getMessage(), null);
+    }
+  }
+
+  private Point3RefundResult refreshPoint3Refund(PaymentAttempt paymentAttempt, Refund refund) {
+    Point3RefundStatusResult status;
+    try {
+      status = point3PaymentPort.getRefundStatus(paymentAttempt.getPoint3SessionId());
+    } catch (Point3PaymentException exception) {
+      return Point3RefundResult.processing(
+          refund.getProviderRefundId(), exception.getFailureCode(), exception.getMessage(), null);
+    }
+    Point3RefundResult result = findPoint3Refund(status, refund);
+    if (result.outcome() != RefundOutcome.PROCESSING) {
+      return result;
+    }
+    Point3RefundStatusResult resumed;
+    try {
+      resumed = point3PaymentPort.resumeRefund(paymentAttempt.getPoint3SessionId());
+    } catch (Point3PaymentException exception) {
+      return Point3RefundResult.processing(
+          refund.getProviderRefundId(), exception.getFailureCode(), exception.getMessage(), null);
+    }
+    return resumed.findRefund(refund.getProviderRefundId()).orElse(result);
+  }
+
+  private Point3RefundResult findPoint3Refund(Point3RefundStatusResult status, Refund refund) {
+    if (status.hasAmbiguousRefundsWithoutProviderId(refund.getProviderRefundId())) {
+      return Point3RefundResult.processing(
+          null,
+          "POINT3_REFUND_MATCH_AMBIGUOUS",
+          "Point3 refund status contains multiple refunds but local refund has no provider id",
+          null);
+    }
+    return status
+        .findRefund(refund.getProviderRefundId())
+        .orElseGet(() -> Point3RefundResult.processing(
+            refund.getProviderRefundId(), "POINT3_REFUND_PROCESSING", null, null));
+  }
+
+  private void applyRefundResult(
+      Order order, Refund refund, UUID changedBy, String reason, Point3RefundResult result) {
+    switch (result.outcome()) {
+      case COMPLETED ->
+        completeRefund(
+            order, refund, changedBy, reason, result.providerRefundId(), Instant.now(clock));
+      case PROCESSING -> {
+        refund.keepProcessing(
+            result.providerRefundId(),
+            result.failureCode(),
+            result.failureMessage(),
+            result.failureDetails());
+      }
+      case RETRYABLE, MANUAL_REQUIRED, FAILED ->
+        refund.fail(
+            result.outcome(),
+            result.providerRefundId(),
+            result.failureCode(),
+            result.failureMessage(),
+            result.failureDetails(),
+            Instant.now(clock));
     }
   }
 
@@ -189,28 +304,26 @@ public class OrderStateService implements OrderStateUseCase {
     }
   }
 
-  private void notifySellerCancelRequested(Order order) {
+  private void notifySellerRefundRequested(Order order) {
     Store store = storePersistencePort
         .findById(order.getStoreId())
         .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
     notificationCreateUseCase.create(new CreateNotificationCommand(
         store.getOwnerUserId(),
-        NotificationType.ORDER_CANCEL_REQUESTED,
+        NotificationType.ORDER_REFUND_REQUESTED,
         NotificationReferenceType.ORDER,
         order.getId(),
-        "주문 취소가 요청되었습니다.",
-        "취소 요청 주문을 확인해 주세요."));
+        "주문 환불이 요청되었습니다.",
+        "환불 요청 주문을 확인해 주세요."));
   }
 
-  private void notifyBuyerRefundResult(Order order, RefundStatus status) {
+  private void notifyBuyerRefundCompleted(Order order) {
     notificationCreateUseCase.create(new CreateNotificationCommand(
         order.getBuyerUserId(),
-        status == RefundStatus.COMPLETED
-            ? NotificationType.ORDER_REFUNDED
-            : NotificationType.ORDER_REFUND_FAILED,
+        NotificationType.ORDER_REFUNDED,
         NotificationReferenceType.ORDER,
         order.getId(),
-        status == RefundStatus.COMPLETED ? "주문 환불이 완료되었습니다." : "주문 환불에 실패했습니다.",
+        "주문 환불이 완료되었습니다.",
         "환불 내역을 확인해 주세요."));
   }
 

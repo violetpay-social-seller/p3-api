@@ -49,11 +49,19 @@ public record SellerOrderListQuery(
           .map(String::trim)
           .filter(text -> !text.isBlank())
           .map(text -> text.toUpperCase(Locale.ROOT))
-          .map(OrderStatus::valueOf)
+          .map(SellerOrderListQuery::parseStatus)
           .collect(Collectors.toUnmodifiableSet());
     } catch (IllegalArgumentException exception) {
       throw new BaseException(CommonErrorCode.INVALID_INPUT, "Invalid order status");
     }
+  }
+
+  private static OrderStatus parseStatus(String statusText) {
+    return switch (statusText) {
+      case "CANCEL_REQUESTED", "REFUND_PROCESSING" -> OrderStatus.REFUND_REQUESTED;
+      case "CANCELED" -> OrderStatus.REFUNDED;
+      default -> OrderStatus.valueOf(statusText);
+    };
   }
 
   private static OrderListDateBasis parseDateBasis(String dateBasisText) {

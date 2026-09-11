@@ -7,7 +7,9 @@ public interface OrderStateUseCase {
 
   OrderResult pickUp(CompleteOrderPickupCommand command);
 
-  OrderResult requestCancel(RequestOrderCancelCommand command);
+  OrderResult requestRefund(RequestOrderRefundCommand command);
 
   OrderDetailResult refund(RefundOrderCommand command);
+
+  OrderDetailResult refreshRefund(RefreshOrderRefundCommand command);
 }

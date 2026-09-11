@@ -147,6 +147,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTestSupport {
       order.markPickedUp();
     }
     if (status == OrderStatus.REFUNDED) {
+      order.requestRefund("테스트 환불 요청", Instant.parse(paidAt));
       order.refund("테스트 환불");
     }
     return orderJpaRepository.saveAndFlush(order);

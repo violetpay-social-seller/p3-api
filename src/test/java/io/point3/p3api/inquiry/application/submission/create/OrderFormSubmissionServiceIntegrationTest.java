@@ -314,6 +314,46 @@ class OrderFormSubmissionServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
   }
 
+  @Test
+  @DisplayName("휴게시간 픽업 요청은 영속 주문서 제출에서 다시 거절한다")
+  void rejectsSubmissionWithBreakTimePickup() {
+    Fixture fixture = prepareFixture();
+    storeSettingService.update(new UpdateStoreSettingCommand(
+        fixture.store().id(),
+        0,
+        0,
+        java.util.Arrays.stream(DayOfWeek.values())
+            .map(day -> new UpdateStoreSettingCommand.WeeklyPickupSetting(
+                day,
+                LocalTime.of(10, 0),
+                LocalTime.of(18, 0),
+                true,
+                LocalTime.of(12, 0),
+                LocalTime.of(13, 0)))
+            .toList(),
+        List.of()));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> submissionService.create(new CreateOrderFormSubmissionCommand(
+            fixture.store().id(),
+            fixture.buyer().getId(),
+            fixture.inquiry().getId(),
+            fixture.form().id(),
+            List.of(
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(0).id(),
+                    selections(selection("menu").put("text", "초코 케이크"))),
+                new CreateOrderFormSubmissionCommand.FormAnswer(
+                    fixture.form().optionGroups().get(1).id(), selections(selection("size-10")))),
+            new CreateOrderFormSubmissionCommand.PickupRequest(
+                availablePickupDate(), LocalTime.of(12, 30)),
+            new CreateOrderFormSubmissionCommand.NoticeAgreement(true),
+            CreateOrderFormSubmissionCommand.emptyReferenceAssets())));
+
+    assertEquals(OrderFormErrorCode.ORDER_FORM_PICKUP_UNAVAILABLE, exception.getErrorCode());
+  }
+
   private Fixture prepareFixture() {
     User seller = saveUser(UserRole.SELLER, "seller");
     User buyer = saveUser(UserRole.BUYER, "buyer");

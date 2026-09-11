@@ -56,7 +56,18 @@ public class StoreOrderSettingAvailabilityCalculator {
             time -> time.plusMinutes(30))
         .filter(time ->
             !date.equals(now.toLocalDate()) || !LocalDateTime.of(date, time).isBefore(now))
+        .filter(time -> isOutsideBreakTime(time, weeklySetting))
         .toList();
+  }
+
+  private boolean isOutsideBreakTime(
+      LocalTime time, StoreSettingResult.WeeklyPickupSetting weeklySetting) {
+    LocalTime breakStartTime = weeklySetting.breakStartTime();
+    LocalTime breakEndTime = weeklySetting.breakEndTime();
+    if (breakStartTime == null || breakEndTime == null) {
+      return true;
+    }
+    return time.isBefore(breakStartTime) || !time.isBefore(breakEndTime);
   }
 
   private Instant cancellationCutoffAt(LocalDate pickupDate, int cancellationCutoffDays) {

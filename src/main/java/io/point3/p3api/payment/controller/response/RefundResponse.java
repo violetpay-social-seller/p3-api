@@ -22,7 +22,8 @@ public record RefundResponse(
     String failureMessage,
     String failureDetails,
     Instant createdAt,
-    Instant completedAt) {
+    Instant completedAt,
+    Instant failedAt) {
 
   public static RefundResponse from(RefundResult result) {
     return new RefundResponse(
@@ -41,6 +42,7 @@ public record RefundResponse(
         result.failureMessage(),
         result.failureDetails(),
         result.createdAt(),
-        result.completedAt());
+        result.completedAt(),
+        result.failedAt());
   }
 }

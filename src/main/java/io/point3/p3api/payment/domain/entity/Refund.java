@@ -76,6 +76,9 @@ public class Refund {
   @Column(name = "completed_at")
   private Instant completedAt;
 
+  @Column(name = "failed_at")
+  private Instant failedAt;
+
   private Refund(
       UUID orderId,
       UUID paymentAttemptId,
@@ -140,6 +143,7 @@ public class Refund {
       this.providerRefundId = providerRefundId;
     }
     this.completedAt = completedAt;
+    this.failedAt = null;
     clearFailure();
   }
 
@@ -151,7 +155,7 @@ public class Refund {
   }
 
   public void fail() {
-    fail(RefundOutcome.FAILED, null, null, null, null);
+    fail(RefundOutcome.FAILED, null, null, null, null, Instant.now());
   }
 
   public void fail(
@@ -159,12 +163,15 @@ public class Refund {
       String providerRefundId,
       String failureCode,
       String failureMessage,
-      String failureDetails) {
+      String failureDetails,
+      Instant failedAt) {
     if (outcome == RefundOutcome.COMPLETED || outcome == RefundOutcome.PROCESSING) {
       throw new IllegalArgumentException("outcome must be a failed outcome");
     }
+    Objects.requireNonNull(failedAt, "failedAt");
     this.status = RefundStatus.FAILED;
     this.outcome = outcome;
+    this.failedAt = failedAt;
     recordProviderResult(providerRefundId, failureCode, failureMessage, failureDetails);
   }
 

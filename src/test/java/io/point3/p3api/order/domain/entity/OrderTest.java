@@ -83,6 +83,14 @@ class OrderTest {
   }
 
   @Test
+  @DisplayName("취소 요청 전 주문은 환불 완료로 변경할 수 없다")
+  void rejectsRefundBeforeRequest() {
+    Order order = createOrder();
+
+    assertThrows(IllegalStateException.class, () -> order.refund("판매자 환불 처리"));
+  }
+
+  @Test
   @DisplayName("음수 결제 금액의 주문은 생성할 수 없다")
   void rejectsNegativePaidAmount() {
     assertThrows(

@@ -46,6 +46,16 @@ public class ChatTimelineItemPublisher {
     return save(ChatTimelineItem.paymentCompleted(inquiryId, buyerUserId, orderId));
   }
 
+  public ChatTimelineItem publishOrderRefundRequested(
+      UUID inquiryId, UUID buyerUserId, UUID orderId) {
+    return save(ChatTimelineItem.orderRefundRequested(inquiryId, buyerUserId, orderId));
+  }
+
+  public ChatTimelineItem publishOrderRefundCompleted(
+      UUID inquiryId, UUID sellerUserId, UUID orderId) {
+    return save(ChatTimelineItem.orderRefundCompleted(inquiryId, sellerUserId, orderId));
+  }
+
   private ChatTimelineItem save(ChatTimelineItem item) {
     ChatTimelineItem savedItem = chatTimelineItemPort.save(item);
     inquiryListChangeEventPublisher.publishInquiryChanged(savedItem.getInquiryId());

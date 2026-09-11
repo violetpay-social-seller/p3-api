@@ -38,6 +38,12 @@ class SellerSettlementAccountTest {
     assertThrows(IllegalArgumentException.class, () -> account("A04", "encrypted-account"));
   }
 
+  @Test
+  @DisplayName("지원하지 않는 금융기관 코드를 거부한다")
+  void rejectsUnsupportedBankCode() {
+    assertThrows(IllegalArgumentException.class, () -> account("999", "encrypted-account"));
+  }
+
   private SellerSettlementAccount account(String bankCode, String encryptedAccountNumber) {
     return SellerSettlementAccount.create(
         UUID.randomUUID(),

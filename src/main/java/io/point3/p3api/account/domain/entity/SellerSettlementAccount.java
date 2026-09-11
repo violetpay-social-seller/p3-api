@@ -1,6 +1,7 @@
 package io.point3.p3api.account.domain.entity;
 
 import io.point3.p3api.account.domain.type.AccountHolderType;
+import io.point3.p3api.account.domain.type.SettlementBank;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -117,8 +118,8 @@ public class SellerSettlementAccount {
 
   private static String validBankCode(String value) {
     String bankCode = requireText(value, "bankCode");
-    if (!bankCode.matches("[0-9]{3}")) {
-      throw new IllegalArgumentException("Bank code must contain 3 digits");
+    if (SettlementBank.findByCode(bankCode).isEmpty()) {
+      throw new IllegalArgumentException("Settlement bank is not supported");
     }
     return bankCode;
   }

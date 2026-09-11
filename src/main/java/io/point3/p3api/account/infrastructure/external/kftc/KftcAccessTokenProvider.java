@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationException;
+import io.point3.p3api.account.application.port.AccountVerificationProviderError;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -56,14 +57,22 @@ public class KftcAccessTokenProvider {
     validateConfiguration();
     HttpResponse<String> response = send(tokenRequest());
     if (response.statusCode() == 401 || response.statusCode() == 403) {
-      log.warn("KFTC token authentication failed. status={}", response.statusCode());
+      AccountVerificationProviderError providerError = tokenProviderError(response);
+      log.warn(
+          "KFTC token authentication failed. status={} ,providerError={}",
+          response.statusCode(),
+          providerError);
       throw new AccountRealNameVerificationException(
-          AccountRealNameVerificationException.Type.AUTHENTICATION);
+          AccountRealNameVerificationException.Type.AUTHENTICATION, providerError);
     }
     if (response.statusCode() != 200) {
-      log.warn("KFTC token request failed. status={}", response.statusCode());
+      AccountVerificationProviderError providerError = tokenProviderError(response);
+      log.warn(
+          "KFTC token request failed. status={} ,providerError={}",
+          response.statusCode(),
+          providerError);
       throw new AccountRealNameVerificationException(
-          AccountRealNameVerificationException.Type.UNAVAILABLE);
+          AccountRealNameVerificationException.Type.UNAVAILABLE, providerError);
     }
 
     TokenResponse token = read(response.body());
@@ -124,10 +133,28 @@ public class KftcAccessTokenProvider {
     }
   }
 
+  private AccountVerificationProviderError tokenProviderError(HttpResponse<String> response) {
+    if (response.body() == null || response.body().isBlank()) {
+      return AccountVerificationProviderError.httpStatus(response.statusCode());
+    }
+    try {
+      TokenErrorResponse error = objectMapper.readValue(response.body(), TokenErrorResponse.class);
+      return new AccountVerificationProviderError(
+          response.statusCode(), error.responseCode(), error.responseMessage(), null, null);
+    } catch (IOException exception) {
+      return AccountVerificationProviderError.httpStatus(response.statusCode());
+    }
+  }
+
   private record CachedToken(String value, Instant expiresAt) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   private record TokenResponse(
       @JsonProperty("access_token") String accessToken,
       @JsonProperty("expires_in") long expiresIn) {}
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  private record TokenErrorResponse(
+      @JsonProperty("rsp_code") String responseCode,
+      @JsonProperty("rsp_message") String responseMessage) {}
 }

@@ -87,12 +87,16 @@ class KftcAccessTokenProviderTest {
   @Test
   @DisplayName("금융결제원 인증 실패를 인증 예외로 변환한다")
   void convertsAuthenticationFailure() throws Exception {
-    stubResponse(401, "{} ");
+    stubResponse(401, """
+        {"rsp_code":"O0001","rsp_message":"인증 실패"}
+        """);
 
     AccountRealNameVerificationException exception =
         assertThrows(AccountRealNameVerificationException.class, tokenProvider::accessToken);
 
     assertEquals(AccountRealNameVerificationException.Type.AUTHENTICATION, exception.getType());
+    assertEquals("O0001", exception.getProviderCode());
+    assertEquals("인증 실패", exception.getProviderError().responseMessage());
   }
 
   private KftcProperties properties(String clientId, String clientSecret) {

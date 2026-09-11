@@ -4,6 +4,7 @@ import io.point3.p3api.account.application.port.AccountRealNameVerificationExcep
 import io.point3.p3api.account.application.port.AccountRealNameVerificationPort;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationRequest;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationResult;
+import io.point3.p3api.account.application.port.AccountVerificationProviderError;
 import io.point3.p3api.account.application.port.SensitiveDataCipher;
 import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
 import io.point3.p3api.account.domain.entity.SellerSettlementAccount;
@@ -11,10 +12,12 @@ import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.account.domain.type.SettlementBank;
 import io.point3.p3api.account.domain.value.BankAccountNumber;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.DetailedBaseException;
 import io.point3.p3api.exception.code.AccountErrorCode;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +29,7 @@ public class SellerSettlementAccountService
         SellerSettlementAccountQueryUseCase,
         SettlementBankQueryUseCase {
 
-  private static final String PERSONAL_HOLDER_INFO_TYPE = "1";
+  private static final String BIRTH_DATE_HOLDER_INFO_TYPE = " ";
   private static final String BUSINESS_HOLDER_INFO_TYPE = "2";
   private static final DateTimeFormatter BIRTH_DATE_FORMAT = DateTimeFormatter.ofPattern("yyMMdd");
 
@@ -152,7 +155,7 @@ public class SellerSettlementAccountService
 
   private String holderInfoType(AccountHolderType holderType) {
     return switch (holderType) {
-      case PERSONAL -> PERSONAL_HOLDER_INFO_TYPE;
+      case PERSONAL -> BIRTH_DATE_HOLDER_INFO_TYPE;
       case BUSINESS -> BUSINESS_HOLDER_INFO_TYPE;
     };
   }
@@ -166,12 +169,38 @@ public class SellerSettlementAccountService
 
   private BaseException toBaseException(AccountRealNameVerificationException exception) {
     return switch (exception.getType()) {
-      case HOLDER_MISMATCH -> new BaseException(AccountErrorCode.ACCOUNT_HOLDER_MISMATCH);
-      case REJECTED -> new BaseException(AccountErrorCode.ACCOUNT_VERIFICATION_REJECTED);
+      case HOLDER_MISMATCH ->
+        detailedException(
+            AccountErrorCode.ACCOUNT_HOLDER_MISMATCH,
+            "입력한 예금주명과 계좌 예금주명이 일치하지 않습니다.",
+            exception.getProviderError());
+      case REJECTED ->
+        detailedException(
+            AccountErrorCode.ACCOUNT_VERIFICATION_REJECTED,
+            rejectionMessage(exception.getProviderError()),
+            exception.getProviderError());
       case CONFIGURATION ->
         new BaseException(AccountErrorCode.ACCOUNT_VERIFICATION_CONFIGURATION_INVALID);
       case AUTHENTICATION, INVALID_RESPONSE, UNAVAILABLE ->
-        new BaseException(AccountErrorCode.ACCOUNT_VERIFICATION_UNAVAILABLE);
+        detailedException(
+            AccountErrorCode.ACCOUNT_VERIFICATION_UNAVAILABLE,
+            "계좌 인증 기관 연결이 원활하지 않습니다. 잠시 후 다시 시도해주세요.",
+            exception.getProviderError());
     };
+  }
+
+  private BaseException detailedException(
+      AccountErrorCode errorCode, String detail, AccountVerificationProviderError providerError) {
+    Map<String, Object> metadata = providerError == null || !providerError.hasProviderValue()
+        ? null
+        : providerError.toMetadata();
+    return new DetailedBaseException(errorCode, detail, metadata);
+  }
+
+  private String rejectionMessage(AccountVerificationProviderError providerError) {
+    if (providerError != null && providerError.primaryMessage() != null) {
+      return providerError.primaryMessage();
+    }
+    return "계좌 실명인증이 거절되었습니다. 입력한 계좌 정보를 확인해주세요.";
   }
 }

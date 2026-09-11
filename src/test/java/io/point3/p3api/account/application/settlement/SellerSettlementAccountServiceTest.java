@@ -12,14 +12,17 @@ import io.point3.p3api.account.application.port.AccountRealNameVerificationExcep
 import io.point3.p3api.account.application.port.AccountRealNameVerificationPort;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationRequest;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationResult;
+import io.point3.p3api.account.application.port.AccountVerificationProviderError;
 import io.point3.p3api.account.application.port.SensitiveDataCipher;
 import io.point3.p3api.account.application.settlement.port.SellerSettlementAccountPersistencePort;
 import io.point3.p3api.account.domain.entity.SellerSettlementAccount;
 import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.DetailedBaseException;
 import io.point3.p3api.exception.code.AccountErrorCode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +69,7 @@ class SellerSettlementAccountServiceTest {
         ArgumentCaptor.forClass(AccountRealNameVerificationRequest.class);
     verify(verificationPort).verify(requestCaptor.capture());
     assertEquals("900102", requestCaptor.getValue().accountHolderInfo());
-    assertEquals("1", requestCaptor.getValue().accountHolderInfoType());
+    assertEquals(" ", requestCaptor.getValue().accountHolderInfoType());
 
     ArgumentCaptor<SellerSettlementAccount> accountCaptor =
         ArgumentCaptor.forClass(SellerSettlementAccount.class);
@@ -125,6 +128,37 @@ class SellerSettlementAccountServiceTest {
             null)));
 
     assertEquals(AccountErrorCode.ACCOUNT_HOLDER_MISMATCH, exception.getErrorCode());
+    verify(persistencePort, never()).save(any());
+  }
+
+  @Test
+  @DisplayName("실명조회 거절 사유를 API 응답용 상세 정보로 변환한다")
+  void convertsVerificationProviderErrorDetail() {
+    when(verificationPort.verify(any()))
+        .thenThrow(new AccountRealNameVerificationException(
+            AccountRealNameVerificationException.Type.REJECTED,
+            new AccountVerificationProviderError(
+                200, "A0000", null, "123", "계좌번호 오류")));
+
+    DetailedBaseException exception = assertThrows(
+        DetailedBaseException.class,
+        () -> service.register(new RegisterSellerSettlementAccountCommand(
+            UUID.randomUUID(),
+            "004",
+            "123456789012",
+            "홍길동",
+            AccountHolderType.PERSONAL,
+            LocalDate.of(1990, 1, 2),
+            null)));
+
+    assertEquals(AccountErrorCode.ACCOUNT_VERIFICATION_REJECTED, exception.getErrorCode());
+    assertEquals("계좌번호 오류", exception.getDetail());
+    @SuppressWarnings("unchecked")
+    Map<String, Object> provider =
+        (Map<String, Object>) exception.getMetadata().get("provider");
+    assertEquals("KFTC_OPEN_BANKING", provider.get("name"));
+    assertEquals("123", provider.get("bankResponseCode"));
+    assertEquals("계좌번호 오류", provider.get("bankResponseMessage"));
     verify(persistencePort, never()).save(any());
   }
 

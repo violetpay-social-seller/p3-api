@@ -1,9 +1,11 @@
 package io.point3.p3api.common.web.response;
 
 import io.point3.p3api.exception.BaseException;
+import io.point3.p3api.exception.DetailedBaseException;
 import io.point3.p3api.exception.ErrorCode;
 import io.point3.p3api.exception.code.CommonErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +24,23 @@ public class GlobalExceptionHandler {
     ErrorCode errorCode = e.getErrorCode();
 
     String instance = request.getRequestURI();
+    String detail = null;
+    Map<String, Object> metadata = null;
+    if (e instanceof DetailedBaseException detailedException) {
+      detail = detailedException.getDetail();
+      metadata = detailedException.getMetadata();
+    }
 
     log.warn(
-        "Business exception. code={} ,title={} ,status={} ,type={}",
+        "Business exception. code={} ,title={} ,status={} ,type={} ,detail={} ,metadata={}",
         errorCode.getCode(),
         errorCode.getTitle(),
         errorCode.getStatus(),
-        errorCode.getType());
+        errorCode.getType(),
+        detail,
+        metadata);
     return ResponseEntity.status(errorCode.getStatus())
-        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance)));
+        .body(ApiResponse.fail(ErrorResult.of(errorCode, instance, detail, metadata)));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)

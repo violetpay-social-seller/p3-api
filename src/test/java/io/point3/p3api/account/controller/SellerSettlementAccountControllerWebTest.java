@@ -19,9 +19,12 @@ import io.point3.p3api.account.application.settlement.SettlementBankResult;
 import io.point3.p3api.account.domain.type.AccountHolderType;
 import io.point3.p3api.common.tenant.web.CurrentStoreId;
 import io.point3.p3api.common.web.response.GlobalExceptionHandler;
+import io.point3.p3api.exception.DetailedBaseException;
+import io.point3.p3api.exception.code.AccountErrorCode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -104,6 +107,45 @@ class SellerSettlementAccountControllerWebTest {
                 }
                 """))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  @DisplayName("정산계좌 실명조회 실패 상세를 응답에 포함한다")
+  void returnsVerificationFailureDetail() throws Exception {
+    when(registerUseCase.register(any()))
+        .thenThrow(new DetailedBaseException(
+            AccountErrorCode.ACCOUNT_VERIFICATION_REJECTED,
+            "계좌번호 오류",
+            Map.of(
+                "provider",
+                Map.of(
+                    "name",
+                    "KFTC_OPEN_BANKING",
+                    "responseCode",
+                    "A0000",
+                    "bankResponseCode",
+                    "123",
+                    "bankResponseMessage",
+                    "계좌번호 오류"))));
+
+    mockMvc
+        .perform(put("/seller/store/settlement-account")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "bankCode":"004",
+                  "accountNumber":"123456789012",
+                  "accountHolderName":"홍길동",
+                  "holderType":"PERSONAL",
+                  "birthDate":"1990-01-02"
+                }
+                """))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.code").value("ACCOUNT_VERIFICATION_REJECTED_400"))
+        .andExpect(jsonPath("$.error.detail").value("계좌번호 오류"))
+        .andExpect(jsonPath("$.error.metadata.provider.name").value("KFTC_OPEN_BANKING"))
+        .andExpect(jsonPath("$.error.metadata.provider.bankResponseCode").value("123"))
+        .andExpect(jsonPath("$.error.metadata.provider.bankResponseMessage").value("계좌번호 오류"));
   }
 
   @Test

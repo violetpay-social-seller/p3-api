@@ -1,5 +1,6 @@
 package io.point3.p3api.order.application.state;
 
+import io.point3.p3api.chat.application.timeline.ChatTimelineItemPublisher;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderConfirmationErrorCode;
 import io.point3.p3api.exception.code.OrderErrorCode;
@@ -65,6 +66,7 @@ public class OrderStateService implements OrderStateUseCase {
   private final NotificationCreateUseCase notificationCreateUseCase;
   private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
   private final OrderReferenceAssetDeliveryService orderReferenceAssetDeliveryService;
+  private final ChatTimelineItemPublisher chatTimelineItemPublisher;
 
   @Override
   public OrderResult pickUp(CompleteOrderPickupCommand command) {
@@ -92,6 +94,8 @@ public class OrderStateService implements OrderStateUseCase {
         command.reason(),
         () -> order.requestRefund(command.reason(), Instant.now(clock)));
     notifySellerRefundRequested(order);
+    chatTimelineItemPublisher.publishOrderRefundRequested(
+        order.getInquiryId(), command.buyerUserId(), order.getId());
 
     return toResult(order);
   }
@@ -168,6 +172,8 @@ public class OrderStateService implements OrderStateUseCase {
     changeStatus(order, changedBy, reason, () -> order.refund(reason));
     refund.complete(providerRefundId, completedAt);
     notifyBuyerRefundCompleted(order);
+    chatTimelineItemPublisher.publishOrderRefundCompleted(
+        order.getInquiryId(), changedBy, order.getId());
   }
 
   private void validateRefundable(Order order) {
@@ -268,7 +274,8 @@ public class OrderStateService implements OrderStateUseCase {
             result.providerRefundId(),
             result.failureCode(),
             result.failureMessage(),
-            result.failureDetails());
+            result.failureDetails(),
+            Instant.now(clock));
     }
   }
 

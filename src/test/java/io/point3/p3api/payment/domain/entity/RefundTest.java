@@ -47,6 +47,27 @@ class RefundTest {
   }
 
   @Test
+  @DisplayName("환불 실패는 결과와 실패 시각을 기록한다")
+  void recordsFailureResultAndFailedAt() {
+    Refund refund = Refund.create(
+        UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 30_400, 80, "구매자 요청");
+    Instant failedAt = Instant.parse("2026-08-25T00:00:00Z");
+
+    refund.fail(
+        RefundOutcome.MANUAL_REQUIRED,
+        null,
+        "SETTLEMENT_DEADLINE_EXCEEDED",
+        "정산 마감일이 지나 환불을 요청할 수 없습니다",
+        "{\"paymentSessionId\":\"pymt_sess-test\"}",
+        failedAt);
+
+    assertEquals(RefundStatus.FAILED, refund.getStatus());
+    assertEquals(RefundOutcome.MANUAL_REQUIRED, refund.getOutcome());
+    assertEquals("SETTLEMENT_DEADLINE_EXCEEDED", refund.getFailureCode());
+    assertEquals(failedAt, refund.getFailedAt());
+  }
+
+  @Test
   @DisplayName("처리 중 환불의 기존 Point3 실패 원인은 다음 조회 응답에 원인이 없어도 보존한다")
   void preservesProcessingFailureCauseWhenNextProviderResultHasNoFailure() {
     Refund refund = Refund.create(

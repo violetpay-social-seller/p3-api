@@ -90,6 +90,16 @@ public class ChatTimelineItem {
     return create(inquiryId, buyerUserId, ChatTimelineItemType.PAYMENT_COMPLETED, orderId);
   }
 
+  public static ChatTimelineItem orderRefundRequested(
+      UUID inquiryId, UUID buyerUserId, UUID orderId) {
+    return create(inquiryId, buyerUserId, ChatTimelineItemType.ORDER_REFUND_REQUESTED, orderId);
+  }
+
+  public static ChatTimelineItem orderRefundCompleted(
+      UUID inquiryId, UUID sellerUserId, UUID orderId) {
+    return create(inquiryId, sellerUserId, ChatTimelineItemType.ORDER_REFUND_COMPLETED, orderId);
+  }
+
   private static ChatTimelineItem create(
       UUID inquiryId, UUID senderUserId, ChatTimelineItemType type, UUID referenceId) {
     Objects.requireNonNull(inquiryId, "inquiryId");

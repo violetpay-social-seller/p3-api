@@ -3,7 +3,8 @@ ALTER TABLE refunds
     ADD COLUMN provider_refund_id VARCHAR(128),
     ADD COLUMN failure_code VARCHAR(100),
     ADD COLUMN failure_message TEXT,
-    ADD COLUMN failure_details JSONB;
+    ADD COLUMN failure_details JSONB,
+    ADD COLUMN failed_at TIMESTAMPTZ;
 
 ALTER TABLE orders
     RENAME COLUMN cancel_requested_at TO refund_requested_at;
@@ -26,6 +27,10 @@ SET outcome = CASE
     ELSE 'PROCESSING'
 END
 WHERE outcome IS NULL;
+
+UPDATE refunds
+SET failed_at = COALESCE(completed_at, created_at)
+WHERE status = 'FAILED' AND failed_at IS NULL;
 
 ALTER TABLE refunds
     ALTER COLUMN outcome SET NOT NULL;

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.IntegrationTestSupport;
+import io.point3.p3api.chat.domain.type.ChatTimelineItemType;
+import io.point3.p3api.chat.infrastructure.persistence.ChatTimelineItemJpaRepository;
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderErrorCode;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
@@ -94,6 +96,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private NotificationJpaRepository notificationJpaRepository;
+
+  @Autowired
+  private ChatTimelineItemJpaRepository chatTimelineItemJpaRepository;
 
   @Autowired
   private RecordingPoint3PaymentPort point3PaymentPort;
@@ -237,12 +242,17 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
             .stream()
             .filter(notification -> notification.getType() == NotificationType.ORDER_REFUNDED)
             .count());
+    assertEquals(1, timelineCount(
+        fixture.inquiry().getId(), ChatTimelineItemType.ORDER_REFUND_REQUESTED));
+    assertEquals(1, timelineCount(
+        fixture.inquiry().getId(), ChatTimelineItemType.ORDER_REFUND_COMPLETED));
   }
 
   @Test
   @DisplayName("판매자 환불은 사유가 없으면 기본 사유로 처리한다")
   void refundsWithDefaultReason() {
     Fixture fixture = prepareFixture("order-refund-default");
+    requestRefund(fixture);
 
     OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), null));
@@ -259,6 +269,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         "order-partial-refund",
         6,
         List.of(new PolicyRule(7, 100), new PolicyRule(5, 80), new PolicyRule(3, 50)));
+    requestRefund(fixture);
 
     OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "정책 부분 환불"));
@@ -277,6 +288,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
         "order-zero-refund",
         2,
         List.of(new PolicyRule(7, 100), new PolicyRule(5, 80), new PolicyRule(3, 50)));
+    requestRefund(fixture);
 
     OrderDetailResult refunded = orderStateUseCase.refund(RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 가능 기간 경과"));
@@ -292,6 +304,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("완료된 주문 환불은 다시 요청할 수 없다")
   void rejectsDuplicateRefund() {
     Fixture fixture = prepareFixture("order-duplicate-refund");
+    requestRefund(fixture);
     RefundOrderCommand command = RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "중복 환불");
     orderStateUseCase.refund(command);
@@ -307,6 +320,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("Point3 EOB 차단은 재시도 가능한 실패로 남기고 같은 주문의 재시도를 허용한다")
   void recordsRetryableRefundAndAllowsRetry() {
     Fixture fixture = prepareFixture("order-refund-retry");
+    requestRefund(fixture);
     RefundOrderCommand command = RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 재시도");
     point3PaymentPort.refundResult = Point3RefundResult.retryable(
@@ -314,7 +328,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
     OrderDetailResult failed = orderStateUseCase.refund(command);
 
-    assertEquals(OrderStatus.PAID, failed.order().status());
+    assertEquals(OrderStatus.REFUND_REQUESTED, failed.order().status());
     assertEquals(RefundStatus.FAILED, failed.refunds().getFirst().status());
     assertEquals(RefundOutcome.RETRYABLE, failed.refunds().getFirst().outcome());
     assertEquals("EOB_WINDOW_BLOCKED", failed.refunds().getFirst().failureCode());
@@ -362,6 +376,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("Point3 결과 미확정은 환불과 주문을 처리 중으로 남기고 실패 알림을 보내지 않는다")
   void keepsProcessingWhenRefundResultIsUncertain() {
     Fixture fixture = prepareFixture("order-refund-processing");
+    requestRefund(fixture);
     point3PaymentPort.refundResult = Point3RefundResult.processing(
         "ref-processing",
         "REFUND_TEMPORARY_UNAVAILABLE",
@@ -371,7 +386,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     OrderDetailResult result = orderStateUseCase.refund(RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "결과 미확정"));
 
-    assertEquals(OrderStatus.PAID, result.order().status());
+    assertEquals(OrderStatus.REFUND_REQUESTED, result.order().status());
     assertEquals(RefundStatus.PROCESSING, result.refunds().getFirst().status());
     assertEquals(RefundOutcome.PROCESSING, result.refunds().getFirst().outcome());
     assertEquals("ref-processing", result.refunds().getFirst().providerRefundId());
@@ -383,6 +398,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("처리 중 환불 재요청은 새 환불 요청을 보내지 않고 상태 조회로 완료 처리한다")
   void refreshesProcessingRefundWithoutDuplicateRequest() {
     Fixture fixture = prepareFixture("order-refund-processing-duplicate");
+    requestRefund(fixture);
     point3PaymentPort.refundResult = Point3RefundResult.processing(
         "ref-processing", "REFUND_TEMPORARY_UNAVAILABLE", "처리 중", null);
 
@@ -415,6 +431,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("처리 중 환불 refresh가 원인 없는 처리 중 응답을 받아도 기존 Point3 원인을 보존한다")
   void preservesProcessingRefundFailureCauseOnRefresh() {
     Fixture fixture = prepareFixture("order-refund-processing-cause");
+    requestRefund(fixture);
     point3PaymentPort.refundResult = Point3RefundResult.processing(
         "ref-processing",
         "REFUND_TEMPORARY_UNAVAILABLE",
@@ -440,7 +457,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     OrderDetailResult result = orderStateUseCase.refreshRefund(RefreshOrderRefundCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId()));
 
-    assertEquals(OrderStatus.PAID, result.order().status());
+    assertEquals(OrderStatus.REFUND_REQUESTED, result.order().status());
     assertEquals(RefundStatus.PROCESSING, result.refunds().getFirst().status());
     assertEquals("REFUND_TEMPORARY_UNAVAILABLE", result.refunds().getFirst().failureCode());
     assertEquals(
@@ -453,6 +470,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("provider id가 없는 처리 중 환불은 Point3 환불 엔트리가 여러 개면 완료로 오판하지 않는다")
   void keepsProcessingWhenPoint3RefundMatchIsAmbiguous() {
     Fixture fixture = prepareFixture("order-refund-ambiguous");
+    requestRefund(fixture);
     point3PaymentPort.refundResult = Point3RefundResult.processing(
         null, "POINT3_REFUND_REQUEST_LOST", "환불 요청 응답을 확인하지 못했습니다.", null);
 
@@ -472,7 +490,7 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
     OrderDetailResult result = orderStateUseCase.refreshRefund(RefreshOrderRefundCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId()));
 
-    assertEquals(OrderStatus.PAID, result.order().status());
+    assertEquals(OrderStatus.REFUND_REQUESTED, result.order().status());
     assertEquals(RefundStatus.PROCESSING, result.refunds().getFirst().status());
     assertEquals("POINT3_REFUND_MATCH_AMBIGUOUS", result.refunds().getFirst().failureCode());
     assertEquals(0, refundCompletedNotificationCount(fixture.buyer().getId()));
@@ -482,12 +500,13 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   @DisplayName("Point3 네트워크 오류는 처리 중으로 남기고 refresh에서 상태 조회 결과로 완료한다")
   void refreshesAfterNetworkError() {
     Fixture fixture = prepareFixture("order-refund-network");
+    requestRefund(fixture);
     point3PaymentPort.failRefundRequest = true;
 
     OrderDetailResult processing = orderStateUseCase.refund(RefundOrderCommand.of(
         fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "네트워크 오류"));
 
-    assertEquals(OrderStatus.PAID, processing.order().status());
+    assertEquals(OrderStatus.REFUND_REQUESTED, processing.order().status());
     assertEquals(RefundStatus.PROCESSING, processing.refunds().getFirst().status());
 
     point3PaymentPort.statusResult = new Point3RefundStatusResult(
@@ -507,15 +526,17 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
-  @DisplayName("결제완료 주문도 판매자가 직접 환불 완료할 수 있다")
-  void refundsPaidOrderDirectly() {
+  @DisplayName("구매자 취소 요청 전 판매자 환불은 차단한다")
+  void rejectsSellerRefundBeforeBuyerRequest() {
     Fixture fixture = prepareFixture("order-direct-refund");
 
-    OrderDetailResult result = orderStateUseCase.refund(RefundOrderCommand.of(
-        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "직접 환불"));
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderStateUseCase.refund(RefundOrderCommand.of(
+            fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "직접 환불")));
 
-    assertEquals(OrderStatus.REFUNDED, result.order().status());
-    assertEquals(RefundStatus.COMPLETED, result.refunds().getFirst().status());
+    assertEquals(OrderErrorCode.ORDER_STATUS_FORBIDDEN, exception.getErrorCode());
+    assertEquals(0, point3PaymentPort.refundCallCount);
   }
 
   @Test
@@ -553,6 +574,18 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   private Fixture prepareFixture(String prefix) {
     return prepareFixture(prefix, 7, List.of(new PolicyRule(0, 100)));
+  }
+
+  private OrderResult requestRefund(Fixture fixture) {
+    return orderStateUseCase.requestRefund(RequestOrderRefundCommand.of(
+        fixture.order().getId(), fixture.buyer().getId(), "취소 요청"));
+  }
+
+  private long timelineCount(UUID inquiryId, ChatTimelineItemType type) {
+    return chatTimelineItemJpaRepository.findAll().stream()
+        .filter(item -> item.getInquiryId().equals(inquiryId))
+        .filter(item -> item.getType() == type)
+        .count();
   }
 
   private Fixture prepareFixture(

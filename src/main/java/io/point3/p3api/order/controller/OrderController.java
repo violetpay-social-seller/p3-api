@@ -61,10 +61,10 @@ public class OrderController {
   public ApiResponse<OrderResponse> requestRefund(
       @PathVariable UUID orderId,
       @Authenticated CurrentUser currentUser,
-      @Valid @RequestBody OrderCancelRequest request) {
+      @Valid @RequestBody(required = false) OrderCancelRequest request) {
     RoleGuard.requireBuyer(currentUser);
     return ApiResponse.ok(OrderResponse.from(orderStateUseCase.requestRefund(
-        RequestOrderRefundCommand.of(orderId, currentUser.userId(), request.reason()))));
+        RequestOrderRefundCommand.of(orderId, currentUser.userId(), refundReason(request)))));
   }
 
   @GetMapping("/seller/orders")
@@ -141,6 +141,10 @@ public class OrderController {
   }
 
   private String refundReason(SellerOrderRefundRequest request) {
+    return request == null ? null : request.reason();
+  }
+
+  private String refundReason(OrderCancelRequest request) {
     return request == null ? null : request.reason();
   }
 }

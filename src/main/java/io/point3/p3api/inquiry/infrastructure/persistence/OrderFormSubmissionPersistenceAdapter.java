@@ -28,6 +28,11 @@ public class OrderFormSubmissionPersistenceAdapter implements OrderFormSubmissio
   }
 
   @Override
+  public Optional<OrderFormSubmission> findByIdForUpdate(UUID submissionId) {
+    return orderFormSubmissionJpaRepository.findByIdForUpdate(submissionId);
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public List<OrderFormSubmission> findAllByInquiryId(UUID inquiryId) {
     return orderFormSubmissionJpaRepository.findAllByInquiryIdOrderBySubmittedAtDesc(inquiryId);

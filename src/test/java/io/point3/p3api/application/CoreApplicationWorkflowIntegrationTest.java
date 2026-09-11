@@ -603,6 +603,7 @@ class CoreApplicationWorkflowIntegrationTest extends IntegrationTestSupport {
   }
 
   private SendOrderConfirmationResult sendConfirmation(Fixture fixture, String title) {
+    fixture.submission().markSellerViewed(Instant.now());
     return orderConfirmationService.send(new SendOrderConfirmationCommand(
         fixture.inquiry().getId(),
         fixture.store().id(),

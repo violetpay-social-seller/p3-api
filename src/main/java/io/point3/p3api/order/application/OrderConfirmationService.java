@@ -61,8 +61,9 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     Inquiry inquiry =
         inquiryChatAccessService.getSellerInquiry(command.inquiryId(), command.storeId());
 
-    // 최신 제출 주문서가 현재 채팅방 소속인지 검증
+    // 발행 대상 주문서가 현재 채팅방 소속인지 검증
     OrderFormSubmission submission = findOrderFormSubmission(command, inquiry);
+    validateSellerViewed(submission);
     OrderFormResult template =
         orderFormQueryUseCase.getSellerTemplate(command.storeId(), submission.getTemplateId());
     ConfirmationAmount amount = calculateAmount(submission, command);
@@ -128,10 +129,7 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
   private OrderFormSubmission findOrderFormSubmission(
       SendOrderConfirmationCommand command, Inquiry inquiry) {
     if (command.orderFormSubmissionId() == null) {
-      return orderFormSubmissionPersistencePort.findAllByInquiryId(inquiry.getId()).stream()
-          .findFirst()
-          .orElseThrow(() ->
-              new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID);
     }
 
     OrderFormSubmission submission = orderFormSubmissionPersistencePort
@@ -144,6 +142,12 @@ public class OrderConfirmationService implements SendOrderConfirmationUseCase {
     }
 
     return submission;
+  }
+
+  private void validateSellerViewed(OrderFormSubmission submission) {
+    if (!submission.isSellerViewed()) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_NOT_VIEWED);
+    }
   }
 
   private ConfirmationAmount calculateAmount(

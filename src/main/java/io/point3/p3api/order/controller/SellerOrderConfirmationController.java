@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -42,9 +43,12 @@ public class SellerOrderConfirmationController {
 
   @GetMapping("/preview")
   public ApiResponse<OrderConfirmationPreviewResponse> getPreview(
-      @PathVariable UUID inquiryId, @CurrentStoreId UUID storeId) {
-    return ApiResponse.ok(OrderConfirmationPreviewResponse.from(
-        orderConfirmationPreviewQueryService.getPreview(inquiryId, storeId)));
+      @PathVariable UUID inquiryId,
+      @CurrentStoreId UUID storeId,
+      @RequestParam(required = false) UUID orderFormSubmissionId) {
+    return ApiResponse.ok(
+        OrderConfirmationPreviewResponse.from(orderConfirmationPreviewQueryService.getPreview(
+            inquiryId, storeId, orderFormSubmissionId)));
   }
 
   @GetMapping

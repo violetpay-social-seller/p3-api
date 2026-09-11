@@ -18,6 +18,8 @@ public record OrderFormSubmissionResponse(
     List<ReferenceAssetResponse> referenceAssets,
     List<OrderOptionRowResponse> optionRows,
     boolean cancellationRefundAgreed,
+    Instant sellerViewedAt,
+    boolean sellerViewed,
     Instant submittedAt) {
 
   public OrderFormSubmissionResponse {
@@ -37,6 +39,8 @@ public record OrderFormSubmissionResponse(
         submission.referenceAssets().stream().map(ReferenceAssetResponse::from).toList(),
         submission.optionRows().stream().map(OrderOptionRowResponse::from).toList(),
         submission.cancellationRefundAgreed(),
+        submission.sellerViewedAt(),
+        submission.sellerViewed(),
         submission.submittedAt());
   }
 

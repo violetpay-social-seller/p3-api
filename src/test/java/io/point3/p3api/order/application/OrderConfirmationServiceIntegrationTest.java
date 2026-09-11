@@ -216,6 +216,30 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("판매자가 확인하지 않은 제출 주문서의 주문확인서 전송은 거절한다")
+  void rejectsUnviewedSubmission() {
+    Fixture fixture = prepareFixture(false, false);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderConfirmationService.send(new SendOrderConfirmationCommand(
+            fixture.inquiry().getId(),
+            fixture.store().id(),
+            fixture.seller().getId(),
+            fixture.submission().getId(),
+            "초코 케이크 1호",
+            "초코 시트",
+            38000,
+            Instant.parse("2030-08-30T04:30:00Z"),
+            List.of(),
+            null)));
+
+    assertEquals(
+        OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_NOT_VIEWED,
+        exception.getErrorCode());
+  }
+
+  @Test
   @DisplayName("주문확인서 미리보기는 최신 제출 주문서의 스냅샷 가격을 합산한다")
   void previewsSubmissionSnapshotAmount() {
     Fixture fixture = prepareFixture();
@@ -226,6 +250,21 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     assertEquals(fixture.submission().getId(), preview.orderFormSubmissionId());
     assertEquals("주문서", preview.confirmationTitle());
     assertEquals(Instant.parse("2030-08-30T04:30:00Z"), preview.pickupAt());
+    assertEquals(38000, preview.baseAmount());
+  }
+
+  @Test
+  @DisplayName("주문확인서 미리보기는 지정한 확인 완료 주문서의 스냅샷을 사용한다")
+  void previewsSelectedSubmissionSnapshotAmount() {
+    Fixture fixture = prepareFixture();
+    OrderFormSubmission latest = submitOrderForm(
+        fixture.store().id(), fixture.buyer().getId(), fixture.inquiry(), fixture.form(), true);
+    latest.markSellerViewed(Instant.parse("2026-08-30T00:00:00Z"));
+
+    OrderConfirmationPreview preview = orderConfirmationPreviewQueryService.getPreview(
+        fixture.inquiry().getId(), fixture.store().id(), fixture.submission().getId());
+
+    assertEquals(fixture.submission().getId(), preview.orderFormSubmissionId());
     assertEquals(38000, preview.baseAmount());
   }
 
@@ -384,6 +423,10 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private Fixture prepareFixture(boolean usePriceLabel) {
+    return prepareFixture(usePriceLabel, true);
+  }
+
+  private Fixture prepareFixture(boolean usePriceLabel, boolean sellerViewed) {
     User seller = saveUser(UserRole.SELLER, "seller");
     User buyer = saveUser(UserRole.BUYER, "buyer");
     StoreResult store = storeService.create(new CreateStoreCommand(
@@ -413,6 +456,9 @@ class OrderConfirmationServiceIntegrationTest extends IntegrationTestSupport {
     savePickupSettings(store.id());
     Inquiry inquiry = inquiryOpenService.open(OpenInquiryCommand.of(store.id(), buyer.getId()));
     OrderFormSubmission submission = submitOrderForm(store.id(), buyer.getId(), inquiry, form);
+    if (sellerViewed) {
+      submission.markSellerViewed(Instant.parse("2026-08-30T00:00:00Z"));
+    }
 
     return new Fixture(seller, buyer, store, form, inquiry, submission);
   }

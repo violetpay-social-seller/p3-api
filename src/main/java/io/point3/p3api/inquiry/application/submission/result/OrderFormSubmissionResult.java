@@ -19,6 +19,7 @@ public record OrderFormSubmissionResult(
     List<OrderFormReferenceAssetResult> referenceAssets,
     List<OrderOptionRow> optionRows,
     boolean cancellationRefundAgreed,
+    Instant sellerViewedAt,
     Instant submittedAt) {
 
   public OrderFormSubmissionResult {
@@ -42,7 +43,12 @@ public record OrderFormSubmissionResult(
         referenceAssets,
         optionRows,
         submission.isCancellationRefundAgreed(),
+        submission.getSellerViewedAt(),
         submission.getSubmittedAt());
+  }
+
+  public boolean sellerViewed() {
+    return sellerViewedAt != null;
   }
 
   @Override

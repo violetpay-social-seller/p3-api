@@ -19,13 +19,14 @@ public class StoreOrderSettingAvailabilityCalculator {
       LocalDate date,
       StoreSettingResult.WeeklyPickupSetting weeklySetting,
       boolean holiday,
-      LocalDateTime earliestPickupAt,
+      LocalDate earliestPickupDate,
+      LocalDateTime now,
       int cancellationCutoffDays) {
     if (weeklySetting == null || !weeklySetting.enabled() || holiday) {
       return unavailable(date, holiday, cancellationCutoffDays);
     }
 
-    List<LocalTime> pickupSlots = getPickupSlots(date, weeklySetting, earliestPickupAt);
+    List<LocalTime> pickupSlots = getPickupSlots(date, weeklySetting, earliestPickupDate, now);
 
     return StoreOrderSettingDateAvailabilityResult.from(
         date,
@@ -44,12 +45,17 @@ public class StoreOrderSettingAvailabilityCalculator {
   private List<LocalTime> getPickupSlots(
       LocalDate date,
       StoreSettingResult.WeeklyPickupSetting weeklySetting,
-      LocalDateTime earliestPickupAt) {
+      LocalDate earliestPickupDate,
+      LocalDateTime now) {
+    if (date.isBefore(earliestPickupDate)) {
+      return List.of();
+    }
     return java.util.stream.Stream.iterate(
             weeklySetting.startTime(),
             time -> time.isBefore(weeklySetting.endTime()),
             time -> time.plusMinutes(30))
-        .filter(time -> !LocalDateTime.of(date, time).isBefore(earliestPickupAt))
+        .filter(time ->
+            !date.equals(now.toLocalDate()) || !LocalDateTime.of(date, time).isBefore(now))
         .toList();
   }
 

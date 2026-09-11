@@ -40,8 +40,9 @@ public class StoreOrderSettingAvailabilityQueryService
     Map<java.time.DayOfWeek, StoreSettingResult.WeeklyPickupSetting> weeklySettings =
         toWeeklySettings(setting);
     Set<LocalDate> holidays = Set.copyOf(setting.holidays());
-    LocalDateTime earliestPickupAt = LocalDateTime.ofInstant(clock.instant(), KOREA_ZONE_ID)
-        .plusMinutes(setting.leadTimeMinutes());
+    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), KOREA_ZONE_ID);
+    LocalDate earliestPickupDate =
+        now.toLocalDate().plusDays(toLeadTimeDays(setting.leadTimeMinutes()));
 
     return StoreOrderSettingAvailabilityResult.from(
         setting,
@@ -50,7 +51,8 @@ public class StoreOrderSettingAvailabilityQueryService
                 date,
                 weeklySettings.get(date.getDayOfWeek()),
                 holidays.contains(date),
-                earliestPickupAt,
+                earliestPickupDate,
+                now,
                 setting.cancellationCutoffDays()))
             .toList());
   }
@@ -70,5 +72,12 @@ public class StoreOrderSettingAvailabilityQueryService
         new EnumMap<>(java.time.DayOfWeek.class);
     setting.weeklyPickupSettings().forEach(item -> weeklySettings.put(item.dayOfWeek(), item));
     return weeklySettings;
+  }
+
+  private long toLeadTimeDays(int leadTimeMinutes) {
+    if (leadTimeMinutes <= 0) {
+      return 0;
+    }
+    return Math.ceilDiv(leadTimeMinutes, 24 * 60);
   }
 }

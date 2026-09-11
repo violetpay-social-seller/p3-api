@@ -6,7 +6,7 @@ import lombok.Getter;
 public class AccountRealNameVerificationException extends RuntimeException {
 
   private final Type type;
-  private final String providerCode;
+  private final AccountVerificationProviderError providerError;
 
   public AccountRealNameVerificationException(Type type) {
     this(type, null, null);
@@ -17,13 +17,23 @@ public class AccountRealNameVerificationException extends RuntimeException {
   }
 
   public AccountRealNameVerificationException(Type type, String providerCode) {
-    this(type, providerCode, null);
+    this(type, new AccountVerificationProviderError(null, providerCode, null, null, null), null);
   }
 
-  private AccountRealNameVerificationException(Type type, String providerCode, Throwable cause) {
+  public AccountRealNameVerificationException(
+      Type type, AccountVerificationProviderError providerError) {
+    this(type, providerError, null);
+  }
+
+  public AccountRealNameVerificationException(
+      Type type, AccountVerificationProviderError providerError, Throwable cause) {
     super(type.name(), cause);
     this.type = type;
-    this.providerCode = providerCode;
+    this.providerError = providerError;
+  }
+
+  public String getProviderCode() {
+    return providerError == null ? null : providerError.primaryCode();
   }
 
   public enum Type {

@@ -100,7 +100,12 @@ class KftcAccountRealNameVerificationAdapterTest {
   @DisplayName("금융결제원 실패 응답 코드를 거절 결과로 변환한다")
   void convertsProviderRejection() throws Exception {
     stubResponse(200, """
-        {"rsp_code":"A0001","rsp_message":"실패","bank_rsp_code":"999"}
+        {
+          "rsp_code":"A0001",
+          "rsp_message":"API 실패",
+          "bank_rsp_code":"999",
+          "bank_rsp_message":"은행 실패"
+        }
         """);
 
     AccountRealNameVerificationException exception = assertThrows(
@@ -108,6 +113,44 @@ class KftcAccountRealNameVerificationAdapterTest {
 
     assertEquals(AccountRealNameVerificationException.Type.REJECTED, exception.getType());
     assertEquals("A0001", exception.getProviderCode());
+    assertEquals("API 실패", exception.getProviderError().responseMessage());
+    assertEquals("999", exception.getProviderError().bankResponseCode());
+    assertEquals("은행 실패", exception.getProviderError().bankResponseMessage());
+  }
+
+  @Test
+  @DisplayName("참가은행 실패 응답 코드를 거절 결과로 변환한다")
+  void convertsBankRejection() throws Exception {
+    stubResponse(200, """
+        {
+          "rsp_code":"A0000",
+          "bank_rsp_code":"123",
+          "bank_rsp_message":"계좌번호 오류"
+        }
+        """);
+
+    AccountRealNameVerificationException exception = assertThrows(
+        AccountRealNameVerificationException.class, () -> adapter.verify(request("홍길동")));
+
+    assertEquals(AccountRealNameVerificationException.Type.REJECTED, exception.getType());
+    assertEquals("123", exception.getProviderCode());
+    assertEquals("계좌번호 오류", exception.getProviderError().primaryMessage());
+  }
+
+  @Test
+  @DisplayName("HTTP 실패 응답 본문에 있는 금융결제원 코드를 보존한다")
+  void preservesProviderCodeFromHttpFailureBody() throws Exception {
+    stubResponse(503, """
+        {"rsp_code":"O9999","rsp_message":"점검 중"}
+        """);
+
+    AccountRealNameVerificationException exception = assertThrows(
+        AccountRealNameVerificationException.class, () -> adapter.verify(request("홍길동")));
+
+    assertEquals(AccountRealNameVerificationException.Type.UNAVAILABLE, exception.getType());
+    assertEquals(503, exception.getProviderError().httpStatus());
+    assertEquals("O9999", exception.getProviderError().responseCode());
+    assertEquals("점검 중", exception.getProviderError().responseMessage());
   }
 
   @Test

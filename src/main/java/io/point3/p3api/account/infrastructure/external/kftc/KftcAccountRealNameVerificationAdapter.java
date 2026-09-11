@@ -7,6 +7,7 @@ import io.point3.p3api.account.application.port.AccountRealNameVerificationExcep
 import io.point3.p3api.account.application.port.AccountRealNameVerificationPort;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationRequest;
 import io.point3.p3api.account.application.port.AccountRealNameVerificationResult;
+import io.point3.p3api.account.application.port.AccountVerificationProviderError;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -56,14 +57,22 @@ public class KftcAccountRealNameVerificationAdapter implements AccountRealNameVe
     String accessToken = tokenProvider.accessToken();
     HttpResponse<String> response = send(inquiryRequest(request, accessToken));
     if (response.statusCode() == 401 || response.statusCode() == 403) {
-      log.warn("KFTC real-name inquiry authentication failed. status={}", response.statusCode());
+      AccountVerificationProviderError providerError = providerError(response);
+      log.warn(
+          "KFTC real-name inquiry authentication failed. status={} ,providerError={}",
+          response.statusCode(),
+          providerError);
       throw new AccountRealNameVerificationException(
-          AccountRealNameVerificationException.Type.AUTHENTICATION);
+          AccountRealNameVerificationException.Type.AUTHENTICATION, providerError);
     }
     if (response.statusCode() != 200) {
-      log.warn("KFTC real-name inquiry failed. status={}", response.statusCode());
+      AccountVerificationProviderError providerError = providerError(response);
+      log.warn(
+          "KFTC real-name inquiry failed. status={} ,providerError={}",
+          response.statusCode(),
+          providerError);
       throw new AccountRealNameVerificationException(
-          AccountRealNameVerificationException.Type.UNAVAILABLE);
+          AccountRealNameVerificationException.Type.UNAVAILABLE, providerError);
     }
 
     InquiryResponse inquiry = read(response.body());
@@ -130,11 +139,10 @@ public class KftcAccountRealNameVerificationAdapter implements AccountRealNameVe
   private void validateSuccess(InquiryResponse response) {
     if (!SUCCESS_API_CODE.equals(response.responseCode())
         || !SUCCESS_BANK_CODE.equals(response.bankResponseCode())) {
-      String providerCode = SUCCESS_API_CODE.equals(response.responseCode())
-          ? response.bankResponseCode()
-          : response.responseCode();
+      AccountVerificationProviderError providerError = response.toProviderError(200);
+      log.warn("KFTC real-name inquiry rejected. providerError={}", providerError);
       throw new AccountRealNameVerificationException(
-          AccountRealNameVerificationException.Type.REJECTED, providerCode);
+          AccountRealNameVerificationException.Type.REJECTED, providerError);
     }
     if (isBlank(response.apiTransactionId())
         || isBlank(response.bankCode())
@@ -175,6 +183,19 @@ public class KftcAccountRealNameVerificationAdapter implements AccountRealNameVe
     return value == null || value.isBlank();
   }
 
+  private AccountVerificationProviderError providerError(HttpResponse<String> response) {
+    if (response.body() == null || response.body().isBlank()) {
+      return AccountVerificationProviderError.httpStatus(response.statusCode());
+    }
+    try {
+      return objectMapper
+          .readValue(response.body(), InquiryResponse.class)
+          .toProviderError(response.statusCode());
+    } catch (IOException exception) {
+      return AccountVerificationProviderError.httpStatus(response.statusCode());
+    }
+  }
+
   private record InquiryRequest(
       @JsonProperty("bank_tran_id") String bankTransactionId,
       @JsonProperty("bank_code_std") String bankCode,
@@ -187,10 +208,18 @@ public class KftcAccountRealNameVerificationAdapter implements AccountRealNameVe
   private record InquiryResponse(
       @JsonProperty("api_tran_id") String apiTransactionId,
       @JsonProperty("rsp_code") String responseCode,
+      @JsonProperty("rsp_message") String responseMessage,
       @JsonProperty("bank_rsp_code") String bankResponseCode,
+      @JsonProperty("bank_rsp_message") String bankResponseMessage,
       @JsonProperty("bank_code_std") String bankCode,
       @JsonProperty("bank_name") String bankName,
       @JsonProperty("account_num") String accountNumber,
       @JsonProperty("account_holder_name") String accountHolderName,
-      @JsonProperty("account_type") String accountType) {}
+      @JsonProperty("account_type") String accountType) {
+
+    private AccountVerificationProviderError toProviderError(int httpStatus) {
+      return new AccountVerificationProviderError(
+          httpStatus, responseCode, responseMessage, bankResponseCode, bankResponseMessage);
+    }
+  }
 }

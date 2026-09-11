@@ -8,6 +8,7 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.inquiry.application.command.RequestOrderFormRevisionCommand;
 import io.point3.p3api.inquiry.application.submission.query.SellerOrderFormSubmissionQueryUseCase;
 import io.point3.p3api.inquiry.application.submission.revision.OrderFormRevisionRequestUseCase;
+import io.point3.p3api.inquiry.application.submission.view.SellerOrderFormSubmissionViewUseCase;
 import io.point3.p3api.inquiry.controller.response.ChatTimelineItemResponse;
 import io.point3.p3api.order.controller.response.OrderFormSubmissionResponse;
 import java.util.List;
@@ -26,6 +27,7 @@ public class SellerOrderFormSubmissionController {
 
   private final SellerOrderFormSubmissionQueryUseCase sellerOrderFormSubmissionQueryUseCase;
   private final OrderFormRevisionRequestUseCase orderFormRevisionRequestUseCase;
+  private final SellerOrderFormSubmissionViewUseCase sellerOrderFormSubmissionViewUseCase;
 
   @GetMapping("/{submissionId}")
   public ApiResponse<OrderFormSubmissionResponse> getSubmission(
@@ -41,6 +43,13 @@ public class SellerOrderFormSubmissionController {
         sellerOrderFormSubmissionQueryUseCase.getSubmissions(inquiryId, storeId).stream()
             .map(OrderFormSubmissionResponse::from)
             .toList());
+  }
+
+  @PostMapping("/{submissionId}/view")
+  public ApiResponse<OrderFormSubmissionResponse> markViewed(
+      @PathVariable UUID inquiryId, @PathVariable UUID submissionId, @CurrentStoreId UUID storeId) {
+    return ApiResponse.ok(OrderFormSubmissionResponse.from(
+        sellerOrderFormSubmissionViewUseCase.markViewed(inquiryId, submissionId, storeId)));
   }
 
   @PostMapping("/{submissionId}/revision-request")

@@ -16,6 +16,11 @@ public enum OrderConfirmationErrorCode implements ErrorCode {
       "Order form submission is invalid for this confirmation",
       HttpStatus.BAD_REQUEST,
       "/errors/order-confirmation/submission-invalid"),
+  ORDER_CONFIRMATION_SUBMISSION_NOT_VIEWED(
+      "ORDER_CONFIRMATION_SUBMISSION_NOT_VIEWED_400",
+      "Order form submission must be viewed before confirmation",
+      HttpStatus.BAD_REQUEST,
+      "/errors/order-confirmation/submission-not-viewed"),
   ORDER_CONFIRMATION_STATUS_FORBIDDEN(
       "ORDER_CONFIRMATION_STATUS_FORBIDDEN_400",
       "Order confirmation status can not be changed",

@@ -691,6 +691,7 @@ class PaymentServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   private SendOrderConfirmationResult sendConfirmation(Fixture fixture) {
+    fixture.submission().markSellerViewed(Instant.now());
     return orderConfirmationService.send(new SendOrderConfirmationCommand(
         fixture.inquiry().getId(),
         fixture.store().id(),

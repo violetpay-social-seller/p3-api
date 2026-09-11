@@ -54,6 +54,9 @@ public class OrderFormSubmission {
   @Column(name = "cancellation_refund_agreed", nullable = false)
   private boolean cancellationRefundAgreed;
 
+  @Column(name = "seller_viewed_at")
+  private Instant sellerViewedAt;
+
   @CreationTimestamp
   @Column(name = "submitted_at", nullable = false, updatable = false)
   private Instant submittedAt;
@@ -102,5 +105,16 @@ public class OrderFormSubmission {
         answers,
         referenceAssets,
         cancellationRefundAgreed);
+  }
+
+  public void markSellerViewed(Instant viewedAt) {
+    Objects.requireNonNull(viewedAt, "viewedAt");
+    if (sellerViewedAt == null) {
+      sellerViewedAt = viewedAt;
+    }
+  }
+
+  public boolean isSellerViewed() {
+    return sellerViewedAt != null;
   }
 }

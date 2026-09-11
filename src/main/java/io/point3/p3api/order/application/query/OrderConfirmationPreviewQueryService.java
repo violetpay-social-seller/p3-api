@@ -27,12 +27,15 @@ public class OrderConfirmationPreviewQueryService {
   private final OrderConfirmationPriceCalculator priceCalculator;
 
   public OrderConfirmationPreview getPreview(UUID inquiryId, UUID storeId) {
+    return getPreview(inquiryId, storeId, null);
+  }
+
+  public OrderConfirmationPreview getPreview(
+      UUID inquiryId, UUID storeId, UUID orderFormSubmissionId) {
     inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-    OrderFormSubmission submission =
-        submissionPersistencePort.findAllByInquiryId(inquiryId).stream()
-            .findFirst()
-            .orElseThrow(() -> new BaseException(
-                OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
+    OrderFormSubmission submission = findSubmission(inquiryId, orderFormSubmissionId);
+    validateSellerViewed(submission);
+
     var pricePreview = priceCalculator.preview(submission.getAnswers());
     return new OrderConfirmationPreview(
         submission.getId(),
@@ -49,5 +52,31 @@ public class OrderConfirmationPreviewQueryService {
         !pricePreview.unconfirmedOptions().isEmpty(),
         !pricePreview.unconfirmedOptions().isEmpty(),
         pricePreview.unconfirmedOptions());
+  }
+
+  private OrderFormSubmission findSubmission(UUID inquiryId, UUID orderFormSubmissionId) {
+    if (orderFormSubmissionId == null) {
+      return submissionPersistencePort.findAllByInquiryId(inquiryId).stream()
+          .findFirst()
+          .orElseThrow(() ->
+              new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
+    }
+
+    OrderFormSubmission submission = submissionPersistencePort
+        .findById(orderFormSubmissionId)
+        .orElseThrow(() ->
+            new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID));
+
+    if (!submission.getInquiryId().equals(inquiryId)) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_INVALID);
+    }
+
+    return submission;
+  }
+
+  private void validateSellerViewed(OrderFormSubmission submission) {
+    if (!submission.isSellerViewed()) {
+      throw new BaseException(OrderConfirmationErrorCode.ORDER_CONFIRMATION_SUBMISSION_NOT_VIEWED);
+    }
   }
 }

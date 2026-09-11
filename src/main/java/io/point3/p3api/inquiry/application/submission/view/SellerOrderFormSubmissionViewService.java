@@ -1,14 +1,18 @@
-package io.point3.p3api.inquiry.application.submission.query;
+package io.point3.p3api.inquiry.application.submission.view;
 
 import io.point3.p3api.exception.BaseException;
 import io.point3.p3api.exception.code.OrderFormErrorCode;
 import io.point3.p3api.inquiry.application.chat.InquiryChatAccessService;
 import io.point3.p3api.inquiry.application.port.OrderFormSubmissionPersistencePort;
+import io.point3.p3api.inquiry.application.realtime.InquiryListChangeEventPublisher;
+import io.point3.p3api.inquiry.application.submission.query.OrderFormAnswerDeliveryService;
+import io.point3.p3api.inquiry.application.submission.query.OrderFormReferenceAssetDeliveryService;
 import io.point3.p3api.inquiry.application.submission.result.OrderFormSubmissionResult;
 import io.point3.p3api.inquiry.domain.entity.Inquiry;
 import io.point3.p3api.inquiry.domain.entity.OrderFormSubmission;
 import io.point3.p3api.order.application.option.OrderOptionRowResolver;
-import java.util.List;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,33 +20,34 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class SellerOrderFormSubmissionQueryService
-    implements SellerOrderFormSubmissionQueryUseCase {
+@Transactional
+public class SellerOrderFormSubmissionViewService implements SellerOrderFormSubmissionViewUseCase {
 
   private final InquiryChatAccessService inquiryChatAccessService;
   private final OrderFormSubmissionPersistencePort orderFormSubmissionPersistencePort;
   private final OrderFormAnswerDeliveryService orderFormAnswerDeliveryService;
   private final OrderFormReferenceAssetDeliveryService orderFormReferenceAssetDeliveryService;
   private final OrderOptionRowResolver orderOptionRowResolver;
+  private final InquiryListChangeEventPublisher inquiryListChangeEventPublisher;
+  private final Clock clock;
 
   @Override
-  public List<OrderFormSubmissionResult> getSubmissions(UUID inquiryId, UUID storeId) {
+  public OrderFormSubmissionResult markViewed(UUID inquiryId, UUID submissionId, UUID storeId) {
     Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-    return orderFormSubmissionPersistencePort.findAllByInquiryId(inquiry.getId()).stream()
-        .map(this::toResult)
-        .toList();
-  }
-
-  @Override
-  public OrderFormSubmissionResult getSubmission(UUID inquiryId, UUID submissionId, UUID storeId) {
-    Inquiry inquiry = inquiryChatAccessService.getSellerInquiry(inquiryId, storeId);
-
     OrderFormSubmission submission = orderFormSubmissionPersistencePort
-        .findById(submissionId)
+        .findByIdForUpdate(submissionId)
         .orElseThrow(() -> new BaseException(OrderFormErrorCode.ORDER_FORM_NOT_FOUND));
 
     validate(submission, inquiry);
+
+    Instant previousViewedAt = submission.getSellerViewedAt();
+    submission.markSellerViewed(Instant.now(clock));
+
+    if (previousViewedAt == null) {
+      inquiry.markInProgressOnSellerReview();
+      inquiryListChangeEventPublisher.publishInquiryChanged(inquiry.getId());
+    }
+
     return toResult(submission);
   }
 

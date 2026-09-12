@@ -1,9 +1,11 @@
 package io.point3.p3api.payment.domain.entity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.point3.p3api.payment.domain.type.RefundOutcome;
+import io.point3.p3api.payment.domain.type.RefundCompletionMethod;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import java.time.Instant;
 import java.util.UUID;
@@ -86,6 +88,34 @@ class RefundTest {
     assertEquals("REFUND_TEMPORARY_UNAVAILABLE", refund.getFailureCode());
     assertEquals("환불 결과가 아직 확정되지 않았습니다.", refund.getFailureMessage());
     assertEquals("{\"refundEntryId\":\"ref-processing\"}", refund.getFailureDetails());
+  }
+
+  @Test
+  @DisplayName("수동 환불 완료는 Point3 실패 원인을 보존하고 완료 방식을 기록한다")
+  void completesManualRefundWithoutClearingFailureCause() {
+    UUID sellerUserId = UUID.randomUUID();
+    Refund refund = Refund.create(
+        UUID.randomUUID(), UUID.randomUUID(), sellerUserId, 30_400, 80, "구매자 요청");
+    Instant failedAt = Instant.parse("2026-08-25T00:00:00Z");
+    refund.fail(
+        RefundOutcome.MANUAL_REQUIRED,
+        null,
+        "SETTLEMENT_DEADLINE_EXCEEDED",
+        "정산 마감일이 지나 환불을 요청할 수 없습니다",
+        "{\"paymentSessionId\":\"pymt_sess-test\"}",
+        failedAt);
+
+    refund.completeManually(sellerUserId, Instant.parse("2026-08-25T01:00:00Z"));
+
+    assertEquals(RefundStatus.COMPLETED, refund.getStatus());
+    assertEquals(RefundOutcome.COMPLETED, refund.getOutcome());
+    assertEquals(RefundCompletionMethod.MANUAL, refund.getCompletionMethod());
+    assertEquals(sellerUserId, refund.getCompletedBy());
+    assertNotNull(refund.getCompletedAt());
+    assertEquals("SETTLEMENT_DEADLINE_EXCEEDED", refund.getFailureCode());
+    assertEquals("정산 마감일이 지나 환불을 요청할 수 없습니다", refund.getFailureMessage());
+    assertEquals("{\"paymentSessionId\":\"pymt_sess-test\"}", refund.getFailureDetails());
+    assertEquals(failedAt, refund.getFailedAt());
   }
 
   @Test

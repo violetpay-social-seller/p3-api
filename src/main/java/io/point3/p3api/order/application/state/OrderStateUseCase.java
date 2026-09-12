@@ -12,4 +12,6 @@ public interface OrderStateUseCase {
   OrderDetailResult refund(RefundOrderCommand command);
 
   OrderDetailResult refreshRefund(RefreshOrderRefundCommand command);
+
+  OrderDetailResult completeManualRefund(CompleteManualOrderRefundCommand command);
 }

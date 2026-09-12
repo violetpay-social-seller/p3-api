@@ -157,9 +157,41 @@ public class OrderStateService implements OrderStateUseCase {
     return toDetail(order);
   }
 
+  @Override
+  public OrderDetailResult completeManualRefund(CompleteManualOrderRefundCommand command) {
+    Order order = getSellerOrderForUpdate(command.orderId(), command.storeId());
+    Refund refund = refundPersistencePort
+        .findById(command.refundId())
+        .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
+    validateManualRefundTarget(order, refund);
+    if (order.getStatus() == OrderStatus.REFUNDED && refund.isManualCompleted()) {
+      return toDetail(order);
+    }
+
+    ensureNoCompletedRefund(order, refund.getId());
+    Instant completedAt = Instant.now(clock);
+    changeStatus(
+        order,
+        command.sellerUserId(),
+        "MANUAL_REFUND_COMPLETED",
+        () -> order.refund(refund.getReason()));
+    refund.completeManually(command.sellerUserId(), completedAt);
+    notifyBuyerRefundCompleted(order);
+    chatTimelineItemPublisher.publishOrderRefundCompleted(
+        order.getInquiryId(), command.sellerUserId(), order.getId());
+    refundPersistencePort.save(refund);
+
+    return toDetail(order);
+  }
+
   private void completeRefund(
       Order order, Refund refund, RefundOrderCommand command, Instant completedAt) {
-    completeRefund(order, refund, command.sellerUserId(), command.reason(), null, completedAt);
+    changeStatus(
+        order, command.sellerUserId(), command.reason(), () -> order.refund(command.reason()));
+    refund.completeZeroAmount(command.sellerUserId(), completedAt);
+    notifyBuyerRefundCompleted(order);
+    chatTimelineItemPublisher.publishOrderRefundCompleted(
+        order.getInquiryId(), command.sellerUserId(), order.getId());
   }
 
   private void completeRefund(
@@ -170,10 +202,33 @@ public class OrderStateService implements OrderStateUseCase {
       String providerRefundId,
       Instant completedAt) {
     changeStatus(order, changedBy, reason, () -> order.refund(reason));
-    refund.complete(providerRefundId, completedAt);
+    refund.completeAutomatically(providerRefundId, changedBy, completedAt);
     notifyBuyerRefundCompleted(order);
     chatTimelineItemPublisher.publishOrderRefundCompleted(
         order.getInquiryId(), changedBy, order.getId());
+  }
+
+  private void validateManualRefundTarget(Order order, Refund refund) {
+    if (!refund.getOrderId().equals(order.getId())) {
+      throw new BaseException(OrderErrorCode.ORDER_NOT_FOUND);
+    }
+    if (order.getStatus() == OrderStatus.REFUNDED && refund.isManualCompleted()) {
+      return;
+    }
+    if (order.getStatus() != OrderStatus.REFUND_REQUESTED
+        || refund.getStatus() != RefundStatus.FAILED
+        || refund.getOutcome() != RefundOutcome.MANUAL_REQUIRED) {
+      throw new BaseException(OrderErrorCode.ORDER_STATUS_FORBIDDEN);
+    }
+  }
+
+  private void ensureNoCompletedRefund(Order order, UUID targetRefundId) {
+    boolean completedExists = refundPersistencePort.findAllByOrderId(order.getId()).stream()
+        .anyMatch(refund ->
+            !refund.getId().equals(targetRefundId) && refund.getStatus() == RefundStatus.COMPLETED);
+    if (completedExists) {
+      throw new BaseException(OrderErrorCode.ORDER_REFUND_ALREADY_PROCESSED);
+    }
   }
 
   private void validateRefundable(Order order) {

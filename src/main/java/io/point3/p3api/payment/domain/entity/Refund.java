@@ -1,5 +1,6 @@
 package io.point3.p3api.payment.domain.entity;
 
+import io.point3.p3api.payment.domain.type.RefundCompletionMethod;
 import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import jakarta.persistence.Column;
@@ -79,6 +80,13 @@ public class Refund {
   @Column(name = "failed_at")
   private Instant failedAt;
 
+  @Column(name = "completed_by")
+  private UUID completedBy;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "completion_method", length = 30)
+  private RefundCompletionMethod completionMethod;
+
   private Refund(
       UUID orderId,
       UUID paymentAttemptId,
@@ -136,15 +144,27 @@ public class Refund {
   }
 
   public void complete(String providerRefundId, Instant completedAt) {
-    Objects.requireNonNull(completedAt, "completedAt");
-    this.status = RefundStatus.COMPLETED;
-    this.outcome = RefundOutcome.COMPLETED;
-    if (providerRefundId != null && !providerRefundId.isBlank()) {
-      this.providerRefundId = providerRefundId;
+    complete(providerRefundId, null, RefundCompletionMethod.AUTOMATIC, true, true, completedAt);
+  }
+
+  public void completeAutomatically(
+      String providerRefundId, UUID completedBy, Instant completedAt) {
+    Objects.requireNonNull(completedBy, "completedBy");
+    complete(
+        providerRefundId, completedBy, RefundCompletionMethod.AUTOMATIC, true, true, completedAt);
+  }
+
+  public void completeZeroAmount(UUID completedBy, Instant completedAt) {
+    Objects.requireNonNull(completedBy, "completedBy");
+    complete(null, completedBy, RefundCompletionMethod.ZERO_AMOUNT, true, true, completedAt);
+  }
+
+  public void completeManually(UUID completedBy, Instant completedAt) {
+    Objects.requireNonNull(completedBy, "completedBy");
+    if (status != RefundStatus.FAILED || outcome != RefundOutcome.MANUAL_REQUIRED) {
+      throw new IllegalStateException("Refund status transition is not allowed");
     }
-    this.completedAt = completedAt;
-    this.failedAt = null;
-    clearFailure();
+    complete(null, completedBy, RefundCompletionMethod.MANUAL, false, false, completedAt);
   }
 
   public void keepProcessing(
@@ -177,6 +197,35 @@ public class Refund {
 
   public boolean isRetryableFailure() {
     return status == RefundStatus.FAILED && outcome == RefundOutcome.RETRYABLE;
+  }
+
+  public boolean isManualCompleted() {
+    return status == RefundStatus.COMPLETED && completionMethod == RefundCompletionMethod.MANUAL;
+  }
+
+  private void complete(
+      String providerRefundId,
+      UUID completedBy,
+      RefundCompletionMethod completionMethod,
+      boolean clearFailure,
+      boolean clearFailedAt,
+      Instant completedAt) {
+    Objects.requireNonNull(completionMethod, "completionMethod");
+    Objects.requireNonNull(completedAt, "completedAt");
+    this.status = RefundStatus.COMPLETED;
+    this.outcome = RefundOutcome.COMPLETED;
+    if (providerRefundId != null && !providerRefundId.isBlank()) {
+      this.providerRefundId = providerRefundId;
+    }
+    this.completedBy = completedBy;
+    this.completionMethod = completionMethod;
+    this.completedAt = completedAt;
+    if (clearFailedAt) {
+      this.failedAt = null;
+    }
+    if (clearFailure) {
+      clearFailure();
+    }
   }
 
   private void recordProviderResult(

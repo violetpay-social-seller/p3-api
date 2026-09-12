@@ -201,6 +201,37 @@ class SellerSettlementAccountServiceTest {
     assertEquals("홍길동", result.accountHolderName());
   }
 
+  @Test
+  @DisplayName("운영자 정산계좌 조회 시 원문 계좌번호와 예금주를 반환한다")
+  void getsSettlementAccountForOperator() {
+    UUID storeId = UUID.randomUUID();
+    SellerSettlementAccount account = SellerSettlementAccount.create(
+        storeId,
+        "090",
+        "encrypted:1234567890123",
+        "encrypted:홍길동",
+        AccountHolderType.PERSONAL,
+        "transaction-id",
+        Instant.parse("2026-09-11T01:00:00Z"));
+    when(persistencePort.findByStoreId(storeId)).thenReturn(Optional.of(account));
+
+    OperatorSettlementAccountResult result = service.getForOperator(storeId);
+
+    assertEquals("090", result.bankCode());
+    assertEquals("카카오뱅크", result.bankName());
+    assertEquals("홍길동", result.accountHolderName());
+    assertEquals("1234567890123", result.accountNumber());
+  }
+
+  @Test
+  @DisplayName("운영자 정산계좌 조회 시 미등록 계좌는 찾을 수 없다")
+  void rejectsMissingSettlementAccountForOperator() {
+    BaseException exception = assertThrows(
+        BaseException.class, () -> service.getForOperator(UUID.randomUUID()));
+
+    assertEquals(AccountErrorCode.SETTLEMENT_ACCOUNT_NOT_FOUND, exception.getErrorCode());
+  }
+
   private static final class TestSensitiveDataCipher implements SensitiveDataCipher {
 
     @Override

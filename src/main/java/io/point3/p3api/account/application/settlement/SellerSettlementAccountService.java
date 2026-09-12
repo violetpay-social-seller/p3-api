@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 public class SellerSettlementAccountService
     implements SellerSettlementAccountRegisterUseCase,
         SellerSettlementAccountQueryUseCase,
+        OperatorSettlementAccountQueryUseCase,
         SettlementBankQueryUseCase {
 
   private static final String BIRTH_DATE_HOLDER_INFO_TYPE = " ";
@@ -70,6 +71,21 @@ public class SellerSettlementAccountService
         .findByStoreId(storeId)
         .orElseThrow(() -> new BaseException(AccountErrorCode.SETTLEMENT_ACCOUNT_NOT_FOUND));
     return toResult(account);
+  }
+
+  @Override
+  public OperatorSettlementAccountResult getForOperator(UUID storeId) {
+    SellerSettlementAccount account = persistencePort
+        .findByStoreId(storeId)
+        .orElseThrow(() -> new BaseException(AccountErrorCode.SETTLEMENT_ACCOUNT_NOT_FOUND));
+    SettlementBank bank = findBank(account.getBankCode());
+    BankAccountNumber accountNumber =
+        accountNumber(sensitiveDataCipher.decrypt(account.getEncryptedAccountNumber()));
+    return new OperatorSettlementAccountResult(
+        bank.code(),
+        bank.displayName(),
+        sensitiveDataCipher.decrypt(account.getEncryptedAccountHolderName()),
+        accountNumber.value());
   }
 
   @Override

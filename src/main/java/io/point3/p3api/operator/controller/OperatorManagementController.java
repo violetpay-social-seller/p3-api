@@ -1,5 +1,7 @@
 package io.point3.p3api.operator.controller;
 
+import io.point3.p3api.account.application.settlement.OperatorSettlementAccountQueryUseCase;
+import io.point3.p3api.account.application.settlement.OperatorSettlementAccountResult;
 import io.point3.p3api.auth.infrastructure.security.RoleGuard;
 import io.point3.p3api.auth.infrastructure.web.Authenticated;
 import io.point3.p3api.auth.infrastructure.web.CurrentUser;
@@ -81,6 +83,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperatorManagementController {
 
   private final OperatorManagementUseCase operatorManagementUseCase;
+  private final OperatorSettlementAccountQueryUseCase operatorSettlementAccountQueryUseCase;
 
   @GetMapping("/operator/dashboard")
   public ApiResponse<OperatorDashboardResult> getDashboard(
@@ -139,6 +142,13 @@ public class OperatorManagementController {
       @Authenticated CurrentUser currentUser, @PathVariable UUID storeId) {
     RoleGuard.requireOperator(currentUser);
     return ApiResponse.ok(operatorManagementUseCase.getStore(storeId));
+  }
+
+  @GetMapping("/operator/stores/{storeId}/settlement-account")
+  public ApiResponse<OperatorSettlementAccountResult> getSettlementAccount(
+      @Authenticated CurrentUser currentUser, @PathVariable UUID storeId) {
+    RoleGuard.requireOperator(currentUser);
+    return ApiResponse.ok(operatorSettlementAccountQueryUseCase.getForOperator(storeId));
   }
 
   @PatchMapping("/operator/stores/{storeId}/status")

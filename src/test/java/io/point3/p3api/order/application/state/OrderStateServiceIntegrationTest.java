@@ -22,6 +22,7 @@ import io.point3.p3api.order.domain.entity.OrderConfirmation;
 import io.point3.p3api.order.domain.type.OrderStatus;
 import io.point3.p3api.order.infrastructure.persistence.OrderConfirmationJpaRepository;
 import io.point3.p3api.order.infrastructure.persistence.OrderJpaRepository;
+import io.point3.p3api.order.infrastructure.persistence.OrderStatusHistoryJpaRepository;
 import io.point3.p3api.payment.application.port.Point3PaymentPort;
 import io.point3.p3api.payment.application.port.Point3PaymentException;
 import io.point3.p3api.payment.application.port.Point3RefundResult;
@@ -31,6 +32,7 @@ import io.point3.p3api.payment.application.result.Point3PaymentSession;
 import io.point3.p3api.payment.domain.entity.PaymentAttempt;
 import io.point3.p3api.payment.domain.entity.Refund;
 import io.point3.p3api.payment.domain.type.PaymentAttemptStatus;
+import io.point3.p3api.payment.domain.type.RefundCompletionMethod;
 import io.point3.p3api.payment.domain.type.RefundOutcome;
 import io.point3.p3api.payment.domain.type.RefundStatus;
 import io.point3.p3api.payment.infrastructure.persistence.PaymentAttemptJpaRepository;
@@ -90,6 +92,9 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderJpaRepository orderJpaRepository;
+
+  @Autowired
+  private OrderStatusHistoryJpaRepository orderStatusHistoryJpaRepository;
 
   @Autowired
   private RefundJpaRepository refundJpaRepository;
@@ -373,6 +378,122 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   }
 
   @Test
+  @DisplayName("판매자는 수동 환불 필요 건을 특정 refundId로 수동 완료한다")
+  void completesManualRequiredRefund() {
+    Fixture fixture = prepareFixture("order-refund-manual-complete");
+    OrderDetailResult manualRequired = createManualRequiredRefund(fixture);
+    var targetRefund = manualRequired.refunds().getFirst();
+
+    OrderDetailResult result =
+        orderStateUseCase.completeManualRefund(CompleteManualOrderRefundCommand.of(
+            fixture.order().getId(),
+            targetRefund.refundId(),
+            fixture.store().getId(),
+            fixture.seller().getId()));
+
+    var completedRefund = result.refunds().getFirst();
+    assertEquals(OrderStatus.REFUNDED, result.order().status());
+    assertEquals(RefundStatus.COMPLETED, completedRefund.status());
+    assertEquals(RefundOutcome.COMPLETED, completedRefund.outcome());
+    assertEquals(RefundCompletionMethod.MANUAL, completedRefund.completionMethod());
+    assertEquals(fixture.seller().getId(), completedRefund.completedBy());
+    assertEquals("SETTLEMENT_DEADLINE_EXCEEDED", completedRefund.failureCode());
+    assertEquals(
+        "정산 마감일이 지나 환불을 요청할 수 없습니다", completedRefund.failureMessage());
+    assertEquals("{\"paymentSessionId\":\"pymt_sess-test\"}", completedRefund.failureDetails());
+    assertNotNull(completedRefund.failedAt());
+    assertEquals(1, refundCompletedNotificationCount(fixture.buyer().getId()));
+    assertEquals(1, timelineCount(
+        fixture.inquiry().getId(), ChatTimelineItemType.ORDER_REFUND_COMPLETED));
+    assertEquals(
+        1,
+        orderStatusHistoryJpaRepository
+            .findAllByOrderIdOrderByCreatedAtDesc(fixture.order().getId())
+            .stream()
+            .filter(history -> history.getNewStatus() == OrderStatus.REFUNDED)
+            .count());
+  }
+
+  @Test
+  @DisplayName("다른 주문의 refundId로 수동 환불 완료할 수 없다")
+  void rejectsManualRefundCompletionWithOtherOrderRefund() {
+    Fixture fixture = prepareFixture("order-refund-manual-other");
+    Fixture other = prepareFixture("order-refund-manual-other-target");
+    OrderDetailResult manualRequired = createManualRequiredRefund(other);
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderStateUseCase.completeManualRefund(CompleteManualOrderRefundCommand.of(
+            fixture.order().getId(),
+            manualRequired.refunds().getFirst().refundId(),
+            fixture.store().getId(),
+            fixture.seller().getId())));
+
+    assertEquals(OrderErrorCode.ORDER_NOT_FOUND, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("재시도 가능 실패는 수동 환불 완료할 수 없다")
+  void rejectsRetryableManualRefundCompletion() {
+    Fixture fixture = prepareFixture("order-refund-manual-retryable");
+    requestRefund(fixture);
+    point3PaymentPort.refundResult =
+        Point3RefundResult.retryable(null, "EOB_WINDOW_BLOCKED", "현재 취소 차단 시간대입니다.", null);
+    OrderDetailResult retryable = orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 처리"));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderStateUseCase.completeManualRefund(CompleteManualOrderRefundCommand.of(
+            fixture.order().getId(),
+            retryable.refunds().getFirst().refundId(),
+            fixture.store().getId(),
+            fixture.seller().getId())));
+
+    assertEquals(OrderErrorCode.ORDER_STATUS_FORBIDDEN, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("자동 완료된 환불은 수동 환불 완료할 수 없다")
+  void rejectsManualRefundCompletionAfterAutomaticCompletion() {
+    Fixture fixture = prepareFixture("order-refund-manual-after-auto");
+    requestRefund(fixture);
+    OrderDetailResult completed = orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "환불 처리"));
+
+    BaseException exception = assertThrows(
+        BaseException.class,
+        () -> orderStateUseCase.completeManualRefund(CompleteManualOrderRefundCommand.of(
+            fixture.order().getId(),
+            completed.refunds().getFirst().refundId(),
+            fixture.store().getId(),
+            fixture.seller().getId())));
+
+    assertEquals(OrderErrorCode.ORDER_STATUS_FORBIDDEN, exception.getErrorCode());
+  }
+
+  @Test
+  @DisplayName("수동 환불 완료 중복 요청은 같은 상세 결과를 반환한다")
+  void returnsManualCompletedRefundOnDuplicateCompletion() {
+    Fixture fixture = prepareFixture("order-refund-manual-duplicate");
+    OrderDetailResult manualRequired = createManualRequiredRefund(fixture);
+    CompleteManualOrderRefundCommand command = CompleteManualOrderRefundCommand.of(
+        fixture.order().getId(),
+        manualRequired.refunds().getFirst().refundId(),
+        fixture.store().getId(),
+        fixture.seller().getId());
+
+    orderStateUseCase.completeManualRefund(command);
+    OrderDetailResult duplicate = orderStateUseCase.completeManualRefund(command);
+
+    assertEquals(OrderStatus.REFUNDED, duplicate.order().status());
+    assertEquals(RefundCompletionMethod.MANUAL, duplicate.refunds().getFirst().completionMethod());
+    assertEquals(1, refundCompletedNotificationCount(fixture.buyer().getId()));
+    assertEquals(1, timelineCount(
+        fixture.inquiry().getId(), ChatTimelineItemType.ORDER_REFUND_COMPLETED));
+  }
+
+  @Test
   @DisplayName("Point3 결과 미확정은 환불과 주문을 처리 중으로 남기고 실패 알림을 보내지 않는다")
   void keepsProcessingWhenRefundResultIsUncertain() {
     Fixture fixture = prepareFixture("order-refund-processing");
@@ -579,6 +700,17 @@ class OrderStateServiceIntegrationTest extends IntegrationTestSupport {
   private OrderResult requestRefund(Fixture fixture) {
     return orderStateUseCase.requestRefund(RequestOrderRefundCommand.of(
         fixture.order().getId(), fixture.buyer().getId(), "취소 요청"));
+  }
+
+  private OrderDetailResult createManualRequiredRefund(Fixture fixture) {
+    requestRefund(fixture);
+    point3PaymentPort.refundResult = Point3RefundResult.manualRequired(
+        null,
+        "SETTLEMENT_DEADLINE_EXCEEDED",
+        "정산 마감일이 지나 환불을 요청할 수 없습니다",
+        "{\"paymentSessionId\":\"pymt_sess-test\"}");
+    return orderStateUseCase.refund(RefundOrderCommand.of(
+        fixture.order().getId(), fixture.store().getId(), fixture.seller().getId(), "판매자 환불"));
   }
 
   private long timelineCount(UUID inquiryId, ChatTimelineItemType type) {

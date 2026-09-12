@@ -8,6 +8,7 @@ import io.point3.p3api.common.web.response.ApiResponse;
 import io.point3.p3api.order.application.calendar.OrderCalendarQueryUseCase;
 import io.point3.p3api.order.application.query.order.OrderQueryUseCase;
 import io.point3.p3api.order.application.query.order.SellerOrderListQuery;
+import io.point3.p3api.order.application.state.CompleteManualOrderRefundCommand;
 import io.point3.p3api.order.application.state.CompleteOrderPickupCommand;
 import io.point3.p3api.order.application.state.OrderStateUseCase;
 import io.point3.p3api.order.application.state.RefreshOrderRefundCommand;
@@ -138,6 +139,17 @@ public class OrderController {
     RoleGuard.requireSeller(currentUser);
     return ApiResponse.ok(OrderDetailResponse.from(orderStateUseCase.refreshRefund(
         RefreshOrderRefundCommand.of(orderId, storeId, currentUser.userId()))));
+  }
+
+  @PostMapping("/seller/orders/{orderId}/refunds/{refundId}/manual-complete")
+  public ApiResponse<OrderDetailResponse> completeManualRefund(
+      @PathVariable UUID orderId,
+      @PathVariable UUID refundId,
+      @CurrentStoreId UUID storeId,
+      @Authenticated CurrentUser currentUser) {
+    RoleGuard.requireSeller(currentUser);
+    return ApiResponse.ok(OrderDetailResponse.from(orderStateUseCase.completeManualRefund(
+        CompleteManualOrderRefundCommand.of(orderId, refundId, storeId, currentUser.userId()))));
   }
 
   private String refundReason(SellerOrderRefundRequest request) {

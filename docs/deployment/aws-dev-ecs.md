@@ -50,6 +50,8 @@
 
 금융결제원 계좌실명조회와 기관용 OAuth 요청은 `https://openapi.openbanking.or.kr`를 사용한다. Client ID, Client Secret과 이용기관 코드는 SSM SecureString에서 ECS Secret으로 주입하며 저장소와 로그에 실제 값을 기록하지 않는다.
 
+금융결제원 운영 승인 전 dev 환경은 `P3_KFTC_VERIFICATION_ENABLED=false`로 설정하여 입력값 기반 임시 정산계좌 등록을 사용한다. 이 모드는 실제 계좌와 예금주를 검증하지 않으므로 실제 정산 기능을 활성화하기 전에 반드시 `true`로 전환하고 기존 임시 등록 계좌의 재검증 정책을 적용해야 한다.
+
 Point3 운영 연동값을 dev ECS에서 활성화할 때는 SSM SecureString으로 추가한 뒤 task definition의 `secrets`에 연결한다.
 
 - `/p3/dev/api/P3_POINT3_CLIENT_ID`

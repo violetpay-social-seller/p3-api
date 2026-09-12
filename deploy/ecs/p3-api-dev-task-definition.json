@@ -88,6 +88,10 @@
         {
           "name": "P3_KFTC_API_BASE_URL",
           "value": "https://openapi.openbanking.or.kr"
+        },
+        {
+          "name": "P3_KFTC_VERIFICATION_ENABLED",
+          "value": "false"
         }
       ],
       "secrets": [

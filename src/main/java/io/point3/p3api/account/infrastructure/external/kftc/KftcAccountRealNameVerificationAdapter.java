@@ -18,9 +18,15 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(
+    prefix = "p3.kftc",
+    name = "verification-enabled",
+    havingValue = "true",
+    matchIfMissing = true)
 @Slf4j
 public class KftcAccountRealNameVerificationAdapter implements AccountRealNameVerificationPort {
 

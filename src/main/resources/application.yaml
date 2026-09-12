@@ -43,6 +43,7 @@ p3:
       key-version: ${P3_ACCOUNT_ENCRYPTION_KEY_VERSION:v1}
 
   kftc:
+    verification-enabled: ${P3_KFTC_VERIFICATION_ENABLED:true}
     auth-base-url: ${P3_KFTC_AUTH_BASE_URL:https://openapi.openbanking.or.kr}
     api-base-url: ${P3_KFTC_API_BASE_URL:https://openapi.openbanking.or.kr}
     client-id: ${P3_KFTC_CLIENT_ID:}
